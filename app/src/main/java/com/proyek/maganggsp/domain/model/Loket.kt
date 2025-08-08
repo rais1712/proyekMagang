@@ -1,19 +1,17 @@
+// File: app/src/main/java/com/proyek/maganggsp/domain/model/Loket.kt
 package com.proyek.maganggsp.domain.model
 
 /**
- * Model domain untuk data Loket (Mitra)
+ * Merepresentasikan data sebuah loket pembayaran.
+ * Ini adalah model inti yang ditampilkan di banyak halaman.
  */
 data class Loket(
-    val loketNumber: String,
+    val id: String,
+    val name: String,
     val phoneNumber: String,
-    val loketName: String,
     val address: String,
-    val status: LoketStatus,
-    val lastAccessed: String,
-    val hasFlaggedTransactions: Boolean
-)
+    val balance: Long,
+    val status: String, // Contoh: "Aktif", "Dipantau", "Diblokir"
+    val lastAccessed: String? = null
 
-enum class LoketStatus {
-    ACTIVE,
-    BLOCKED
-}
+)

@@ -1,10 +1,8 @@
 package com.proyek.maganggsp.di
 
-import com.proyek.maganggsp.BuildConfig
-import com.proyek.maganggsp.data.remote.api.AuthApi
-import com.proyek.maganggsp.data.remote.api.HistoryApi
-import com.proyek.maganggsp.data.remote.api.LoketApi
-import com.proyek.maganggsp.data.remote.interceptor.AuthInterceptor
+import com.proyek.maganggsp.data.api.AuthApi
+import com.proyek.maganggsp.data.api.HistoryApi
+import com.proyek.maganggsp.data.api.LoketApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -13,52 +11,46 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    @Provides
+    // Alamat dasar dari API lokal yang akan kita panggil
+    private const val BASE_URL = "http://192.168.168.6:8180/"
+
     @Singleton
-    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
+    @Provides
+    fun provideOkHttpClient(): OkHttpClient {
+        // Interceptor ini sangat berguna untuk melihat log request & response di Logcat
+        // Membantu proses debugging saat ada masalah dengan API
+        val loggingInterceptor = HttpLoggingInterceptor()
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
         return OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            })
-            .addInterceptor(authInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 
-    @Provides
     @Singleton
+    @Provides
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL)
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    @Provides
     @Singleton
-    fun provideAuthApi(retrofit: Retrofit): AuthApi {
-        return retrofit.create(AuthApi::class.java)
-    }
+    @Provides
+    fun provideAuthApi(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
 
-    @Provides
     @Singleton
-    fun provideLoketApi(retrofit: Retrofit): LoketApi {
-        return retrofit.create(LoketApi::class.java)
-    }
+    @Provides
+    fun provideLoketApi(retrofit: Retrofit): LoketApi = retrofit.create(LoketApi::class.java)
 
-    @Provides
     @Singleton
-    fun provideHistoryApi(retrofit: Retrofit): HistoryApi {
-        return retrofit.create(HistoryApi::class.java)
-    }
+    @Provides
+    fun provideHistoryApi(retrofit: Retrofit): HistoryApi = retrofit.create(HistoryApi::class.java)
 }

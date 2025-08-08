@@ -1,29 +1,22 @@
+// File: app/src/main/java/com/proyek/maganggsp/domain/repository/LoketRepository.kt
 package com.proyek.maganggsp.domain.repository
 
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.model.Mutasi
-import com.proyek.maganggsp.util.NetworkResult
-import kotlinx.coroutines.flow.Flow
 
 /**
- * Interface repository untuk operasi terkait Loket
+ * Kontrak untuk semua aksi yang berhubungan dengan data loket dan mutasi.
  */
 interface LoketRepository {
-    suspend fun getLoketByPhone(phoneNumber: String): NetworkResult<Loket>
+    suspend fun getLoketDetails(phoneNumber: String): Loket
+    suspend fun getMutations(loketId: String): List<Mutasi>
+    suspend fun blockLoket(loketId: String)
+    suspend fun unblockLoket(loketId: String)
+    suspend fun flagMutation(mutationId: String)
+    suspend fun getFlaggedLokets(): List<Loket>
+    suspend fun getBlockedLokets(): List<Loket>
+    suspend fun searchLoket(query: String): List<Loket>
+    suspend fun clearAllFlags(loketId: String)
 
-    suspend fun getMutations(loketNumber: String): NetworkResult<List<Mutasi>>
 
-    suspend fun blockLoket(loketNumber: String): NetworkResult<Unit>
-
-    suspend fun unblockLoket(loketNumber: String): NetworkResult<Unit>
-
-    suspend fun getFlaggedLokets(): NetworkResult<List<Loket>>
-
-    suspend fun getBlockedLokets(): NetworkResult<List<Loket>>
-
-    fun getRecentHistory(): Flow<NetworkResult<List<Loket>>>
-
-    fun getFullHistory(): Flow<NetworkResult<List<Loket>>>
-
-    suspend fun flagTransaction(mutationId: String): NetworkResult<Unit>
 }

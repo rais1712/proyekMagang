@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_app_gray"
+    tools:context=".presentation.detail_loket.DetailLoketActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/blue_primary"
+        app:elevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/arrow_back"
+            app:title="@string/detail_loket_title"
+            app:titleTextColor="@color/yellow_secondary_accent" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Background Biru untuk Area Header + Card -->
+    <View
+        android:id="@+id/viewBlueBackground"
+        android:layout_width="0dp"
+        android:layout_height="260dp"
+        android:background="@color/blue_primary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/btnClearFlags"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Card Informasi Loket dengan Tombol di Dalam -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardLoketInfo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/layoutLoketInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card_info_normal"
+                    android:padding="16dp">
+
+                    <!-- ID Loket -->
+                    <TextView
+                        android:id="@+id/tvLoketId"
+                        style="@style/TextAppearance.Material3.HeadlineSmall"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary_black"
+                        android:textStyle="bold"
+                        app:layout_constraintEnd_toStartOf="@id/chipStatus"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        tools:text="#101010" />
+
+                    <!-- Chip Status -->
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipStatus"
+                        android:layout_width="74dp"
+                        android:layout_height="38dp"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        app:chipCornerRadius="8dp"
+                        app:chipStrokeWidth="0dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        tools:chipBackgroundColor="@color/chip_normal_background"
+                        tools:text="Normal" />
+
+                    <!-- Nama Loket -->
+                    <TextView
+                        android:id="@+id/tvLoketName"
+                        style="@style/TextAppearance.Material3.TitleMedium"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/text_primary_black"
+                        android:textStyle="bold"
+                        app:layout_constraintEnd_toStartOf="@id/btnBlock"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvLoketId"
+                        tools:text="Loket Fatih" />
+
+                    <!-- Info Phone -->
+                    <TextView
+                        android:id="@+id/tvPhoneValue"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/text_secondary_gray"
+                        app:layout_constraintEnd_toStartOf="@id/btnBlock"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvLoketName"
+                        tools:text="+628123456890" />
+
+                    <!-- Info Email -->
+                    <TextView
+                        android:id="@+id/tvEmailValue"
+                        style="@style/TextAppearance.Material3.BodyMedium"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/text_secondary_gray"
+                        app:layout_constraintEnd_toStartOf="@id/btnBlock"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/tvPhoneValue"
+                        tools:text="AdminGespay@gmail.com" />
+
+                    <!-- Tombol Block - DI DALAM KARTU -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBlock"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="144dp"
+                        android:layout_height="51dp"
+                        android:minWidth="80dp"
+                        android:text="@string/block_loket"
+                        android:textSize="12sp"
+                        app:backgroundTint="@color/red_danger"
+                        app:cornerRadius="8dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/chipStatus"
+                        app:layout_constraintVertical_bias="0.5" />
+
+                    <!-- Tombol Unblock - DI DALAM KARTU -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnUnblock"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="8dp"
+                        android:minWidth="80dp"
+                        android:text="@string/unblock_loket"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        app:backgroundTint="@color/blue_accent_action"
+                        app:cornerRadius="8dp"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/btnBlock" />
+
+                    <!-- Tombol Diblokir - Status Button (Red, Disabled Look) -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDiblokir"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="16dp"
+                        android:minWidth="80dp"
+                        android:text="Diblokir"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        app:backgroundTint="@color/red_danger"
+                        app:cornerRadius="8dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/chipStatus"
+                        app:layout_constraintVertical_bias="0.5" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Shimmer untuk Card Info Loket -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerCardInfo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <include layout="@layout/placeholder_loket_info_card" />
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
+            <!-- Background Putih untuk Section Mutasi -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layoutMutasiSection"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@color/background_app_gray"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="24dp"
+                android:paddingBottom="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/cardLoketInfo">
+
+                <!-- Section Title Mutasi -->
+                <TextView
+                    android:id="@+id/tvMutasiTitle"
+                    style="@style/TextAppearance.Material3.TitleLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/mutasi_title"
+                    android:textColor="@color/text_primary_black"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <!-- RecyclerView Container -->
+                <FrameLayout
+                    android:id="@+id/frameLayoutMutations"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:minHeight="400dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintHorizontal_bias="0.0"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tvMutasiTitle">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvMutations"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        tools:itemCount="7"
+                        tools:listitem="@layout/item_mutasi" />
+
+                    <com.facebook.shimmer.ShimmerFrameLayout
+                        android:id="@+id/mutationsShimmerLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <include layout="@layout/item_mutasi_placeholder" />
+                            <include layout="@layout/item_mutasi_placeholder" />
+                            <include layout="@layout/item_mutasi_placeholder" />
+                            <include layout="@layout/item_mutasi_placeholder" />
+                            <include layout="@layout/item_mutasi_placeholder" />
+                        </LinearLayout>
+                    </com.facebook.shimmer.ShimmerFrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvMutationsError"
+                        style="@style/TextAppearance.Material3.BodyLarge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="@string/error_load_mutations"
+                        android:textColor="@color/text_secondary_gray"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Button - Hapus Semua Penanda -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnClearFlags"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="@string/hapus_semua_penanda"
+        android:visibility="gone"
+        app:backgroundTint="@color/yellow_secondary_accent"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Main Progress Bar -->
+    <ProgressBar
+        android:id="@+id/mainProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

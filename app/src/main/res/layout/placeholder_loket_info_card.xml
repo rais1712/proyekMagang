@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:padding="16dp">
+
+        <!-- Placeholder untuk ID Loket -->
+        <View
+            android:id="@+id/placeholderLoketId"
+            android:layout_width="120dp"
+            android:layout_height="24dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Placeholder untuk Status Chip -->
+        <View
+            android:id="@+id/placeholderChipStatus"
+            android:layout_width="80dp"
+            android:layout_height="46dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Placeholder untuk Nama Loket -->
+        <View
+            android:id="@+id/placeholderLoketName"
+            android:layout_width="0dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintEnd_toStartOf="@+id/placeholderButton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/placeholderLoketId"
+            app:layout_constraintWidth_percent="0.4" />
+
+        <!-- Placeholder untuk Phone -->
+        <View
+            android:id="@+id/placeholderPhone"
+            android:layout_width="0dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintEnd_toStartOf="@+id/placeholderButton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/placeholderLoketName"
+            app:layout_constraintWidth_percent="0.35" />
+
+        <!-- Placeholder untuk Email -->
+        <View
+            android:id="@+id/placeholderEmail"
+            android:layout_width="0dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintEnd_toStartOf="@+id/placeholderButton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/placeholderPhone"
+            app:layout_constraintWidth_percent="0.5" />
+
+        <!-- Placeholder untuk Tombol -->
+        <View
+            android:id="@+id/placeholderButton"
+            android:layout_width="144dp"
+            android:layout_height="51dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/placeholderChipStatus"
+            app:layout_constraintVertical_bias="0.5" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

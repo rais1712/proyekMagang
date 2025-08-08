@@ -1,3 +1,36 @@
 <resources>
     <string name="app_name">MagangGSP</string>
+
+    <!-- Detail Loket Screen -->
+    <string name="detail_loket_title">Detail Loket</string>
+    <string name="block_loket">Block</string>
+    <string name="unblock_loket">Unblock</string>
+    <string name="mutasi_title">Mutasi</string>
+    <string name="hapus_semua_penanda">Hapus Semua Penanda Pada Loket</string>
+    <string name="error_load_mutations">Gagal memuat mutasi.</string>
+
+    <!-- Status -->
+    <string name="status_normal">Normal</string>
+    <string name="status_ditandai">Ditandai</string>
+    <string name="status_diblokir">Diblokir</string>
+
+    <!-- Labels -->
+    <string name="label_phone">No. Telepon</string>
+    <string name="label_email">Email</string>
+    <string name="label_id_loket">ID Loket</string>
+    <string name="label_saldo">Saldo</string>
+
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Beranda</string>
+    <string name="nav_monitor">Monitor Loket</string>
+    <string name="nav_history">Riwayat</string>
+
+    <!-- Titles -->
+    <string name="history_title">Riwayat Penelusuran</string>
+    <string name="no_search_results">\"Loket tidak ditemukan.\"</string>
+    <string name="no_recent_history">Belum ada riwayat pencarian</string>
+
+    <!-- nothing -->
+    "Belum ada riwayat pencarian"
 </resources>

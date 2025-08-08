@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="4dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Placeholder untuk Ikon -->
+        <View
+            android:id="@+id/placeholderIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Placeholder untuk Timestamp -->
+        <View
+            android:id="@+id/placeholderTimestamp"
+            android:layout_width="0dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintEnd_toStartOf="@+id/placeholderAmount"
+            app:layout_constraintStart_toEndOf="@id/placeholderIcon"
+            app:layout_constraintTop_toTopOf="@id/placeholderIcon"
+            app:layout_constraintWidth_percent="0.25" />
+
+        <!-- Placeholder untuk Description -->
+        <View
+            android:id="@+id/placeholderDescription"
+            android:layout_width="0dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintEnd_toStartOf="@+id/placeholderAmount"
+            app:layout_constraintStart_toStartOf="@id/placeholderTimestamp"
+            app:layout_constraintTop_toBottomOf="@id/placeholderTimestamp"
+            app:layout_constraintWidth_percent="0.4" />
+
+        <!-- Placeholder untuk Saldo Info -->
+        <View
+            android:id="@+id/placeholderSaldoInfo"
+            android:layout_width="0dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintEnd_toStartOf="@+id/placeholderAmount"
+            app:layout_constraintStart_toStartOf="@id/placeholderTimestamp"
+            app:layout_constraintTop_toBottomOf="@id/placeholderDescription"
+            app:layout_constraintWidth_percent="0.35" />
+
+        <!-- Placeholder untuk Amount -->
+        <View
+            android:id="@+id/placeholderAmount"
+            android:layout_width="100dp"
+            android:layout_height="20dp"
+            android:background="@drawable/bg_placeholder"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

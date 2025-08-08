@@ -1,8 +1,11 @@
+// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt
 package com.proyek.maganggsp.di
 
-import com.proyek.maganggsp.data.repository.AuthRepositoryImpl
-import com.proyek.maganggsp.data.repository.LoketRepositoryImpl
+import com.proyek.maganggsp.data.repositoryImpl.AuthRepositoryImpl
+import com.proyek.maganggsp.data.repositoryImpl.HistoryRepositoryImpl
+import com.proyek.maganggsp.data.repositoryImpl.LoketRepositoryImpl
 import com.proyek.maganggsp.domain.repository.AuthRepository
+import com.proyek.maganggsp.domain.repository.HistoryRepository
 import com.proyek.maganggsp.domain.repository.LoketRepository
 import dagger.Binds
 import dagger.Module
@@ -16,13 +19,13 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindAuthRepository(
-        authRepositoryImpl: AuthRepositoryImpl
-    ): AuthRepository
+    abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
     @Binds
     @Singleton
-    abstract fun bindLoketRepository(
-        loketRepositoryImpl: LoketRepositoryImpl
-    ): LoketRepository
+    abstract fun bindLoketRepository(impl: LoketRepositoryImpl): LoketRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindHistoryRepository(impl: HistoryRepositoryImpl): HistoryRepository
 }

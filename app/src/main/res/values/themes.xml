@@ -1,5 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.GesPayAdmin" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorOnSecondary">@color/colorOnSecondary</item>
 
-    <style name="Theme.MagangGSP" parent="android:Theme.Material.Light.NoActionBar" />
+        <item name="fontFamily">@font</item> </style>
+
+    <style name="Theme.GesPayAdmin" parent="Base.Theme.GesPayAdmin" />
 </resources>

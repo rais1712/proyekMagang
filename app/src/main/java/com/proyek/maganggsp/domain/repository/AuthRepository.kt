@@ -1,14 +1,15 @@
+// File: app/src/main/java/com/proyek/maganggsp/domain/repository/AuthRepository.kt
 package com.proyek.maganggsp.domain.repository
 
 import com.proyek.maganggsp.domain.model.Admin
-import com.proyek.maganggsp.util.NetworkResult
 
 /**
- * Interface repository untuk autentikasi
+ * Kontrak untuk semua aksi yang berhubungan dengan otentikasi.
  */
 interface AuthRepository {
-    suspend fun login(email: String, password: String): NetworkResult<Admin>
-    suspend fun logout(): NetworkResult<Unit>
-    suspend fun getStoredToken(): String?
-    suspend fun clearStoredToken()
+    /**
+     * Melakukan proses login dan mengembalikan data Admin jika berhasil.
+     * Akan melempar Exception jika gagal.
+     */
+    suspend fun login(email: String, password: String): Admin
 }
