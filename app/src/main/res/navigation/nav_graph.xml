@@ -10,23 +10,72 @@
         android:name="com.proyek.maganggsp.presentation.home.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" >
-
         <action
             android:id="@+id/action_homeFragment_to_historyFragment"
-            app:destination="@id/historyFragment" />
-
+            app:destination="@id/historyFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_homeFragment_to_monitorFragment"
+            app:destination="@id/monitorFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_homeFragment_to_detailLoketActivity"
+            app:destination="@id/detailLoketActivity" />
     </fragment>
 
     <fragment
         android:id="@+id/historyFragment"
         android:name="com.proyek.maganggsp.presentation.history.HistoryFragment"
         android:label="fragment_history"
-        tools:layout="@layout/fragment_history" />
+        tools:layout="@layout/fragment_history" >
+        <action
+            android:id="@+id/action_historyFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_historyFragment_to_monitorFragment"
+            app:destination="@id/monitorFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_historyFragment_to_detailLoketActivity"
+            app:destination="@id/detailLoketActivity" />
+    </fragment>
 
     <fragment
         android:id="@+id/monitorFragment"
         android:name="com.proyek.maganggsp.presentation.monitor.MonitorFragment"
         android:label="fragment_monitor"
-        tools:layout="@layout/fragment_monitor" />
+        tools:layout="@layout/fragment_monitor" >
+        <action
+            android:id="@+id/action_monitorFragment_to_homeFragment"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_monitorFragment_to_historyFragment"
+            app:destination="@id/historyFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+
+        <action
+            android:id="@+id/action_monitorFragment_to_detailLoketActivity"
+            app:destination="@id/detailLoketActivity" />
+    </fragment>
+
+    <activity
+        android:id="@+id/detailLoketActivity"
+        android:name="com.proyek.maganggsp.presentation.detail_loket.DetailLoketActivity"
+        android:label="activity_detail_loket"
+        tools:layout="@layout/activity_detail_loket" >
+
+        <argument
+            android:name="noLoket"
+            app:argType="string" />
+
+    </activity>
 
 </navigation>

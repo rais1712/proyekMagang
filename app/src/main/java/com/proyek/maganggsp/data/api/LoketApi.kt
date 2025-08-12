@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/api/LoketApi.kt
 package com.proyek.maganggsp.data.api
 
 import com.proyek.maganggsp.data.dto.LoketDto
@@ -8,55 +7,47 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
-import retrofit2.http.DELETE
-
 
 interface LoketApi {
-    /**
-     * Mencari dan mendapatkan detail loket berdasarkan nomor telepon.
-     */
-    @GET("loket/{phoneNumber}")
-    suspend fun getLoketDetails(@Path("phoneNumber") phoneNumber: String): LoketDto
 
-    /**
-     * Mendapatkan daftar transaksi (mutasi) dari sebuah loket.
-     */
-    @GET("loket/{id}/mutations")
-    suspend fun getMutations(@Path("id") loketId: String): List<MutasiDto>
+    @GET("loket/{idLoket}")
+    suspend fun getLoketDetail(
+        @Path("idLoket") idLoket: String
+    ): LoketDto // Langsung mengembalikan DTO
 
-    /**
-     * Memblokir sebuah loket.
-     */
-    @POST("loket/{id}/block")
-    suspend fun blockLoket(@Path("id") loketId: String): Response<Unit> // Response<Unit> untuk respons kosong
+    @GET("mutasi/{idLoket}")
+    suspend fun getMutation(
+        @Path("idLoket") idLoket: String
+    ): List<MutasiDto> // Langsung mengembalikan List DTO
 
-    /**
-     * Membuka blokir sebuah loket.
-     */
-    @POST("loket/{id}/unblock")
-    suspend fun unblockLoket(@Path("id") loketId: String): Response<Unit>
+    @GET("search")
+    suspend fun searchLoket(
+        @Query("q") query: String
+    ): List<LoketDto> // Langsung mengembalikan List DTO
 
-    /**
-     * Menandai sebuah transaksi sebagai mencurigakan.
-     */
-    @POST("mutations/{id}/flag")
-    suspend fun flagMutation(@Path("id") mutationId: String): Response<Unit>
+    @POST("loket/{idLoket}/block")
+    suspend fun blockLoket(
+        @Path("idLoket") idLoket: String
+    ): Response<Unit> // Menggunakan Response<Unit> untuk respons tanpa body
 
-    /**
-     * Mendapatkan daftar loket yang punya transaksi ditandai.
-     */
+    @POST("loket/{idLoket}/unblock")
+    suspend fun unblockLoket(
+        @Path("idLoket") idLoket: String
+    ): Response<Unit> // Menggunakan Response<Unit> untuk respons tanpa body
+
+    @POST("mutasi/{idMutasi}/flag")
+    suspend fun flagMutation(
+        @Path("idMutasi") idMutasi: String
+    ): Response<Unit>
+
+    @POST("loket/{idLoket}/clear-flags")
+    suspend fun clearAllFlags(
+        @Path("idLoket") idLoket: String
+    ): Response<Unit>
+
     @GET("loket/flagged")
     suspend fun getFlaggedLokets(): List<LoketDto>
 
-    /**
-     * Mendapatkan daftar loket yang diblokir.
-     */
     @GET("loket/blocked")
     suspend fun getBlockedLokets(): List<LoketDto>
-
-    @GET("loket/search") // <<< TAMBAHKAN FUNGSI INI
-    suspend fun searchLoket(@Query("q") query: String): List<LoketDto>
-
-    @DELETE("loket/{id}/mutations/flags") // <<< TAMBAHKAN FUNGSI INI
-    suspend fun clearAllFlags(@Path("id") loketId: String): Response<Unit>
 }

@@ -10,9 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import android.content.Intent
-import com.proyek.maganggsp.domain.model.Loket
-import com.proyek.maganggsp.presentation.detail_loket.DetailLoketActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.databinding.FragmentHistoryBinding
 import com.proyek.maganggsp.presentation.home.HistoryAdapter
 import com.proyek.maganggsp.util.Resource
@@ -39,27 +37,22 @@ class HistoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        setupToolbar()
         setupRecyclerView()
         observeHistory()
     }
 
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-    }
-
     private fun setupRecyclerView() {
         historyAdapter = HistoryAdapter()
-        binding.rvHistory.adapter = historyAdapter
+        binding.rvHistory.apply {
+            adapter = historyAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+
+        // --- PERUBAHAN DITAMBAHKAN DI SINI ---
         historyAdapter.setOnItemClickListener { loket ->
-            // Mengarahkan ke DetailLoketActivity saat item diklik
-            val intent = Intent(requireActivity(), DetailLoketActivity::class.java).apply {
-                putExtra("phone_number", loket.phoneNumber)
-            }
-            startActivity(intent)
+            // Menggunakan HistoryFragmentDirections untuk navigasi
+            val action = HistoryFragmentDirections.actionHistoryFragmentToDetailLoketActivity(loket.noLoket)
+            findNavController().navigate(action)
         }
     }
 

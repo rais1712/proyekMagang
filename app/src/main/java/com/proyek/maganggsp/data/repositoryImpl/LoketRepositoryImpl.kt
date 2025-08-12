@@ -5,83 +5,140 @@ import com.proyek.maganggsp.data.dto.toDomain
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.model.Mutasi
 import com.proyek.maganggsp.domain.repository.LoketRepository
+import com.proyek.maganggsp.util.Resource
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class LoketRepositoryImpl @Inject constructor(
     private val api: LoketApi
 ) : LoketRepository {
 
-    override suspend fun getLoketDetails(phoneNumber: String): Loket {
-        return try {
-            api.getLoketDetails(phoneNumber).toDomain()
-        } catch (e: Exception) {
-            throw e
-        }
-    }
-
-    override suspend fun getMutations(loketId: String): List<Mutasi> {
-        return try {
-            api.getMutations(loketId).map { it.toDomain() }
-        } catch (e: Exception) {
-            throw e
-        }
-    }
-
-    override suspend fun blockLoket(loketId: String) {
+    override fun getLoketDetail(idLoket: String): Flow<Resource<Loket>> = flow {
+        emit(Resource.Loading())
         try {
-            api.blockLoket(loketId)
-        } catch (e: Exception) {
-            throw e
+            val response = api.getLoketDetail(idLoket)
+            emit(Resource.Success(response.toDomain()))
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
         }
     }
 
-    override suspend fun unblockLoket(loketId: String) {
+    override fun getMutation(idLoket: String): Flow<Resource<List<Mutasi>>> = flow {
+        emit(Resource.Loading())
         try {
-            api.unblockLoket(loketId)
-        } catch (e: Exception) {
-            throw e
+            val response = api.getMutation(idLoket)
+            emit(Resource.Success(response.map { it.toDomain() }))
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
         }
     }
 
-    override suspend fun flagMutation(mutationId: String) {
+    override fun searchLoket(query: String): Flow<Resource<List<Loket>>> = flow {
+        emit(Resource.Loading())
         try {
-            api.flagMutation(mutationId)
-        } catch (e: Exception) {
-            throw e
+            val response = api.searchLoket(query)
+            emit(Resource.Success(response.map { it.toDomain() }))
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
         }
     }
 
-    override suspend fun getFlaggedLokets(): List<Loket> {
-        return try {
-            api.getFlaggedLokets().map { it.toDomain() }
-        } catch (e: Exception) {
-            throw e
-        }
-    }
-
-    override suspend fun getBlockedLokets(): List<Loket> {
-        return try {
-            api.getBlockedLokets().map { it.toDomain() }
-        } catch (e: Exception) {
-            throw e
-        }
-
-    }
-
-    override suspend fun searchLoket(query: String): List<Loket> { // <<< TAMBAHKAN FUNGSI INI
-        return try {
-            api.searchLoket(query).map { it.toDomain() }
-        } catch (e: Exception) {
-            throw e
-        }
-    }
-
-    override suspend fun clearAllFlags(loketId: String) { // <<< TAMBAHKAN FUNGSI INI
+    override fun blockLoket(idLoket: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
         try {
-            api.clearAllFlags(loketId)
-        } catch (e: Exception) {
-            throw e
+            val response = api.blockLoket(idLoket)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error("Gagal memblokir loket: ${response.message()}"))
+            }
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
         }
     }
 
+    override fun unblockLoket(idLoket: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = api.unblockLoket(idLoket)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error("Gagal membuka blokir loket: ${response.message()}"))
+            }
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
+        }
+    }
+
+    override fun flagMutation(idMutasi: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = api.flagMutation(idMutasi)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error("Gagal menandai mutasi: ${response.message()}"))
+            }
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
+        }
+    }
+
+    override fun clearAllFlags(idLoket: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = api.clearAllFlags(idLoket)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error("Gagal menghapus semua tanda: ${response.message()}"))
+            }
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
+        }
+    }
+
+    override fun getFlaggedLokets(): Flow<Resource<List<Loket>>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = api.getFlaggedLokets()
+            emit(Resource.Success(response.map { it.toDomain() }))
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
+        }
+    }
+
+    override fun getBlockedLokets(): Flow<Resource<List<Loket>>> = flow {
+        emit(Resource.Loading())
+        try {
+            val response = api.getBlockedLokets()
+            emit(Resource.Success(response.map { it.toDomain() }))
+        } catch (e: HttpException) {
+            emit(Resource.Error("Terjadi kesalahan: ${e.message()}"))
+        } catch (e: IOException) {
+            emit(Resource.Error("Koneksi bermasalah, periksa jaringan internet Anda."))
+        }
+    }
 }

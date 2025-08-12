@@ -8,81 +8,75 @@ import com.proyek.maganggsp.domain.usecase.auth.GetAdminProfileUseCase
 import com.proyek.maganggsp.domain.usecase.history.GetRecentHistoryUseCase
 import com.proyek.maganggsp.domain.usecase.loket.SearchLoketUseCase
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.Resource.Empty
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@OptIn(FlowPreview::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    private val getAdminProfileUseCase: GetAdminProfileUseCase,
     private val getRecentHistoryUseCase: GetRecentHistoryUseCase,
-    private val searchLoketUseCase: SearchLoketUseCase,
-    private val getAdminProfileUseCase: GetAdminProfileUseCase // <<< Tambahkan ini
+    private val searchLoketUseCase: SearchLoketUseCase
 ) : ViewModel() {
 
-    // State untuk Riwayat Terakhir
-    private val _recentHistoryState = MutableStateFlow<Resource<List<Loket>>>(Empty())
-    val recentHistoryState: StateFlow<Resource<List<Loket>>> = _recentHistoryState
-
-    // State untuk Hasil Pencarian
-    private val _searchResultState = MutableStateFlow<Resource<List<Loket>>>(Empty())
-    val searchResultState: StateFlow<Resource<List<Loket>>> = _searchResultState
-
-    // <<< State baru untuk Profil Admin >>>
     private val _adminProfileState = MutableStateFlow<Admin?>(null)
-    val adminProfileState: StateFlow<Admin?> = _adminProfileState
+    val adminProfileState = _adminProfileState.asStateFlow()
 
-    // State untuk query pencarian
-    private val _searchQuery = MutableStateFlow("")
+    // --- MENGGUNAKAN SATU STATEFLOW UNTUK UI ---
+    private val _uiState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty())
+    val uiState = _uiState.asStateFlow()
+
+    private var searchJob: Job? = null
+
+    // Menyimpan riwayat terakhir untuk dikembalikan saat pencarian dibersihkan
+    private var lastRecentHistory: List<Loket> = emptyList()
 
     init {
-        loadAdminProfile() // Panggil fungsi ini
-        getRecentHistory()
-        observeSearchQuery()
+        loadAdminProfile()
+        loadRecentHistory()
     }
 
-    // <<< Fungsi baru untuk memuat profil admin >>>
-    private fun loadAdminProfile() {
-        _adminProfileState.value = getAdminProfileUseCase()
-    }
-
-    private fun getRecentHistory() {
-        getRecentHistoryUseCase().onEach { result ->
-            _recentHistoryState.value = result
-        }.launchIn(viewModelScope)
-    }
-
-    fun refreshRecentHistory() {
+    fun loadAdminProfile() {
         viewModelScope.launch {
-            _recentHistoryState.value = Resource.Loading()
-            getRecentHistory()
+            _adminProfileState.value = getAdminProfileUseCase()
         }
     }
 
-    private fun observeSearchQuery() {
-        _searchQuery
-            .debounce(500L)
-            .onEach { query ->
-                if (query.isEmpty()) {
-                    _searchResultState.value = Empty()
-                } else {
-                    _searchResultState.value = Resource.Loading()
-                    searchLoketUseCase(query).onEach { result ->
-                        _searchResultState.value = result
-                    }.launchIn(viewModelScope)
-                }
+    fun loadRecentHistory() {
+        getRecentHistoryUseCase().onEach { result ->
+            if (result is Resource.Success) {
+                lastRecentHistory = result.data ?: emptyList()
             }
-            .launchIn(viewModelScope)
+            _uiState.value = result
+        }.launchIn(viewModelScope)
     }
 
-    fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
+    fun searchLoket(query: String) {
+        searchJob?.cancel() // Batalkan job pencarian sebelumnya
+        searchJob = viewModelScope.launch {
+            delay(500L) // Memberi jeda agar tidak mencari setiap kali user mengetik
+            if (query.isBlank()) {
+                clearSearch()
+            } else {
+                searchLoketUseCase(query).onEach { result ->
+                    _uiState.value = result
+                }.launchIn(viewModelScope)
+            }
+        }
+    }
+
+    fun clearSearch() {
+        // Kembalikan UI ke state riwayat terakhir
+        _uiState.value = Resource.Success(lastRecentHistory)
+    }
+
+    fun refresh() {
+        loadRecentHistory()
     }
 }

@@ -1,4 +1,4 @@
-package com.proyek.maganggsp.presentation.auth
+package com.proyek.maganggsp.presentation.login
 
 import android.content.Intent
 import android.os.Bundle

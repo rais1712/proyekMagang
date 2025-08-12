@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/text_primary_black"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@+id/tvLoketId"
+            app:layout_constraintEnd_toStartOf="@+id/tvNomorLoket"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Loket Fatih" />
@@ -35,13 +35,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/text_secondary_gray"
-            app:layout_constraintEnd_toStartOf="@+id/tvLoketId"
+            app:layout_constraintEnd_toStartOf="@+id/tvNomorLoket"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvLoketName"
             tools:text="+628123456890" />
 
         <TextView
-            android:id="@+id/tvLoketId"
+            android:id="@+id/tvNomorLoket"
             style="@style/TextAppearance.Material3.TitleMedium"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -61,7 +61,7 @@
             android:layout_marginTop="8dp"
             android:textColor="@color/text_secondary_gray"
             android:visibility="gone"
-            app:layout_constraintEnd_toStartOf="@+id/tvLoketId"
+            app:layout_constraintEnd_toStartOf="@+id/tvNomorLoket"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvLoketPhone"
             tools:text="Diakses pada: 07 Agu 2025, 15:30"

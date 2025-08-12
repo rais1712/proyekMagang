@@ -88,19 +88,6 @@
                 android:layout_height="wrap_content"
                 android:paddingBottom="24dp">
 
-                <androidx.constraintlayout.widget.Group
-                    android:id="@+id/group_history"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:constraint_referenced_ids="tvRecentHistoryTitle,tvSeeAll,rvRecentHistory,tvEmptyHistory,shimmerLayoutHistory" />
-
-                <androidx.constraintlayout.widget.Group
-                    android:id="@+id/group_search"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone"
-                    app:constraint_referenced_ids="rvSearchResult,tvEmptySearch,shimmerLayoutSearch" />
-
                 <TextView
                     android:id="@+id/tvRecentHistoryTitle"
                     android:layout_width="wrap_content"
@@ -149,7 +136,7 @@
                 </com.facebook.shimmer.ShimmerFrameLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvRecentHistory"
+                    android:id="@+id/rvLoketList"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
@@ -170,50 +157,6 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/tvRecentHistoryTitle" />
-
-                <!-- Shimmer untuk Search Result -->
-                <com.facebook.shimmer.ShimmerFrameLayout
-                    android:id="@+id/shimmerLayoutSearch"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:visibility="gone"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <include layout="@layout/item_loket_placeholder" />
-                        <include layout="@layout/item_loket_placeholder" />
-                        <include layout="@layout/item_loket_placeholder" />
-                    </LinearLayout>
-                </com.facebook.shimmer.ShimmerFrameLayout>
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvSearchResult"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <TextView
-                    android:id="@+id/tvEmptySearch"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="32dp"
-                    android:gravity="center"
-                    android:text="Loket tidak ditemukan."
-                    android:textColor="@color/text_secondary_gray"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.core.widget.NestedScrollView>

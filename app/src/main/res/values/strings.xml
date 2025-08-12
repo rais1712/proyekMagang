@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">MagangGSP</string>
 
+    <!-- Welcome message -->
+    <string name="welcome_admin">Halo, %1$s!</string>
+
     <!-- Detail Loket Screen -->
     <string name="detail_loket_title">Detail Loket</string>
     <string name="block_loket">Block</string>
@@ -8,6 +11,21 @@
     <string name="mutasi_title">Mutasi</string>
     <string name="hapus_semua_penanda">Hapus Semua Penanda Pada Loket</string>
     <string name="error_load_mutations">Gagal memuat mutasi.</string>
+
+    <!-- Dialog Confirmation Strings -->
+    <string name="dialog_confirm_block_title">Konfirmasi Blokir</string>
+    <string name="dialog_confirm_block_message">Yakin ingin memblokir loket ini?</string>
+    <string name="dialog_confirm_unblock_title">Konfirmasi Buka Blokir</string>
+    <string name="dialog_confirm_unblock_message">Yakin ingin membuka blokir loket ini?</string>
+    <string name="dialog_confirm_clear_flags_title">Konfirmasi Hapus Penanda</string>
+    <string name="dialog_confirm_clear_flags_message">Yakin ingin menghapus semua penanda pada loket ini?</string>
+    <string name="dialog_button_yes">Ya</string>
+    <string name="dialog_button_cancel">Batal</string>
+
+    <!-- Success Messages -->
+    <string name="success_block_loket">Loket berhasil diblokir</string>
+    <string name="success_unblock_loket">Loket berhasil dibuka blokirnya</string>
+    <string name="success_clear_flags">Semua penanda berhasil dihapus</string>
 
     <!-- Status -->
     <string name="status_normal">Normal</string>
@@ -20,7 +38,6 @@
     <string name="label_id_loket">ID Loket</string>
     <string name="label_saldo">Saldo</string>
 
-
     <!-- Bottom Navigation -->
     <string name="nav_home">Beranda</string>
     <string name="nav_monitor">Monitor Loket</string>
@@ -28,9 +45,6 @@
 
     <!-- Titles -->
     <string name="history_title">Riwayat Penelusuran</string>
-    <string name="no_search_results">\"Loket tidak ditemukan.\"</string>
+    <string name="no_search_results">Loket tidak ditemukan</string>
     <string name="no_recent_history">Belum ada riwayat pencarian</string>
-
-    <!-- nothing -->
-    "Belum ada riwayat pencarian"
 </resources>

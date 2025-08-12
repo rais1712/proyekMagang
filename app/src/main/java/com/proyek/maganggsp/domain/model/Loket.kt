@@ -1,17 +1,10 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/model/Loket.kt
 package com.proyek.maganggsp.domain.model
 
-/**
- * Merepresentasikan data sebuah loket pembayaran.
- * Ini adalah model inti yang ditampilkan di banyak halaman.
- */
+// Hanya berisi data yang benar-benar dibutuhkan aplikasi
 data class Loket(
-    val id: String,
-    val name: String,
-    val phoneNumber: String,
-    val address: String,
-    val balance: Long,
-    val status: String, // Contoh: "Aktif", "Dipantau", "Diblokir"
-    val lastAccessed: String? = null
-
+    val noLoket: String,         // Untuk detail & daftar
+    val namaLoket: String,       // Untuk detail & daftar
+    val nomorTelepon: String,    // Untuk detail & daftar
+    val email: String,           // Hanya untuk detail
+    val status: String           // Hanya untuk detail
 )

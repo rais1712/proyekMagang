@@ -1,4 +1,4 @@
-package com.proyek.maganggsp.presentation.auth
+package com.proyek.maganggsp.presentation.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

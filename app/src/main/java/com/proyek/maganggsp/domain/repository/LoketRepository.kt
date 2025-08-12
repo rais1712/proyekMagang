@@ -1,22 +1,30 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/repository/LoketRepository.kt
 package com.proyek.maganggsp.domain.repository
 
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.model.Mutasi
+import com.proyek.maganggsp.util.Resource
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Kontrak untuk semua aksi yang berhubungan dengan data loket dan mutasi.
  */
 interface LoketRepository {
-    suspend fun getLoketDetails(phoneNumber: String): Loket
-    suspend fun getMutations(loketId: String): List<Mutasi>
-    suspend fun blockLoket(loketId: String)
-    suspend fun unblockLoket(loketId: String)
-    suspend fun flagMutation(mutationId: String)
-    suspend fun getFlaggedLokets(): List<Loket>
-    suspend fun getBlockedLokets(): List<Loket>
-    suspend fun searchLoket(query: String): List<Loket>
-    suspend fun clearAllFlags(loketId: String)
 
+    // --- PERUBAHAN DI BARIS INI ---
+    // Mengambil detail loket sekarang berdasarkan ID uniknya, bukan nomor telepon.
+    fun getLoketDetail(idLoket: String): Flow<Resource<Loket>>
 
+    fun getMutation(idLoket: String): Flow<Resource<List<Mutasi>>>
+
+    fun searchLoket(query: String): Flow<Resource<List<Loket>>>
+
+    // Fungsi-fungsi ini sudah benar menggunakan ID
+    fun blockLoket(idLoket: String): Flow<Resource<Unit>>
+    fun unblockLoket(idLoket: String): Flow<Resource<Unit>>
+    fun flagMutation(idMutasi: String): Flow<Resource<Unit>>
+    fun clearAllFlags(idLoket: String): Flow<Resource<Unit>>
+
+    // Fungsi untuk mendapatkan daftar loket di halaman monitor
+    fun getFlaggedLokets(): Flow<Resource<List<Loket>>>
+    fun getBlockedLokets(): Flow<Resource<List<Loket>>>
 }

@@ -1,22 +1,26 @@
 package com.proyek.maganggsp.presentation.home
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.databinding.ItemLoketHistoryBinding
 import com.proyek.maganggsp.domain.model.Loket
-import com.proyek.maganggsp.util.Formatters
 
 class HistoryAdapter : RecyclerView.Adapter<HistoryAdapter.HistoryViewHolder>() {
 
-    inner class HistoryViewHolder(val binding: ItemLoketHistoryBinding) : RecyclerView.ViewHolder(binding.root)
+    // On-item click listener
+    private var onItemClickListener: ((Loket) -> Unit)? = null
 
-    private val diffCallback = object : DiffUtil.ItemCallback<Loket>() {
+    fun setOnItemClickListener(listener: (Loket) -> Unit) {
+        onItemClickListener = listener
+    }
+
+    // DiffUtil untuk performa RecyclerView yang efisien
+    private val differCallback = object : DiffUtil.ItemCallback<Loket>() {
         override fun areItemsTheSame(oldItem: Loket, newItem: Loket): Boolean {
-            return oldItem.id == newItem.id
+            return oldItem.noLoket == newItem.noLoket // Menggunakan ID unik
         }
 
         override fun areContentsTheSame(oldItem: Loket, newItem: Loket): Boolean {
@@ -24,47 +28,42 @@ class HistoryAdapter : RecyclerView.Adapter<HistoryAdapter.HistoryViewHolder>() 
         }
     }
 
-    val differ = AsyncListDiffer(this, diffCallback)
+    val differ = AsyncListDiffer(this, differCallback)
 
-    private var onItemClickListener: ((Loket) -> Unit)? = null
+    inner class HistoryViewHolder(private val binding: ItemLoketHistoryBinding) :
+        RecyclerView.ViewHolder(binding.root) {
 
-    fun setOnItemClickListener(listener: (Loket) -> Unit) {
-        onItemClickListener = listener
+        init {
+            binding.root.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val currentList = differ.currentList
+                    if (position < currentList.size) {
+                        onItemClickListener?.invoke(currentList[position])
+                    }
+                }
+            }
+        }
+
+        fun bind(loket: Loket) {
+            binding.apply {
+                tvLoketName.text = loket.namaLoket
+                tvLoketPhone.text = loket.nomorTelepon
+                // Menggunakan tvNomorLoket yang sudah diperbaiki di XML
+                tvNomorLoket.text = loket.noLoket
+            }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
-        val binding = ItemLoketHistoryBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
+        val binding =
+            ItemLoketHistoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return HistoryViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
         val loket = differ.currentList[position]
-        holder.binding.apply {
-            // Mengisi data dasar
-            tvLoketName.text = loket.name
-            tvLoketAddress.text = loket.address
-
-            // Logika untuk menampilkan tanggal akses terakhir
-            // Ini akan dieksekusi jika field 'lastAccessed' ada isinya
-            loket.lastAccessed?.let { timestamp ->
-                tvLastAccessed.text = "Diakses pada: ${Formatters.toReadableDateTime(timestamp)}"
-                tvLastAccessed.visibility = View.VISIBLE
-            } ?: run {
-                // Jika tidak ada data tanggal, sembunyikan TextView-nya
-                tvLastAccessed.visibility = View.GONE
-            }
-
-            // Memasang click listener pada seluruh item view
-            holder.itemView.setOnClickListener {
-                onItemClickListener?.let { listener ->
-                    listener(loket)
-                }
-            }
-        }
+        holder.bind(loket)
     }
 
     override fun getItemCount(): Int = differ.currentList.size

@@ -4,13 +4,16 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityDetailLoketBinding
 import com.proyek.maganggsp.domain.model.Loket
-import com.proyek.maganggsp.util.Formatters
+import com.proyek.maganggsp.domain.model.Mutasi
+import com.proyek.maganggsp.presentation.detailloket.DetailLoketViewModel
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -31,10 +34,7 @@ class DetailLoketActivity : AppCompatActivity() {
         setupToolbar()
         setupRecyclerView()
         setupActionListeners()
-        observeLoketDetails()
-        observeMutations()
-        observeActionState()
-        observeUiEvents()
+        observeStates()
     }
 
     private fun setupToolbar() {
@@ -45,203 +45,203 @@ class DetailLoketActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         mutasiAdapter = MutasiAdapter()
-        binding.rvMutations.adapter = mutasiAdapter
-        mutasiAdapter.setOnLongClickListener { mutasi ->
-            viewModel.flagMutation(mutasi.id)
+        binding.rvMutations.apply {
+            adapter = mutasiAdapter
+            layoutManager = LinearLayoutManager(this@DetailLoketActivity)
+            isNestedScrollingEnabled = false
         }
     }
 
     private fun setupActionListeners() {
+        // Tambahkan dialog konfirmasi sebelum aksi Block
         binding.btnBlock.setOnClickListener {
             showConfirmationDialog(
-                title = "Konfirmasi Blokir",
-                message = "Apakah Anda yakin ingin memblokir loket ini?",
-                positiveButtonText = "Ya, Blokir"
-            ) {
-                viewModel.blockLoket()
-            }
+                title = getString(R.string.dialog_confirm_block_title),
+                message = getString(R.string.dialog_confirm_block_message),
+                onConfirm = { viewModel.blockLoket() }
+            )
         }
 
+        // Tambahkan dialog konfirmasi sebelum aksi Unblock
         binding.btnUnblock.setOnClickListener {
             showConfirmationDialog(
-                title = "Konfirmasi Buka Blokir",
-                message = "Apakah Anda yakin ingin membuka blokir loket ini?",
-                positiveButtonText = "Ya, Buka Blokir"
-            ) {
-                viewModel.unblockLoket()
-            }
+                title = getString(R.string.dialog_confirm_unblock_title),
+                message = getString(R.string.dialog_confirm_unblock_message),
+                onConfirm = { viewModel.unblockLoket() }
+            )
         }
 
+        // Tambahkan dialog konfirmasi sebelum aksi Clear Flags
         binding.btnClearFlags.setOnClickListener {
-            // Aksi ini tidak memerlukan dialog konfirmasi
-            viewModel.clearAllFlags()
-        }
-    }
-
-    private fun observeLoketDetails() {
-        lifecycleScope.launch {
-            viewModel.loketDetailsState.collectLatest { resource ->
-                when (resource) {
-                    is Resource.Loading -> {
-                        binding.shimmerCardInfo.startShimmer()
-                        binding.shimmerCardInfo.isVisible = true
-                        binding.cardLoketInfo.isVisible = false
-                    }
-                    is Resource.Success -> {
-                        binding.shimmerCardInfo.stopShimmer()
-                        binding.shimmerCardInfo.isVisible = false
-                        binding.cardLoketInfo.isVisible = true
-
-                        resource.data?.let { loket ->
-                            updateLoketInfoUI(loket)
-                        }
-                    }
-                    is Resource.Error -> {
-                        binding.shimmerCardInfo.stopShimmer()
-                        binding.shimmerCardInfo.isVisible = false
-                        binding.cardLoketInfo.isVisible = false
-                        // TODO: Handle Error State for Loket Details (misal: tampilkan halaman error)
-                        Toast.makeText(this@DetailLoketActivity, resource.message, Toast.LENGTH_LONG).show()
-                    }
-                    is Resource.Empty -> {
-                        binding.shimmerCardInfo.stopShimmer()
-                        binding.shimmerCardInfo.isVisible = false
-                        binding.cardLoketInfo.isVisible = false
-                        // Handle empty state for loket details
-                    }
-                }
-            }
-        }
-    }
-
-    private fun observeMutations() {
-        lifecycleScope.launch {
-            viewModel.mutationsState.collectLatest { resource ->
-                when (resource) {
-                    is Resource.Loading -> {
-                        binding.mutationsShimmerLayout.startShimmer()
-                        binding.mutationsShimmerLayout.isVisible = true
-                        binding.rvMutations.isVisible = false
-                        binding.tvMutationsError.isVisible = false
-                        // Hide empty view jika ada
-                        // binding.tvMutationsEmpty.isVisible = false
-                    }
-                    is Resource.Success -> {
-                        binding.mutationsShimmerLayout.stopShimmer()
-                        binding.mutationsShimmerLayout.isVisible = false
-                        binding.rvMutations.isVisible = true
-                        binding.tvMutationsError.isVisible = false
-
-                        mutasiAdapter.differ.submitList(resource.data)
-                    }
-                    is Resource.Error -> {
-                        binding.mutationsShimmerLayout.stopShimmer()
-                        binding.mutationsShimmerLayout.isVisible = false
-                        binding.rvMutations.isVisible = false
-                        binding.tvMutationsError.isVisible = true
-                        binding.tvMutationsError.text = resource.message
-                    }
-                    is Resource.Empty -> {
-                        binding.mutationsShimmerLayout.stopShimmer()
-                        binding.mutationsShimmerLayout.isVisible = false
-                        binding.rvMutations.isVisible = false
-                        // Jika Anda memiliki TextView untuk empty state, uncomment baris di bawah
-                        // binding.tvMutationsEmpty.isVisible = true
-                        // binding.tvMutationsEmpty.text = "Tidak ada data mutasi"
-                    }
-                }
-            }
-        }
-    }
-
-    private fun observeActionState() {
-        lifecycleScope.launch {
-            viewModel.actionState.collectLatest { resource ->
-                val isLoading = resource is Resource.Loading
-                binding.mainProgressBar.isVisible = isLoading
-
-                // Nonaktifkan semua tombol aksi saat loading
-                binding.btnBlock.isEnabled = !isLoading
-                binding.btnUnblock.isEnabled = !isLoading
-
-                // Atur ulang status tombol hapus tanda berdasarkan status loket saat ini
-                val currentStatus = viewModel.loketDetailsState.value.data?.status?.lowercase()
-                binding.btnClearFlags.isEnabled = !isLoading && currentStatus == "dipantau"
-            }
-        }
-    }
-
-    private fun observeUiEvents() {
-        lifecycleScope.launch {
-            viewModel.eventFlow.collectLatest { event ->
-                when (event) {
-                    is DetailLoketViewModel.UiEvent.ShowToast -> {
-                        Toast.makeText(this@DetailLoketActivity, event.message, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun updateLoketInfoUI(loket: Loket) {
-        // Mengisi semua data loket
-        binding.tvLoketId.text = "#${loket.id}"
-        binding.tvLoketName.text = loket.name
-        binding.tvPhoneValue.text = loket.phoneNumber
-        binding.tvEmailValue.text = "email.placeholder@example.com" // Asumsi ada email
-        // Anda perlu menambahkan field alamat dan saldo di layout untuk bisa menampilkannya
-        // binding.tvAddressValue.text = loket.address
-        // binding.tvBalanceValue.text = Formatters.toRupiah(loket.balance)
-
-
-        // Mengatur tampilan UI berdasarkan status loket
-        when (loket.status.lowercase()) {
-            "diblokir" -> {
-                binding.chipStatus.text = "Diblokir"
-                binding.chipStatus.setChipBackgroundColorResource(R.color.red_danger)
-                binding.layoutLoketInfo.setBackgroundResource(R.drawable.bg_card_info_diblokir)
-                binding.btnBlock.isVisible = false
-                binding.btnDiblokir.isVisible = true // Menampilkan tombol status "Diblokir"
-                binding.btnUnblock.isVisible = true
-                binding.btnClearFlags.isVisible = false
-            }
-            "dipantau" -> {
-                binding.chipStatus.text = "Dipantau"
-                binding.chipStatus.setChipBackgroundColorResource(R.color.yellow_secondary_accent)
-                binding.layoutLoketInfo.setBackgroundResource(R.drawable.bg_card_info_ditandai)
-                binding.btnBlock.isVisible = true
-                binding.btnDiblokir.isVisible = false
-                binding.btnUnblock.isVisible = false
-                binding.btnClearFlags.isVisible = true
-                binding.btnClearFlags.isEnabled = true
-            }
-            else -> { // Aktif atau Normal
-                binding.chipStatus.text = "Normal"
-                binding.chipStatus.setChipBackgroundColorResource(R.color.chip_normal_background)
-                binding.layoutLoketInfo.setBackgroundResource(R.drawable.bg_card_info_normal)
-                binding.btnBlock.isVisible = true
-                binding.btnDiblokir.isVisible = false
-                binding.btnUnblock.isVisible = false
-                binding.btnClearFlags.isVisible = true
-                // Tombolnya ada tapi dinonaktifkan
-                binding.btnClearFlags.isEnabled = false
-            }
+            showConfirmationDialog(
+                title = getString(R.string.dialog_confirm_clear_flags_title),
+                message = getString(R.string.dialog_confirm_clear_flags_message),
+                onConfirm = { viewModel.clearAllFlags() }
+            )
         }
     }
 
     private fun showConfirmationDialog(
         title: String,
         message: String,
-        positiveButtonText: String,
         onConfirm: () -> Unit
     ) {
         MaterialAlertDialogBuilder(this)
             .setTitle(title)
             .setMessage(message)
-            .setNegativeButton("Batal", null)
-            .setPositiveButton(positiveButtonText) { _, _ ->
+            .setPositiveButton(getString(R.string.dialog_button_yes)) { dialog, _ ->
                 onConfirm()
+                dialog.dismiss()
+            }
+            .setNegativeButton(getString(R.string.dialog_button_cancel)) { dialog, _ ->
+                dialog.dismiss()
             }
             .show()
+    }
+
+    private fun observeStates() {
+        // Mengamati detail loket
+        lifecycleScope.launch {
+            viewModel.loketDetailsState.collectLatest { resource ->
+                // Mengelola shimmer effect untuk kartu info
+                binding.shimmerCardInfo.isVisible = resource is Resource.Loading<*>
+                binding.cardLoketInfo.isVisible = resource !is Resource.Loading<*>
+
+                when(resource) {
+                    is Resource.Success<Loket> -> {
+                        binding.shimmerCardInfo.stopShimmer()
+                        resource.data?.let { loket ->
+                            updateLoketInfo(loket)
+                        }
+                    }
+                    is Resource.Error<Loket> -> {
+                        binding.shimmerCardInfo.stopShimmer()
+                        Toast.makeText(this@DetailLoketActivity, resource.message, Toast.LENGTH_LONG).show()
+                    }
+                    is Resource.Loading<Loket> -> {
+                        binding.shimmerCardInfo.startShimmer()
+                    }
+                    else -> Unit
+                }
+            }
+        }
+
+        // Mengamati daftar mutasi
+        lifecycleScope.launch {
+            viewModel.mutationsState.collectLatest { resource ->
+                // Mengelola shimmer effect untuk daftar mutasi
+                binding.mutationsShimmerLayout.isVisible = resource is Resource.Loading<*>
+                binding.rvMutations.isVisible = resource is Resource.Success<*> && resource.data?.isNotEmpty() == true
+                binding.tvMutationsError.isVisible = resource is Resource.Error<*> || (resource is Resource.Success<*> && resource.data?.isEmpty() == true)
+
+                when(resource) {
+                    is Resource.Success<List<Mutasi>> -> {
+                        binding.mutationsShimmerLayout.stopShimmer()
+                        val mutasiList = resource.data ?: emptyList()
+                        if (mutasiList.isEmpty()) {
+                            binding.tvMutationsError.text = "Tidak ada riwayat mutasi."
+                        } else {
+                            // Submit list data ke adapter
+                            mutasiAdapter.differ.submitList(mutasiList)
+                        }
+                    }
+                    is Resource.Error<List<Mutasi>> -> {
+                        binding.mutationsShimmerLayout.stopShimmer()
+                        binding.tvMutationsError.text = getString(R.string.error_load_mutations)
+                    }
+                    is Resource.Loading<List<Mutasi>> -> {
+                        binding.mutationsShimmerLayout.startShimmer()
+                    }
+                    else -> Unit
+                }
+            }
+        }
+
+        // Mengamati status aksi (block/unblock/clear flags)
+        lifecycleScope.launch {
+            viewModel.actionState.collectLatest { resource ->
+                when(resource) {
+                    is Resource.Success<Unit> -> {
+                        // Tampilkan pesan sukses sesuai aksi yang dilakukan
+                        val message = when {
+                            // Bisa ditambahkan logic untuk mendeteksi aksi apa yang baru saja dilakukan
+                            // Untuk saat ini gunakan pesan umum
+                            else -> "Aksi berhasil dilakukan"
+                        }
+                        Toast.makeText(this@DetailLoketActivity, message, Toast.LENGTH_SHORT).show()
+                    }
+                    is Resource.Error<Unit> -> {
+                        Toast.makeText(this@DetailLoketActivity, resource.message, Toast.LENGTH_LONG).show()
+                    }
+                    is Resource.Loading<Unit> -> {
+                        // Bisa ditambahkan ProgressBar untuk aksi jika perlu
+                    }
+                    else -> Unit
+                }
+            }
+        }
+    }
+
+    private fun updateLoketInfo(loket: Loket) {
+        binding.tvLoketId.text = loket.noLoket
+        binding.tvLoketName.text = loket.namaLoket
+        binding.tvPhoneValue.text = loket.nomorTelepon
+        binding.tvEmailValue.text = loket.email
+
+        when (loket.status.uppercase()) {
+            "DIBLOKIR" -> {
+                binding.chipStatus.text = getString(R.string.status_diblokir)
+                binding.chipStatus.setChipBackgroundColor(ContextCompat.getColorStateList(this, R.color.chip_blocked_background))
+                binding.btnBlock.isVisible = false
+                binding.btnUnblock.isVisible = true
+                binding.btnDiblokir.isVisible = false
+
+                // Clear Flags: Disabled saat diblokir
+                updateClearFlagsButton(isEnabled = false)
+            }
+            "DIPANTAU" -> {
+                binding.chipStatus.text = getString(R.string.status_ditandai)
+                binding.chipStatus.setChipBackgroundColor(ContextCompat.getColorStateList(this, R.color.chip_flagged_background))
+                binding.btnBlock.isVisible = true
+                binding.btnUnblock.isVisible = false
+                binding.btnDiblokir.isVisible = false
+
+                // Clear Flags: Enabled saat dipantau/ditandai
+                updateClearFlagsButton(isEnabled = true)
+            }
+            else -> { // AKTIF / NORMAL
+                binding.chipStatus.text = getString(R.string.status_normal)
+                binding.chipStatus.setChipBackgroundColor(ContextCompat.getColorStateList(this, R.color.chip_normal_background))
+                binding.btnBlock.isVisible = true
+                binding.btnUnblock.isVisible = false
+                binding.btnDiblokir.isVisible = false
+
+                // Clear Flags: Disabled saat normal
+                updateClearFlagsButton(isEnabled = false)
+            }
+        }
+    }
+
+    private fun updateClearFlagsButton(isEnabled: Boolean) {
+        binding.btnClearFlags.apply {
+            // Selalu visible sesuai requirement
+            isVisible = true
+
+            // Set enabled state
+            this.isEnabled = isEnabled
+
+            // Update appearance berdasarkan state
+            if (isEnabled) {
+                // State aktif - gunakan warna kuning
+                backgroundTintList = ContextCompat.getColorStateList(this@DetailLoketActivity, R.color.yellow_secondary_accent)
+                setTextColor(ContextCompat.getColor(this@DetailLoketActivity, R.color.text_primary_black))
+                alpha = 1.0f
+            } else {
+                // State disabled - gunakan warna abu-abu
+                backgroundTintList = ContextCompat.getColorStateList(this@DetailLoketActivity, android.R.color.darker_gray)
+                setTextColor(ContextCompat.getColor(this@DetailLoketActivity, android.R.color.white))
+                alpha = 0.6f
+            }
+        }
     }
 }

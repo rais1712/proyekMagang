@@ -1,42 +1,35 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/dto/Mapper.kt
 package com.proyek.maganggsp.data.dto
 
 import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.model.Mutasi
 
-// Mengubah AdminDto menjadi Admin (Model Domain)
-fun AdminDto.toDomain(): Admin {
+// Memetakan LoginResponse -> Admin
+fun LoginResponse.toDomain(): Admin {
     return Admin(
-        id = this.id,
-        name = this.fullName,
-        email = this.email
+        name = this.adminName ?: "Nama Admin",
+        email = this.adminEmail ?: "Email tidak tersedia",
+        token = this.token ?: ""
     )
 }
 
-// Mengubah LoketDto menjadi Loket (Model Domain)
+// Memetakan LoketDto -> Loket
 fun LoketDto.toDomain(): Loket {
     return Loket(
-        id = this.id,
-        name = this.loketName,
-        phoneNumber = this.phoneNumber,
-        address = this.address,
-        balance = this.lastBalance,
-        status = this.currentStatus,
-        lastAccessed = this.lastAccessedDate
+        noLoket = this.noLoket ?: "-",
+        namaLoket = this.namaLoket ?: "Tanpa Nama",
+        nomorTelepon = this.nomorTelepon ?: "-",
+        email = this.email ?: "Email tidak tersedia",
+        status = this.status ?: "UNKNOWN"
     )
 }
 
-// Mengubah MutasiDto menjadi Mutasi (Model Domain)
+// Memetakan MutasiDto -> Mutasi
 fun MutasiDto.toDomain(): Mutasi {
     return Mutasi(
-        id = this.transactionId,
-        description = this.notes,
-        amount = this.amount,
-        type = this.transactionType,
-        balanceAfter = this.balanceAfter,
-        reference = this.referenceCode,
-        timestamp = this.transactionDate,
-        isFlagged = this.isFlagged
+        tanggal = this.tanggal ?: "-",
+        nomorReferensi = this.nomorReferensi ?: "-",
+        nominalTransaksi = this.nominalTransaksi ?: 0L,
+        sisaSaldo = this.sisaSaldo ?: 0L
     )
 }
