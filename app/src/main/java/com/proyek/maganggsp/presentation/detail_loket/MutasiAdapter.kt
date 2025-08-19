@@ -1,4 +1,4 @@
-package com.proyek.maganggsp.presentation.detail_loket
+package com.proyek.maganggsp.presentation.detailloket
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -9,58 +9,54 @@ import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemMutasiBinding
 import com.proyek.maganggsp.domain.model.Mutasi
-import com.proyek.maganggsp.util.Formatters
+import com.proyek.maganggsp.util.Formatters // Import object Formatters
 
 class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
 
-    inner class MutasiViewHolder(val binding: ItemMutasiBinding) : RecyclerView.ViewHolder(binding.root)
-
-    private val diffCallback = object : DiffUtil.ItemCallback<Mutasi>() {
+    private val differCallback = object : DiffUtil.ItemCallback<Mutasi>() {
         override fun areItemsTheSame(oldItem: Mutasi, newItem: Mutasi): Boolean {
-            // Menggunakan nomorReferensi sebagai unique identifier
-            return oldItem.nomorReferensi == newItem.nomorReferensi
+            return oldItem.id == newItem.id
         }
-        override fun areContentsTheSame(oldItem: Mutasi, newItem: Mutasi): Boolean = oldItem == newItem
+        override fun areContentsTheSame(oldItem: Mutasi, newItem: Mutasi): Boolean {
+            return oldItem == newItem
+        }
     }
 
-    val differ = AsyncListDiffer(this, diffCallback)
+    val differ = AsyncListDiffer(this, differCallback)
+
+    inner class MutasiViewHolder(private val binding: ItemMutasiBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(mutasi: Mutasi) {
+            val context = binding.root.context
+            binding.apply {
+                // --- PERUBAHAN DI SINI: Menggunakan Formatters ---
+                tvTransactionDate.text = Formatters.toReadableDateTime(mutasi.timestamp)
+                tvReference.text = context.getString(R.string.label_ref, mutasi.reference)
+                tvRemainingBalance.text = context.getString(R.string.label_sisa_saldo, Formatters.toRupiah(mutasi.balanceAfter))
+
+                // Membedakan tampilan berdasarkan tipe transaksi
+                if (mutasi.type.equals("IN", ignoreCase = true)) {
+                    // Transaksi masuk (DEBIT/IN)
+                    tvTransactionAmount.text = "+ ${Formatters.toRupiah(mutasi.amount)}"
+                    tvTransactionAmount.setTextColor(ContextCompat.getColor(context, R.color.green_success))
+                } else {
+                    // Transaksi keluar (KREDIT/OUT)
+                    tvTransactionAmount.text = "- ${Formatters.toRupiah(mutasi.amount)}"
+                    tvTransactionAmount.setTextColor(ContextCompat.getColor(context, R.color.red_danger))
+                }
+            }
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MutasiViewHolder {
         val binding = ItemMutasiBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return MutasiViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: MutasiViewHolder, position: Int) {
-        val mutasi = differ.currentList[position]
-        val context = holder.itemView.context
-
-        holder.binding.apply {
-            // Format dan tampilkan tanggal menggunakan Formatters
-            tvTimestamp.text = Formatters.toReadableDateTime(mutasi.tanggal)
-
-            // Tampilkan nomor referensi
-            tvDescription.text = "No. Ref: ${mutasi.nomorReferensi}"
-
-            // Tampilkan sisa saldo
-            tvSaldoInfo.text = "Sisa Saldo: ${Formatters.toRupiah(mutasi.sisaSaldo)}"
-
-            // Tentukan tipe transaksi berdasarkan nilai nominalTransaksi (Opsi B)
-            if (mutasi.nominalTransaksi > 0) {
-                // Transaksi masuk (DEBIT/IN)
-                tvAmount.text = "+${Formatters.toRupiah(mutasi.nominalTransaksi)}"
-                tvAmount.setTextColor(ContextCompat.getColor(context, R.color.green_success))
-                ivTransactionType.setImageResource(R.drawable.arrow_circle_up_24)
-                ivTransactionType.setColorFilter(ContextCompat.getColor(context, R.color.green_success))
-            } else {
-                // Transaksi keluar (KREDIT/OUT)
-                val absoluteAmount = kotlin.math.abs(mutasi.nominalTransaksi)
-                tvAmount.text = "-${Formatters.toRupiah(absoluteAmount)}"
-                tvAmount.setTextColor(ContextCompat.getColor(context, R.color.red_danger))
-                ivTransactionType.setImageResource(R.drawable.arrow_circle_down_24)
-                ivTransactionType.setColorFilter(ContextCompat.getColor(context, R.color.red_danger))
-            }
-        }
-    }
-
     override fun getItemCount(): Int = differ.currentList.size
+
+    override fun onBindViewHolder(holder: MutasiViewHolder, position: Int) {
+        holder.bind(differ.currentList[position])
+    }
 }

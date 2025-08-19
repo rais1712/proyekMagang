@@ -1,4 +1,3 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/LoketRepositoryImpl.kt
 package com.proyek.maganggsp.data.repositoryImpl
 
 import com.proyek.maganggsp.data.api.LoketApi
@@ -15,19 +14,19 @@ import javax.inject.Singleton
 @Singleton
 class LoketRepositoryImpl @Inject constructor(
     private val api: LoketApi,
-    private val exceptionMapper: ExceptionMapper
+    exceptionMapper: ExceptionMapper
 ) : BaseRepository(exceptionMapper), LoketRepository {
 
-    override fun getLoketDetail(idLoket: String): Flow<Resource<Loket>> {
+    override fun getLoketDetail(noLoket: String): Flow<Resource<Loket>> {
         return safeApiFlowWithItemMapping(
-            apiCall = { api.getLoketDetail(idLoket) },
+            apiCall = { api.getLoketDetail(noLoket) },
             mapper = { it.toDomain() }
         )
     }
 
-    override fun getMutation(idLoket: String): Flow<Resource<List<Mutasi>>> {
+    override fun getMutation(noLoket: String): Flow<Resource<List<Mutasi>>> {
         return safeApiFlowWithMapping(
-            apiCall = { api.getMutation(idLoket) },
+            apiCall = { api.getMutation(noLoket) },
             mapper = { it.toDomain() }
         )
     }
@@ -39,20 +38,20 @@ class LoketRepositoryImpl @Inject constructor(
         )
     }
 
-    override fun blockLoket(idLoket: String): Flow<Resource<Unit>> {
-        return safeApiFlowUnit { api.blockLoket(idLoket) }
+    override fun blockLoket(noLoket: String): Flow<Resource<Unit>> {
+        return safeApiFlowUnit { api.blockLoket(noLoket) }
     }
 
-    override fun unblockLoket(idLoket: String): Flow<Resource<Unit>> {
-        return safeApiFlowUnit { api.unblockLoket(idLoket) }
+    override fun unblockLoket(noLoket: String): Flow<Resource<Unit>> {
+        return safeApiFlowUnit { api.unblockLoket(noLoket) }
     }
 
     override fun flagMutation(idMutasi: String): Flow<Resource<Unit>> {
         return safeApiFlowUnit { api.flagMutation(idMutasi) }
     }
 
-    override fun clearAllFlags(idLoket: String): Flow<Resource<Unit>> {
-        return safeApiFlowUnit { api.clearAllFlags(idLoket) }
+    override fun clearAllFlags(noLoket: String): Flow<Resource<Unit>> {
+        return safeApiFlowUnit { api.clearAllFlags(noLoket) }
     }
 
     override fun getFlaggedLokets(): Flow<Resource<List<Loket>>> {

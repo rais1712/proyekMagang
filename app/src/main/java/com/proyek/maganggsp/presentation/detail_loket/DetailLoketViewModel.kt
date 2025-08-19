@@ -9,6 +9,7 @@ import com.proyek.maganggsp.domain.usecase.loket.*
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,21 +22,23 @@ class DetailLoketViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // FIXED: Gunakan Resource dengan struktur yang benar
-    private val _loketDetailsState = MutableStateFlow<Resource<Loket>>(Resource.Loading())
+    // --- KESALAHAN UTAMA DIPERBAIKI DI SINI ---
+    // Hapus tanda kurung () dari Loading dan Empty
+    private val _loketDetailsState = MutableStateFlow<Resource<Loket>>(Resource.Loading)
     val loketDetailsState: StateFlow<Resource<Loket>> = _loketDetailsState
 
-    private val _mutationsState = MutableStateFlow<Resource<List<Mutasi>>>(Resource.Loading())
+    private val _mutationsState = MutableStateFlow<Resource<List<Mutasi>>>(Resource.Loading)
     val mutationsState: StateFlow<Resource<List<Mutasi>>> = _mutationsState
 
-    // State untuk aksi (block/unblock/clear flags) - gunakan Resource.Empty sebagai object
     private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty)
     val actionState: StateFlow<Resource<Unit>> = _actionState
 
-    private var currentNoLoket: String? = null
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
+    private var currentNoLoket: String?
 
     init {
-        // Mengambil 'noLoket' dari argumen navigasi
         currentNoLoket = savedStateHandle["noLoket"]
         refreshData()
     }
@@ -63,7 +66,10 @@ class DetailLoketViewModel @Inject constructor(
         currentNoLoket?.let { noLoket ->
             blockLoketUseCase(noLoket).onEach { result ->
                 _actionState.value = result
-                if (result is Resource.Success) refreshData()
+                if (result is Resource.Success) {
+                    viewModelScope.launch { _eventFlow.emit(UiEvent.ShowToast("Loket berhasil diblokir")) }
+                    refreshData()
+                }
             }.launchIn(viewModelScope)
         }
     }
@@ -72,7 +78,10 @@ class DetailLoketViewModel @Inject constructor(
         currentNoLoket?.let { noLoket ->
             unblockLoketUseCase(noLoket).onEach { result ->
                 _actionState.value = result
-                if (result is Resource.Success) refreshData()
+                if (result is Resource.Success) {
+                    viewModelScope.launch { _eventFlow.emit(UiEvent.ShowToast("Blokir loket berhasil dibuka")) }
+                    refreshData()
+                }
             }.launchIn(viewModelScope)
         }
     }
@@ -81,8 +90,19 @@ class DetailLoketViewModel @Inject constructor(
         currentNoLoket?.let { noLoket ->
             clearAllFlagsUseCase(noLoket).onEach { result ->
                 _actionState.value = result
-                if (result is Resource.Success) refreshData()
+                if (result is Resource.Success) {
+                    viewModelScope.launch { _eventFlow.emit(UiEvent.ShowToast("Semua tanda berhasil dihapus")) }
+                    refreshData()
+                }
             }.launchIn(viewModelScope)
         }
+    }
+
+    fun onActionConsumed() {
+        _actionState.value = Resource.Empty
+    }
+
+    sealed class UiEvent {
+        data class ShowToast(val message: String) : UiEvent()
     }
 }
