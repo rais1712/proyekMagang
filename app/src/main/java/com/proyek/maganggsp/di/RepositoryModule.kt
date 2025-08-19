@@ -7,8 +7,10 @@ import com.proyek.maganggsp.data.repositoryImpl.LoketRepositoryImpl
 import com.proyek.maganggsp.domain.repository.AuthRepository
 import com.proyek.maganggsp.domain.repository.HistoryRepository
 import com.proyek.maganggsp.domain.repository.LoketRepository
+import com.proyek.maganggsp.util.exceptions.ExceptionMapper
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -28,4 +30,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindHistoryRepository(impl: HistoryRepositoryImpl): HistoryRepository
+
+    companion object {
+        @Provides
+        @Singleton
+        fun provideExceptionMapper(): ExceptionMapper = ExceptionMapper()
+    }
 }

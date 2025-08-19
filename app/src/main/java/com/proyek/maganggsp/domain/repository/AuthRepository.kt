@@ -4,12 +4,23 @@ package com.proyek.maganggsp.domain.repository
 import com.proyek.maganggsp.domain.model.Admin
 
 /**
- * Kontrak untuk semua aksi yang berhubungan dengan otentikasi.
+ * FIXED: Enhanced AuthRepository interface dengan additional methods
+ * untuk better session management
  */
 interface AuthRepository {
     /**
      * Melakukan proses login dan mengembalikan data Admin jika berhasil.
-     * Akan melempar Exception jika gagal.
+     * Akan melempar AppException jika gagal.
      */
     suspend fun login(email: String, password: String): Admin
+
+    /**
+     * Melakukan logout dan membersihkan session
+     */
+    suspend fun logout()
+
+    /**
+     * Mengecek apakah user sudah login
+     */
+    fun isLoggedIn(): Boolean
 }
