@@ -28,13 +28,11 @@ class HomeViewModel @Inject constructor(
     private val _adminProfileState = MutableStateFlow<Admin?>(null)
     val adminProfileState = _adminProfileState.asStateFlow()
 
-    // --- MENGGUNAKAN SATU STATEFLOW UNTUK UI ---
-    private val _uiState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty())
+    // FIXED: Gunakan Resource.Empty sebagai object
+    private val _uiState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
     val uiState = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
-
-    // Menyimpan riwayat terakhir untuk dikembalikan saat pencarian dibersihkan
     private var lastRecentHistory: List<Loket> = emptyList()
 
     init {
@@ -58,9 +56,9 @@ class HomeViewModel @Inject constructor(
     }
 
     fun searchLoket(query: String) {
-        searchJob?.cancel() // Batalkan job pencarian sebelumnya
+        searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            delay(500L) // Memberi jeda agar tidak mencari setiap kali user mengetik
+            delay(500L)
             if (query.isBlank()) {
                 clearSearch()
             } else {
@@ -72,7 +70,6 @@ class HomeViewModel @Inject constructor(
     }
 
     fun clearSearch() {
-        // Kembalikan UI ke state riwayat terakhir
         _uiState.value = Resource.Success(lastRecentHistory)
     }
 

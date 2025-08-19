@@ -12,7 +12,7 @@ import java.io.IOException
 
 /**
  * Base repository yang menyediakan common functionality untuk semua repository
- * FIXED: Removed @Inject from abstract class constructor
+ * FIXED: Updated to use correct Resource structure and proper error handling
  */
 abstract class BaseRepository(
     private val exceptionMapper: ExceptionMapper

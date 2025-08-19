@@ -17,7 +17,8 @@ class HistoryViewModel @Inject constructor(
     private val getFullHistoryUseCase: GetFullHistoryUseCase
 ) : ViewModel() {
 
-    private val _historyState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty())
+    // FIXED: Gunakan Resource.Empty sebagai object
+    private val _historyState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
     val historyState: StateFlow<Resource<List<Loket>>> = _historyState
 
     init {

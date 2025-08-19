@@ -5,7 +5,7 @@ import com.proyek.maganggsp.util.exceptions.AppException
 
 /**
  * FIXED: Unified Resource class dengan consistent constructor parameters
- * dan better type safety
+ * dan better type safety - Based on user's provided structure
  */
 sealed class Resource<out T> {
 

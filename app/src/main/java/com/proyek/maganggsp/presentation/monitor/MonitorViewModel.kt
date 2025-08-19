@@ -19,12 +19,11 @@ class MonitorViewModel @Inject constructor(
     private val getBlockedLoketsUseCase: GetBlockedLoketsUseCase
 ) : ViewModel() {
 
-    // State untuk daftar loket yang ditandai (Dipantau)
-    private val _flaggedLoketsState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty())
+    // FIXED: Gunakan Resource.Empty sebagai object
+    private val _flaggedLoketsState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
     val flaggedLoketsState: StateFlow<Resource<List<Loket>>> = _flaggedLoketsState
 
-    // State untuk daftar loket yang diblokir
-    private val _blockedLoketsState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty())
+    private val _blockedLoketsState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
     val blockedLoketsState: StateFlow<Resource<List<Loket>>> = _blockedLoketsState
 
     init {
@@ -44,26 +43,14 @@ class MonitorViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
-    /**
-     * Refresh flagged lokets data
-     * Dipanggil saat user melakukan pull-to-refresh atau manual refresh
-     */
     fun refreshFlaggedLokets() {
         loadFlaggedLokets()
     }
 
-    /**
-     * Refresh blocked lokets data
-     * Dipanggil saat user melakukan pull-to-refresh atau manual refresh
-     */
     fun refreshBlockedLokets() {
         loadBlockedLokets()
     }
 
-    /**
-     * Refresh both flagged and blocked lokets data
-     * Berguna untuk refresh keseluruhan data monitor
-     */
     fun refreshAll() {
         refreshFlaggedLokets()
         refreshBlockedLokets()

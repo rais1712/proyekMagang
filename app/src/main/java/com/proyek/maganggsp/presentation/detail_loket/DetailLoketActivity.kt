@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/DetailLoketActivity.kt
 package com.proyek.maganggsp.presentation.detail_loket
 
 import android.os.Bundle
@@ -131,8 +132,15 @@ class DetailLoketActivity : AppCompatActivity() {
             viewModel.mutationsState.collectLatest { resource ->
                 // Mengelola shimmer effect untuk daftar mutasi
                 binding.mutationsShimmerLayout.isVisible = resource is Resource.Loading<*>
-                binding.rvMutations.isVisible = resource is Resource.Success<*> && resource.data?.isNotEmpty() == true
-                binding.tvMutationsError.isVisible = resource is Resource.Error<*> || (resource is Resource.Success<*> && resource.data?.isEmpty() == true)
+
+                // FIXED: Safe type checking untuk List<Mutasi>
+                val isSuccessWithData = resource is Resource.Success &&
+                        resource.data != null && resource.data.isNotEmpty()
+                binding.rvMutations.isVisible = isSuccessWithData
+
+                val isErrorOrEmpty = resource is Resource.Error<*> ||
+                        (resource is Resource.Success && (resource.data == null || resource.data.isEmpty()))
+                binding.tvMutationsError.isVisible = isErrorOrEmpty
 
                 when(resource) {
                     is Resource.Success<List<Mutasi>> -> {
@@ -163,11 +171,7 @@ class DetailLoketActivity : AppCompatActivity() {
                 when(resource) {
                     is Resource.Success<Unit> -> {
                         // Tampilkan pesan sukses sesuai aksi yang dilakukan
-                        val message = when {
-                            // Bisa ditambahkan logic untuk mendeteksi aksi apa yang baru saja dilakukan
-                            // Untuk saat ini gunakan pesan umum
-                            else -> "Aksi berhasil dilakukan"
-                        }
+                        val message = "Aksi berhasil dilakukan"
                         Toast.makeText(this@DetailLoketActivity, message, Toast.LENGTH_SHORT).show()
                     }
                     is Resource.Error<Unit> -> {
