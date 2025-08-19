@@ -1,4 +1,5 @@
-package com.proyek.maganggsp.data.remote.dto
+// FIX: Corrected package path to match directory structure
+package com.proyek.maganggsp.data.dto
 
 import com.google.gson.annotations.SerializedName
 

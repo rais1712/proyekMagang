@@ -1,7 +1,8 @@
 package com.proyek.maganggsp.domain.usecase.auth
 
 import com.google.gson.Gson
-import com.proyek.maganggsp.data.remote.dto.ErrorResponseDto
+// FIX: Updated import path to match corrected ErrorResponseDto location
+import com.proyek.maganggsp.data.dto.ErrorResponseDto
 import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.repository.AuthRepository
 import com.proyek.maganggsp.util.Resource
@@ -21,14 +22,13 @@ class LoginUseCase @Inject constructor(
             emit(Resource.Success(admin))
 
         } catch (e: HttpException) {
-            // <<< BLOK INI YANG KITA TINGKATKAN >>>
-            // Coba parsing error body untuk mendapatkan pesan spesifik
+            // Enhanced error parsing with corrected import
             val errorMessage = try {
                 val errorJson = e.response()?.errorBody()?.string()
                 Gson().fromJson(errorJson, ErrorResponseDto::class.java).message
                     ?: "Terjadi kesalahan yang tidak terduga."
             } catch (jsonError: Exception) {
-                // Jika parsing gagal, gunakan pesan default dari HTTP exception
+                // Fallback to HTTP exception message
                 e.localizedMessage ?: "Terjadi kesalahan yang tidak terduga."
             }
             emit(Resource.Error(errorMessage))
