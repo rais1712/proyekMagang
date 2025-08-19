@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.proyek.maganggsp.domain.model.Admin
+import com.proyek.maganggsp.util.NavigationConstants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -14,6 +15,8 @@ import javax.inject.Singleton
 class SessionManager @Inject constructor(@ApplicationContext private val context: Context) {
 
     private var _sharedPreferences: SharedPreferences? = null
+    private var _isEncrypted: Boolean = false
+
     private val sharedPreferences: SharedPreferences
         get() {
             if (_sharedPreferences == null) {
@@ -26,25 +29,35 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
         private const val TAG = "SessionManager"
         private const val ENCRYPTED_PREFS_NAME = "encrypted_session"
         private const val FALLBACK_PREFS_NAME = "session_fallback"
-        private const val AUTH_TOKEN_KEY = "auth_token"
-        private const val ADMIN_NAME_KEY = "admin_name"
-        private const val ADMIN_EMAIL_KEY = "admin_email"
+
+        // FIXED: Menggunakan constants dari NavigationConstants
+        private const val AUTH_TOKEN_KEY = NavigationConstants.PREF_AUTH_TOKEN
+        private const val ADMIN_NAME_KEY = NavigationConstants.PREF_ADMIN_NAME
+        private const val ADMIN_EMAIL_KEY = NavigationConstants.PREF_ADMIN_EMAIL
+
+        // Session validity duration (24 hours in milliseconds)
+        private const val SESSION_DURATION_MS = 24 * 60 * 60 * 1000L
+        private const val SESSION_TIMESTAMP_KEY = "session_timestamp"
     }
 
     /**
-     * Create SharedPreferences dengan fallback mechanism yang proper
+     * ENHANCED: Create SharedPreferences dengan better error handling dan logging
      */
     private fun createSharedPreferences(): SharedPreferences {
         return try {
-            createEncryptedPreferences()
+            val encryptedPrefs = createEncryptedPreferences()
+            _isEncrypted = true
+            Log.i(TAG, "Successfully created EncryptedSharedPreferences")
+            encryptedPrefs
         } catch (e: Exception) {
             Log.w(TAG, "Failed to create EncryptedSharedPreferences, using fallback", e)
+            _isEncrypted = false
             createFallbackPreferences()
         }
     }
 
     /**
-     * Create EncryptedSharedPreferences
+     * Create EncryptedSharedPreferences dengan better error handling
      */
     @Throws(Exception::class)
     private fun createEncryptedPreferences(): SharedPreferences {
@@ -58,9 +71,7 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        ).also {
-            Log.d(TAG, "EncryptedSharedPreferences created successfully")
-        }
+        )
     }
 
     /**
@@ -71,23 +82,31 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
         return context.getSharedPreferences(FALLBACK_PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    fun saveAuthToken(token: String?) {
+    /**
+     * ENHANCED: Save auth token dengan session timestamp
+     */
+    fun saveAuthToken(token: String?): Boolean {
         if (token.isNullOrBlank()) {
             Log.w(TAG, "Attempting to save null or blank token")
-            return
+            return false
         }
 
-        try {
+        return try {
+            val currentTime = System.currentTimeMillis()
             val editor = sharedPreferences.edit()
             editor.putString(AUTH_TOKEN_KEY, token)
-            val success = editor.commit() // Using commit() for immediate write
+            editor.putLong(SESSION_TIMESTAMP_KEY, currentTime)
+
+            val success = editor.commit()
             if (success) {
-                Log.d(TAG, "Auth token saved successfully")
+                Log.d(TAG, "Auth token saved successfully with timestamp: $currentTime")
             } else {
                 Log.e(TAG, "Failed to save auth token - commit returned false")
             }
+            success
         } catch (e: Exception) {
             Log.e(TAG, "Exception while saving auth token", e)
+            false
         }
     }
 
@@ -102,24 +121,35 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
         }
     }
 
-    fun saveAdminProfile(admin: Admin?) {
+    /**
+     * ENHANCED: Save admin profile dengan better validation
+     */
+    fun saveAdminProfile(admin: Admin?): Boolean {
         if (admin == null) {
             Log.w(TAG, "Attempting to save null admin profile")
-            return
+            return false
         }
 
-        try {
+        if (admin.name.isBlank() || admin.email.isBlank()) {
+            Log.w(TAG, "Attempting to save admin profile with blank name or email")
+            return false
+        }
+
+        return try {
             val editor = sharedPreferences.edit()
-            editor.putString(ADMIN_NAME_KEY, admin.name)
-            editor.putString(ADMIN_EMAIL_KEY, admin.email)
+            editor.putString(ADMIN_NAME_KEY, admin.name.trim())
+            editor.putString(ADMIN_EMAIL_KEY, admin.email.trim())
+
             val success = editor.commit()
             if (success) {
                 Log.d(TAG, "Admin profile saved successfully - Name: ${admin.name}, Email: ${admin.email}")
             } else {
                 Log.e(TAG, "Failed to save admin profile - commit returned false")
             }
+            success
         } catch (e: Exception) {
             Log.e(TAG, "Exception while saving admin profile", e)
+            false
         }
     }
 
@@ -132,7 +162,7 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
             Log.d(TAG, "Retrieving admin profile - Name: ${name != null}, Email: ${email != null}, Token: ${token != null}")
 
             if (!name.isNullOrBlank() && !email.isNullOrBlank() && !token.isNullOrBlank()) {
-                val admin = Admin(name, email, token)
+                val admin = Admin(name.trim(), email.trim(), token)
                 Log.d(TAG, "Admin profile retrieved successfully")
                 admin
             } else {
@@ -145,8 +175,11 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
         }
     }
 
-    fun clearSession() {
-        try {
+    /**
+     * ENHANCED: Clear session dengan better cleanup
+     */
+    fun clearSession(): Boolean {
+        return try {
             val editor = sharedPreferences.edit()
             editor.clear()
             val success = editor.commit()
@@ -155,20 +188,35 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
             } else {
                 Log.e(TAG, "Failed to clear session - commit returned false")
             }
+            success
         } catch (e: Exception) {
             Log.e(TAG, "Exception while clearing session", e)
+            false
         }
     }
 
     /**
-     * Check if session is valid (has token and profile)
+     * ENHANCED: Check session validity dengan time-based expiration
      */
     fun isSessionValid(): Boolean {
         return try {
             val token = getAuthToken()
             val profile = getAdminProfile()
-            val isValid = !token.isNullOrBlank() && profile != null
-            Log.d(TAG, "Session validity check: $isValid")
+            val sessionTimestamp = sharedPreferences.getLong(SESSION_TIMESTAMP_KEY, 0L)
+            val currentTime = System.currentTimeMillis()
+
+            val hasValidData = !token.isNullOrBlank() && profile != null
+            val isNotExpired = sessionTimestamp > 0L && (currentTime - sessionTimestamp) < SESSION_DURATION_MS
+
+            val isValid = hasValidData && isNotExpired
+
+            Log.d(TAG, "Session validity check: $isValid (hasData: $hasValidData, notExpired: $isNotExpired)")
+
+            if (hasValidData && !isNotExpired) {
+                Log.i(TAG, "Session expired, clearing session data")
+                clearSession()
+            }
+
             isValid
         } catch (e: Exception) {
             Log.e(TAG, "Exception while checking session validity", e)
@@ -177,28 +225,48 @@ class SessionManager @Inject constructor(@ApplicationContext private val context
     }
 
     /**
-     * Check if session is expired
-     * For now, just inverse of isSessionValid
-     * TODO: Implement proper token expiry checking in future versions
+     * ENHANCED: More comprehensive session expiry check
      */
     fun isSessionExpired(): Boolean {
         return !isSessionValid()
     }
 
     /**
-     * Debug helper function untuk testing dan troubleshooting
+     * NEW: Get remaining session time in minutes
+     */
+    fun getRemainingSessionTimeMinutes(): Long {
+        return try {
+            val sessionTimestamp = sharedPreferences.getLong(SESSION_TIMESTAMP_KEY, 0L)
+            if (sessionTimestamp == 0L) return 0L
+
+            val currentTime = System.currentTimeMillis()
+            val elapsedTime = currentTime - sessionTimestamp
+            val remainingTime = SESSION_DURATION_MS - elapsedTime
+
+            if (remainingTime <= 0) 0L else remainingTime / (1000 * 60) // Convert to minutes
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception while calculating remaining session time", e)
+            0L
+        }
+    }
+
+    /**
+     * ENHANCED: Debug helper dengan lebih banyak informasi
      */
     fun debugSessionState(): String {
         return try {
             val token = getAuthToken()
             val profile = getAdminProfile()
-            val prefsType = if (sharedPreferences.javaClass.simpleName.contains("Encrypted")) {
-                "Encrypted"
-            } else {
-                "Fallback"
-            }
-            "Session State ($prefsType) - Token: ${token != null}, Profile: ${profile != null}, " +
-                    "Name: ${profile?.name}, Email: ${profile?.email}"
+            val sessionTimestamp = sharedPreferences.getLong(SESSION_TIMESTAMP_KEY, 0L)
+            val remainingTime = getRemainingSessionTimeMinutes()
+            val prefsType = if (_isEncrypted) "Encrypted" else "Fallback"
+
+            "Session State ($prefsType) - " +
+                    "Token: ${token != null}, " +
+                    "Profile: ${profile != null}, " +
+                    "Name: ${profile?.name}, " +
+                    "Email: ${profile?.email}, " +
+                    "Remaining: ${remainingTime}min"
         } catch (e: Exception) {
             "Session State - Error: ${e.message}"
         }

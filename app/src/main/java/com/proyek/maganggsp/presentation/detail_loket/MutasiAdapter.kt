@@ -9,12 +9,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemMutasiBinding
 import com.proyek.maganggsp.domain.model.Mutasi
-import com.proyek.maganggsp.util.Formatters // Import object Formatters
+import com.proyek.maganggsp.util.Formatters
 
+/**
+ * FIXED: MutasiAdapter yang menggunakan fields yang ada di Mutasi model
+ */
 class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
 
     private val differCallback = object : DiffUtil.ItemCallback<Mutasi>() {
         override fun areItemsTheSame(oldItem: Mutasi, newItem: Mutasi): Boolean {
+            // FIXED: Menggunakan field yang benar-benar ada
             return oldItem.id == newItem.id
         }
         override fun areContentsTheSame(oldItem: Mutasi, newItem: Mutasi): Boolean {
@@ -30,20 +34,27 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
         fun bind(mutasi: Mutasi) {
             val context = binding.root.context
             binding.apply {
-                // --- PERUBAHAN DI SINI: Menggunakan Formatters ---
+                // FIXED: Menggunakan fields yang benar dari Mutasi model
                 tvTransactionDate.text = Formatters.toReadableDateTime(mutasi.timestamp)
                 tvReference.text = context.getString(R.string.label_ref, mutasi.reference)
-                tvRemainingBalance.text = context.getString(R.string.label_sisa_saldo, Formatters.toRupiah(mutasi.balanceAfter))
+                tvRemainingBalance.text = context.getString(
+                    R.string.label_sisa_saldo,
+                    Formatters.toRupiah(mutasi.balanceAfter)
+                )
 
                 // Membedakan tampilan berdasarkan tipe transaksi
                 if (mutasi.type.equals("IN", ignoreCase = true)) {
                     // Transaksi masuk (DEBIT/IN)
                     tvTransactionAmount.text = "+ ${Formatters.toRupiah(mutasi.amount)}"
-                    tvTransactionAmount.setTextColor(ContextCompat.getColor(context, R.color.green_success))
+                    tvTransactionAmount.setTextColor(
+                        ContextCompat.getColor(context, R.color.green_success)
+                    )
                 } else {
                     // Transaksi keluar (KREDIT/OUT)
-                    tvTransactionAmount.text = "- ${Formatters.toRupiah(mutasi.amount)}"
-                    tvTransactionAmount.setTextColor(ContextCompat.getColor(context, R.color.red_danger))
+                    tvTransactionAmount.text = "- ${Formatters.toRupiah(kotlin.math.abs(mutasi.amount))}"
+                    tvTransactionAmount.setTextColor(
+                        ContextCompat.getColor(context, R.color.red_danger)
+                    )
                 }
             }
         }

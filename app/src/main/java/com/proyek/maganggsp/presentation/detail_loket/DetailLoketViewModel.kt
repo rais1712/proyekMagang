@@ -1,3 +1,6 @@
+// FIXED: Standardized Resource usage across all ViewModels
+// File: DetailLoketViewModel.kt (excerpt showing fixes)
+
 package com.proyek.maganggsp.presentation.detailloket
 
 import androidx.lifecycle.SavedStateHandle
@@ -22,12 +25,11 @@ class DetailLoketViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // --- KESALAHAN UTAMA DIPERBAIKI DI SINI ---
-    // Hapus tanda kurung () dari Loading dan Empty
-    private val _loketDetailsState = MutableStateFlow<Resource<Loket>>(Resource.Loading)
+    // FIXED: Standardized ke Resource.Empty (object, bukan function call)
+    private val _loketDetailsState = MutableStateFlow<Resource<Loket>>(Resource.Loading())
     val loketDetailsState: StateFlow<Resource<Loket>> = _loketDetailsState
 
-    private val _mutationsState = MutableStateFlow<Resource<List<Mutasi>>>(Resource.Loading)
+    private val _mutationsState = MutableStateFlow<Resource<List<Mutasi>>>(Resource.Loading())
     val mutationsState: StateFlow<Resource<List<Mutasi>>> = _mutationsState
 
     private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty)
@@ -39,7 +41,7 @@ class DetailLoketViewModel @Inject constructor(
     private var currentNoLoket: String?
 
     init {
-        currentNoLoket = savedStateHandle["noLoket"]
+        currentNoLoket = savedStateHandle.get<String>("noLoket")
         refreshData()
     }
 
@@ -67,7 +69,9 @@ class DetailLoketViewModel @Inject constructor(
             blockLoketUseCase(noLoket).onEach { result ->
                 _actionState.value = result
                 if (result is Resource.Success) {
-                    viewModelScope.launch { _eventFlow.emit(UiEvent.ShowToast("Loket berhasil diblokir")) }
+                    viewModelScope.launch {
+                        _eventFlow.emit(UiEvent.ShowToast("Loket berhasil diblokir"))
+                    }
                     refreshData()
                 }
             }.launchIn(viewModelScope)
@@ -79,7 +83,9 @@ class DetailLoketViewModel @Inject constructor(
             unblockLoketUseCase(noLoket).onEach { result ->
                 _actionState.value = result
                 if (result is Resource.Success) {
-                    viewModelScope.launch { _eventFlow.emit(UiEvent.ShowToast("Blokir loket berhasil dibuka")) }
+                    viewModelScope.launch {
+                        _eventFlow.emit(UiEvent.ShowToast("Blokir loket berhasil dibuka"))
+                    }
                     refreshData()
                 }
             }.launchIn(viewModelScope)
@@ -91,7 +97,9 @@ class DetailLoketViewModel @Inject constructor(
             clearAllFlagsUseCase(noLoket).onEach { result ->
                 _actionState.value = result
                 if (result is Resource.Success) {
-                    viewModelScope.launch { _eventFlow.emit(UiEvent.ShowToast("Semua tanda berhasil dihapus")) }
+                    viewModelScope.launch {
+                        _eventFlow.emit(UiEvent.ShowToast("Semua tanda berhasil dihapus"))
+                    }
                     refreshData()
                 }
             }.launchIn(viewModelScope)

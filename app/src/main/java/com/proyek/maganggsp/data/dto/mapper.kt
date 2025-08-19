@@ -24,12 +24,26 @@ fun LoketDto.toDomain(): Loket {
     )
 }
 
-// Memetakan MutasiDto -> Mutasi
+// FIXED: Memetakan MutasiDto -> Mutasi dengan robust mapping
 fun MutasiDto.toDomain(): Mutasi {
+    // Prioritize fields - gunakan field yang lebih spesifik dulu
+    val finalTanggal = this.timestamp ?: this.tanggal ?: "-"
+    val finalReferensi = this.reference ?: this.nomorReferensi ?: "-"
+    val finalNominal = this.amount ?: this.nominalTransaksi ?: 0L
+    val finalSaldo = this.balanceAfter ?: this.sisaSaldo ?: 0L
+
     return Mutasi(
-        tanggal = this.tanggal ?: "-",
-        nomorReferensi = this.nomorReferensi ?: "-",
-        nominalTransaksi = this.nominalTransaksi ?: 0L,
-        sisaSaldo = this.sisaSaldo ?: 0L
+        tanggal = finalTanggal,
+        nomorReferensi = finalReferensi,
+        nominalTransaksi = finalNominal,
+        sisaSaldo = finalSaldo,
+
+        // New fields akan otomatis terisi dari constructor Mutasi
+        id = this.id ?: finalReferensi,
+        timestamp = finalTanggal,
+        reference = finalReferensi,
+        amount = finalNominal,
+        balanceAfter = finalSaldo,
+        type = this.transactionType ?: if (finalNominal >= 0) "IN" else "OUT"
     )
 }
