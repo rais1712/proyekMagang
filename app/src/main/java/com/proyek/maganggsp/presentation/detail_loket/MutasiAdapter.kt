@@ -1,4 +1,4 @@
-// ENHANCED: MutasiAdapter with memory leak prevention and better performance
+// ENHANCED: MutasiAdapter with FIXED field mapping to match item_mutasi.xml
 // File: app/src/main/java/com/proyek/maganggsp/presentation/detailloket/MutasiAdapter.kt
 
 package com.proyek.maganggsp.presentation.detailloket
@@ -15,11 +15,12 @@ import com.proyek.maganggsp.domain.model.Mutasi
 import com.proyek.maganggsp.util.Formatters
 
 /**
- * ENHANCED: MutasiAdapter dengan proper memory management dan click handling
+ * FIXED: MutasiAdapter dengan correct field mapping ke item_mutasi.xml
+ * Mapping: tvTransactionDate -> tvTimestamp, tvReference -> tvDescription, etc.
  */
 class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
 
-    // ENHANCED: Click listener with more specific callback
+    // Click listener with more specific callback
     private var onFlagClickListener: ((Mutasi) -> Unit)? = null
 
     fun setOnFlagClickListener(listener: (Mutasi) -> Unit) {
@@ -28,12 +29,10 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
 
     private val differCallback = object : DiffUtil.ItemCallback<Mutasi>() {
         override fun areItemsTheSame(oldItem: Mutasi, newItem: Mutasi): Boolean {
-            // FIXED: Use reliable ID comparison
             return oldItem.id == newItem.id
         }
 
         override fun areContentsTheSame(oldItem: Mutasi, newItem: Mutasi): Boolean {
-            // ENHANCED: More efficient comparison
             return oldItem.reference == newItem.reference &&
                     oldItem.amount == newItem.amount &&
                     oldItem.balanceAfter == newItem.balanceAfter &&
@@ -42,12 +41,9 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
         }
 
         override fun getChangePayload(oldItem: Mutasi, newItem: Mutasi): Any? {
-            // ENHANCED: Partial update support for better performance
             val changes = mutableListOf<String>()
-
             if (oldItem.amount != newItem.amount) changes.add("amount")
             if (oldItem.balanceAfter != newItem.balanceAfter) changes.add("balance")
-
             return if (changes.isNotEmpty()) changes else null
         }
     }
@@ -59,7 +55,6 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {
-            // ENHANCED: Click handling with proper bounds checking
             binding.root.setOnClickListener {
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION && position < differ.currentList.size) {
@@ -69,7 +64,7 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
         }
 
         fun bind(mutasi: Mutasi, payloads: List<Any>? = null) {
-            // ENHANCED: Support partial updates for better performance
+            // Support partial updates for better performance
             if (!payloads.isNullOrEmpty()) {
                 val changes = payloads.firstOrNull() as? List<*>
                 changes?.forEach { change ->
@@ -88,34 +83,41 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
         private fun bindComplete(mutasi: Mutasi) {
             val context = binding.root.context
             binding.apply {
-                // ENHANCED: Better date formatting with fallback
-                tvTransactionDate.text = try {
+                // FIXED: Correct field mapping to match item_mutasi.xml
+
+                // tvTransactionDate -> tvTimestamp (XML field)
+                tvTimestamp.text = try {
                     Formatters.toReadableDateTime(mutasi.timestamp)
                 } catch (e: Exception) {
                     mutasi.timestamp // Fallback to original string
                 }
 
-                tvReference.text = context.getString(R.string.label_ref, mutasi.reference)
+                // tvReference -> tvDescription (XML field)
+                tvDescription.text = context.getString(R.string.label_ref, mutasi.reference)
 
+                // Update amount and balance
                 updateAmount(mutasi)
                 updateBalance(mutasi)
+
+                // Update transaction type icon
+                updateTransactionIcon(mutasi)
             }
         }
 
         private fun updateAmount(mutasi: Mutasi) {
             val context = binding.root.context
             binding.apply {
-                // ENHANCED: Better amount formatting and coloring
+                // Better amount formatting and coloring
                 val isIncoming = mutasi.type.equals("IN", ignoreCase = true) || mutasi.amount >= 0
 
                 if (isIncoming) {
-                    tvTransactionAmount.text = "+ ${Formatters.toRupiah(kotlin.math.abs(mutasi.amount))}"
-                    tvTransactionAmount.setTextColor(
+                    tvAmount.text = "+ ${Formatters.toRupiah(kotlin.math.abs(mutasi.amount))}"
+                    tvAmount.setTextColor(
                         ContextCompat.getColor(context, R.color.green_success)
                     )
                 } else {
-                    tvTransactionAmount.text = "- ${Formatters.toRupiah(kotlin.math.abs(mutasi.amount))}"
-                    tvTransactionAmount.setTextColor(
+                    tvAmount.text = "- ${Formatters.toRupiah(kotlin.math.abs(mutasi.amount))}"
+                    tvAmount.setTextColor(
                         ContextCompat.getColor(context, R.color.red_danger)
                     )
                 }
@@ -124,10 +126,33 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
 
         private fun updateBalance(mutasi: Mutasi) {
             val context = binding.root.context
-            binding.tvRemainingBalance.text = context.getString(
+            // FIXED: tvRemainingBalance -> tvSaldoInfo (XML field)
+            binding.tvSaldoInfo.text = context.getString(
                 R.string.label_sisa_saldo,
                 Formatters.toRupiah(mutasi.balanceAfter)
             )
+        }
+
+        /**
+         * NEW: Update transaction type icon based on amount/type
+         */
+        private fun updateTransactionIcon(mutasi: Mutasi) {
+            val context = binding.root.context
+            binding.apply {
+                val isIncoming = mutasi.type.equals("IN", ignoreCase = true) || mutasi.amount >= 0
+
+                if (isIncoming) {
+                    ivTransactionType.setImageResource(R.drawable.arrow_circle_up_24)
+                    ivTransactionType.setColorFilter(
+                        ContextCompat.getColor(context, R.color.green_success)
+                    )
+                } else {
+                    ivTransactionType.setImageResource(R.drawable.arrow_circle_down_24)
+                    ivTransactionType.setColorFilter(
+                        ContextCompat.getColor(context, R.color.red_danger)
+                    )
+                }
+            }
         }
     }
 
@@ -158,24 +183,17 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
 
     override fun getItemCount(): Int = differ.currentList.size
 
-    // ENHANCED: Memory leak prevention
+    // Memory leak prevention
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
         onFlagClickListener = null
     }
 
-    // ENHANCED: ViewHolder recycling optimization
-    override fun onViewRecycled(holder: MutasiViewHolder) {
-        super.onViewRecycled(holder)
-        // Clear any ongoing operations or listeners if needed
-    }
-
-    // ENHANCED: Helper method to update data efficiently
+    // Helper methods for external usage
     fun updateData(newMutations: List<Mutasi>) {
-        differ.submitList(newMutations.toList()) // Create new list instance to trigger diff
+        differ.submitList(newMutations.toList())
     }
 
-    // ENHANCED: Helper to clear data
     fun clearData() {
         differ.submitList(emptyList())
     }

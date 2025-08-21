@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.FragmentHomeBinding
 import com.proyek.maganggsp.util.Resource
+import com.proyek.maganggsp.util.applyToLoadingViews
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -84,19 +85,27 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // Mengamati UI State (satu observer untuk semua)
+        // ENHANCED: Menggunakan standardized loading state management
         lifecycleScope.launch {
             viewModel.uiState.collectLatest { resource ->
-                binding.shimmerLayoutHistory.visibility = if (resource is Resource.Loading) View.VISIBLE else View.GONE
-                binding.rvLoketList.visibility = if (resource is Resource.Success && resource.data?.isNotEmpty() == true) View.VISIBLE else View.GONE
-                binding.tvEmptyHistory.visibility = if (resource is Resource.Success && resource.data?.isEmpty() == true) View.VISIBLE else View.GONE
+                // FIXED: Menggunakan extension function untuk unified loading management
+                // Nama shimmer di XML adalah shimmerLayoutHistory
+                resource.applyToLoadingViews(
+                    shimmerView = binding.shimmerLayoutHistory,
+                    contentView = binding.rvLoketList,
+                    emptyView = binding.tvEmptyHistory
+                )
+
+                // Manage SwipeRefreshLayout loading indicator
                 binding.swipeRefreshLayout.isRefreshing = resource is Resource.Loading
 
                 when (resource) {
                     is Resource.Success -> {
                         loketAdapter.differ.submitList(resource.data ?: emptyList())
-                        // Context-aware empty state message
-                        binding.tvEmptyHistory.text = if (binding.etSearch.text.toString().trim().isNotEmpty()) {
+
+                        // ENHANCED: Context-aware empty state message
+                        val isSearchMode = binding.etSearch.text.toString().trim().isNotEmpty()
+                        binding.tvEmptyHistory.text = if (isSearchMode) {
                             getString(R.string.no_search_results)
                         } else {
                             getString(R.string.no_recent_history)
@@ -105,7 +114,7 @@ class HomeFragment : Fragment() {
                     is Resource.Error -> {
                         Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show()
                     }
-                    else -> Unit // Handle Loading dan Empty state dengan visibility di atas
+                    else -> Unit // Loading dan Empty state sudah dihandle oleh extension
                 }
             }
         }

@@ -12,6 +12,7 @@ import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityDetailLoketBinding
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.util.Resource
+import com.proyek.maganggsp.util.applyToLoadingViews
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -21,8 +22,6 @@ class DetailLoketActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailLoketBinding
     private val viewModel: DetailLoketViewModel by viewModels()
-
-    // --- PERUBAHAN STRUKTUR 1: Deklarasi di level class ---
     private lateinit var mutasiAdapter: MutasiAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,7 +42,7 @@ class DetailLoketActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        mutasiAdapter = MutasiAdapter() // Inisialisasi di sini
+        mutasiAdapter = MutasiAdapter()
         binding.rvMutations.apply {
             adapter = mutasiAdapter
             layoutManager = LinearLayoutManager(this@DetailLoketActivity)
@@ -58,37 +57,39 @@ class DetailLoketActivity : AppCompatActivity() {
     }
 
     private fun observeStates() {
-        // Observer untuk detail loket
+        // Observer untuk detail loket dengan standardized loading management
         lifecycleScope.launch {
             viewModel.loketDetailsState.collectLatest { resource ->
-                binding.shimmerCardInfo.isVisible = resource is Resource.Loading
-                binding.cardLoketInfo.isVisible = resource is Resource.Success
+                // ENHANCED: Menggunakan unified loading state management
+                resource.applyToLoadingViews(
+                    shimmerView = binding.shimmerCardInfo,
+                    contentView = binding.cardLoketInfo
+                )
 
                 when(resource) {
                     is Resource.Success -> {
-                        binding.shimmerCardInfo.stopShimmer()
                         updateLoketInfo(resource.data)
                     }
                     is Resource.Error -> {
-                        binding.shimmerCardInfo.stopShimmer()
                         Toast.makeText(this@DetailLoketActivity, resource.exception.message, Toast.LENGTH_LONG).show()
                     }
-                    is Resource.Loading -> binding.shimmerCardInfo.startShimmer()
-                    is Resource.Empty -> binding.cardLoketInfo.isVisible = false
+                    else -> Unit // Loading state dihandle oleh extension
                 }
             }
         }
 
-        // Observer untuk daftar mutasi
+        // Observer untuk daftar mutasi dengan standardized loading management
         lifecycleScope.launch {
             viewModel.mutationsState.collectLatest { resource ->
-                binding.mutationsShimmerLayout.isVisible = resource is Resource.Loading
-                binding.rvMutations.isVisible = resource is Resource.Success && resource.data.isNotEmpty()
-                binding.tvMutationsError.isVisible = resource is Resource.Error || (resource is Resource.Success && resource.data.isEmpty())
+                // ENHANCED: Unified loading state management untuk mutations
+                resource.applyToLoadingViews(
+                    shimmerView = binding.mutationsShimmerLayout,
+                    contentView = binding.rvMutations,
+                    emptyView = binding.tvMutationsError
+                )
 
                 when(resource) {
                     is Resource.Success -> {
-                        binding.mutationsShimmerLayout.stopShimmer()
                         if (resource.data.isEmpty()) {
                             binding.tvMutationsError.text = "Tidak ada riwayat mutasi."
                         } else {
@@ -96,15 +97,12 @@ class DetailLoketActivity : AppCompatActivity() {
                         }
                     }
                     is Resource.Error -> {
-                        binding.mutationsShimmerLayout.stopShimmer()
                         binding.tvMutationsError.text = getString(R.string.error_load_mutations)
                     }
-                    is Resource.Loading -> binding.mutationsShimmerLayout.startShimmer()
                     is Resource.Empty -> {
-                        binding.mutationsShimmerLayout.stopShimmer()
-                        binding.tvMutationsError.isVisible = true
                         binding.tvMutationsError.text = "Tidak ada riwayat mutasi."
                     }
+                    else -> Unit // Loading state dihandle oleh extension
                 }
             }
         }
@@ -114,6 +112,7 @@ class DetailLoketActivity : AppCompatActivity() {
             viewModel.actionState.collectLatest { resource ->
                 binding.mainProgressBar.isVisible = resource is Resource.Loading
                 setButtonsEnabled(resource !is Resource.Loading)
+
                 if (resource is Resource.Error) {
                     Toast.makeText(this@DetailLoketActivity, resource.exception.message, Toast.LENGTH_LONG).show()
                     viewModel.onActionConsumed()
@@ -139,7 +138,6 @@ class DetailLoketActivity : AppCompatActivity() {
         binding.btnClearFlags.isEnabled = isEnabled
     }
 
-    // --- PERUBAHAN STRUKTUR 2: Fungsi dipindahkan ke level class ---
     private fun updateLoketInfo(loket: Loket) {
         binding.tvLoketId.text = loket.noLoket
         binding.tvLoketName.text = loket.namaLoket
