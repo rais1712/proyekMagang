@@ -1,5 +1,5 @@
 // FIXED: Standardized Resource usage across all ViewModels
-// File: DetailLoketViewModel.kt (excerpt showing fixes)
+// File: app/src/main/java/com/proyek/maganggsp/presentation/detailloket/DetailLoketViewModel.kt
 
 package com.proyek.maganggsp.presentation.detailloket
 
@@ -25,24 +25,36 @@ class DetailLoketViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // FIXED: Standardized ke Resource.Empty (object, bukan function call)
+    // FIXED: Consistent usage of Resource.Empty as object
     private val _loketDetailsState = MutableStateFlow<Resource<Loket>>(Resource.Loading())
-    val loketDetailsState: StateFlow<Resource<Loket>> = _loketDetailsState
+    val loketDetailsState: StateFlow<Resource<Loket>> = _loketDetailsState.asStateFlow()
 
     private val _mutationsState = MutableStateFlow<Resource<List<Mutasi>>>(Resource.Loading())
-    val mutationsState: StateFlow<Resource<List<Mutasi>>> = _mutationsState
+    val mutationsState: StateFlow<Resource<List<Mutasi>>> = _mutationsState.asStateFlow()
 
     private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty)
-    val actionState: StateFlow<Resource<Unit>> = _actionState
+    val actionState: StateFlow<Resource<Unit>> = _actionState.asStateFlow()
 
-    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    private val _eventFlow = MutableSharedFlow<UiEvent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
     val eventFlow = _eventFlow.asSharedFlow()
 
-    private var currentNoLoket: String?
+    private var currentNoLoket: String? = null
 
     init {
         currentNoLoket = savedStateHandle.get<String>("noLoket")
-        refreshData()
+        if (currentNoLoket != null) {
+            refreshData()
+        } else {
+            // Handle missing parameter gracefully
+            _loketDetailsState.value = Resource.Error(
+                com.proyek.maganggsp.util.exceptions.AppException.ValidationException(
+                    "Nomor loket tidak ditemukan"
+                )
+            )
+        }
     }
 
     fun refreshData() {
@@ -53,56 +65,60 @@ class DetailLoketViewModel @Inject constructor(
     }
 
     private fun loadLoketDetails(noLoket: String) {
-        getLoketDetailUseCase(noLoket).onEach { result ->
-            _loketDetailsState.value = result
-        }.launchIn(viewModelScope)
+        getLoketDetailUseCase(noLoket)
+            .onEach { result ->
+                _loketDetailsState.value = result
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun loadMutations(noLoket: String) {
-        getMutationUseCase(noLoket).onEach { result ->
-            _mutationsState.value = result
-        }.launchIn(viewModelScope)
+        getMutationUseCase(noLoket)
+            .onEach { result ->
+                _mutationsState.value = result
+            }
+            .launchIn(viewModelScope)
     }
 
     fun blockLoket() {
         currentNoLoket?.let { noLoket ->
-            blockLoketUseCase(noLoket).onEach { result ->
-                _actionState.value = result
-                if (result is Resource.Success) {
-                    viewModelScope.launch {
-                        _eventFlow.emit(UiEvent.ShowToast("Loket berhasil diblokir"))
+            blockLoketUseCase(noLoket)
+                .onEach { result ->
+                    _actionState.value = result
+                    if (result is Resource.Success) {
+                        emitUiEvent(UiEvent.ShowToast("Loket berhasil diblokir"))
+                        refreshData() // Refresh to get updated status
                     }
-                    refreshData()
                 }
-            }.launchIn(viewModelScope)
+                .launchIn(viewModelScope)
         }
     }
 
     fun unblockLoket() {
         currentNoLoket?.let { noLoket ->
-            unblockLoketUseCase(noLoket).onEach { result ->
-                _actionState.value = result
-                if (result is Resource.Success) {
-                    viewModelScope.launch {
-                        _eventFlow.emit(UiEvent.ShowToast("Blokir loket berhasil dibuka"))
+            unblockLoketUseCase(noLoket)
+                .onEach { result ->
+                    _actionState.value = result
+                    if (result is Resource.Success) {
+                        emitUiEvent(UiEvent.ShowToast("Blokir loket berhasil dibuka"))
+                        refreshData() // Refresh to get updated status
                     }
-                    refreshData()
                 }
-            }.launchIn(viewModelScope)
+                .launchIn(viewModelScope)
         }
     }
 
     fun clearAllFlags() {
         currentNoLoket?.let { noLoket ->
-            clearAllFlagsUseCase(noLoket).onEach { result ->
-                _actionState.value = result
-                if (result is Resource.Success) {
-                    viewModelScope.launch {
-                        _eventFlow.emit(UiEvent.ShowToast("Semua tanda berhasil dihapus"))
+            clearAllFlagsUseCase(noLoket)
+                .onEach { result ->
+                    _actionState.value = result
+                    if (result is Resource.Success) {
+                        emitUiEvent(UiEvent.ShowToast("Semua tanda berhasil dihapus"))
+                        refreshData() // Refresh to get updated status
                     }
-                    refreshData()
                 }
-            }.launchIn(viewModelScope)
+                .launchIn(viewModelScope)
         }
     }
 
@@ -110,7 +126,21 @@ class DetailLoketViewModel @Inject constructor(
         _actionState.value = Resource.Empty
     }
 
+    private fun emitUiEvent(event: UiEvent) {
+        viewModelScope.launch {
+            _eventFlow.emit(event)
+        }
+    }
+
+    // ENHANCED: Better lifecycle management
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up any ongoing operations if needed
+    }
+
     sealed class UiEvent {
         data class ShowToast(val message: String) : UiEvent()
+        object NavigateBack : UiEvent()
+        data class ShowError(val message: String) : UiEvent()
     }
 }
