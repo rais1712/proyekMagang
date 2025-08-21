@@ -1,7 +1,7 @@
 // MODERNIZED: Updated MainActivity with latest Android practices
 // File: app/src/main/java/com/proyek/maganggsp/presentation/MainActivity.kt
 
-package com.proyek.maganggsp.presentation
+package com.proyek.maganggsp.presentation.main
 
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
@@ -12,7 +12,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityMainBinding
 import com.proyek.maganggsp.util.Resource

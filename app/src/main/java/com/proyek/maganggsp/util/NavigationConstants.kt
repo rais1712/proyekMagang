@@ -1,35 +1,50 @@
+// File: app/src/main/java/com/proyek/maganggsp/util/NavigationConstants.kt
 package com.proyek.maganggsp.util
 
 /**
- * Constants untuk navigation arguments dan keys
- * Mencegah typo dan memudahkan refactoring
+ * SIMPLIFIED: Constants untuk navigation arguments dan keys yang benar-benar digunakan
+ * Menghapus konstanta yang redundant dan tidak terpakai
  */
 object NavigationConstants {
 
-    // Navigation Arguments
+    // ✅ NAVIGATION ARGUMENTS (Dipakai di nav_graph.xml)
     const val ARG_NO_LOKET = "noLoket"
-    const val ARG_LOKET_DATA = "loketData"
 
-    // Intent Extras
-    const val EXTRA_NO_LOKET = "extra_no_loket"
-    const val EXTRA_FROM_SEARCH = "extra_from_search"
-
-    // SharedPreferences Keys
+    // ✅ SHARED PREFERENCES KEYS (Dipakai di SessionManager)
     const val PREF_AUTH_TOKEN = "auth_token"
     const val PREF_ADMIN_NAME = "admin_name"
     const val PREF_ADMIN_EMAIL = "admin_email"
 
-    // Request Codes
-    const val REQUEST_CODE_DETAIL = 1001
-    const val REQUEST_CODE_LOGIN = 1002
+    // ✅ NAVIGATION DESTINATION IDs (Runtime values, bukan compile-time constants)
+    // Menggunakan @JvmStatic untuk akses yang mudah tapi bukan const
+    object Destinations {
+        @JvmStatic
+        val HOME_FRAGMENT: Int
+            get() = com.proyek.maganggsp.R.id.homeFragment
 
-    // Fragment Tags
-    const val TAG_HOME_FRAGMENT = "HomeFragment"
-    const val TAG_HISTORY_FRAGMENT = "HistoryFragment"
-    const val TAG_MONITOR_FRAGMENT = "MonitorFragment"
+        @JvmStatic
+        val HISTORY_FRAGMENT: Int
+            get() = com.proyek.maganggsp.R.id.historyFragment
 
-    // Navigation Actions (untuk type safety)
-    const val ACTION_HOME_TO_DETAIL = "action_homeFragment_to_detailLoketActivity"
-    const val ACTION_HISTORY_TO_DETAIL = "action_historyFragment_to_detailLoketActivity"
-    const val ACTION_MONITOR_TO_DETAIL = "action_monitorFragment_to_detailLoketActivity"
+        @JvmStatic
+        val MONITOR_FRAGMENT: Int
+            get() = com.proyek.maganggsp.R.id.monitorFragment
+
+        @JvmStatic
+        val DETAIL_LOKET_ACTIVITY: Int
+            get() = com.proyek.maganggsp.R.id.detailLoketActivity
+    }
+
+    // ✅ INTENT EXTRAS (Untuk fallback navigation jika diperlukan)
+    const val EXTRA_NO_LOKET = "extra_no_loket"
+    const val EXTRA_SESSION_EXPIRED = "extra_session_expired"
 }
+
+/**
+ * REMOVED (Tidak dipakai):
+ * - REQUEST_CODE_* → Pakai Navigation Component, bukan startActivityForResult
+ * - TAG_*_FRAGMENT → Fragment tags tidak diperlukan dengan Navigation Component
+ * - ACTION_* → Action IDs sudah ada di nav_graph.xml, tidak perlu konstanta terpisah
+ * - ARG_LOKET_DATA → Cuma perlu noLoket aja, data diambil via API
+ * - EXTRA_FROM_SEARCH → Tidak digunakan di implementasi sekarang
+ */

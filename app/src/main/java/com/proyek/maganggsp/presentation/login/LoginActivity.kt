@@ -8,7 +8,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.proyek.maganggsp.databinding.ActivityLoginBinding
-import com.proyek.maganggsp.presentation.MainActivity
+import com.proyek.maganggsp.presentation.main.MainActivity
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
