@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.FragmentHomeBinding
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.applyToLoadingViews
+import com.proyek.maganggsp.util.applyToStandardLoadingViews
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -85,13 +85,12 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // ENHANCED: Menggunakan standardized loading state management
+        // ENHANCED: Using new standardized loading state management
         lifecycleScope.launch {
             viewModel.uiState.collectLatest { resource ->
-                // FIXED: Menggunakan extension function untuk unified loading management
-                // Nama shimmer di XML adalah shimmerLayoutHistory
-                resource.applyToLoadingViews(
-                    shimmerView = binding.shimmerLayoutHistory,
+                // FIXED: Using new applyToStandardLoadingViews with standardized shimmer ID
+                resource.applyToStandardLoadingViews(
+                    shimmerView = binding.standardShimmerLayout,
                     contentView = binding.rvLoketList,
                     emptyView = binding.tvEmptyHistory
                 )
