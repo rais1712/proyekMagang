@@ -8,4 +8,11 @@
         android:icon="@drawable/ic_logout"
         app:showAsAction="never" />
 
+    <!-- 🚩 FIXED: Added missing debug info menu item -->
+    <item
+        android:id="@+id/action_debug_info"
+        android:title="Debug Info"
+        android:visible="false"
+        app:showAsAction="never" />
+
 </menu>

@@ -5,62 +5,67 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
-    <!-- SIMPLIFIED: Only HomeFragment for basic login-logout flow -->
+    <!-- 🚩 SURGICAL CUTTING: CORE NAVIGATION ONLY -->
+    <!-- PHASE 1: Only HomeFragment for basic login-logout flow -->
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.proyek.maganggsp.presentation.home.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" >
 
-        <!-- FUTURE: Uncomment when DetailLoketActivity is stable -->
-        <!--
+        <!-- Navigation to DetailLoketActivity - ENABLED but conditional -->
         <action
             android:id="@+id/action_homeFragment_to_detailLoketActivity"
             app:destination="@id/detailLoketActivity" />
-        -->
     </fragment>
 
-    <!-- DISABLED TEMPORARILY: Uncomment when these fragments are ready -->
-    <!--
+    <!-- HistoryFragment - CONDITIONALLY ENABLED based on FeatureFlags -->
     <fragment
         android:id="@+id/historyFragment"
         android:name="com.proyek.maganggsp.presentation.history.HistoryFragment"
         android:label="fragment_history"
         tools:layout="@layout/fragment_history" >
-        <action
-            android:id="@+id/action_historyFragment_to_homeFragment"
-            app:destination="@id/homeFragment"
-            app:popUpTo="@id/nav_graph"
-            app:popUpToInclusive="true" />
+
         <action
             android:id="@+id/action_historyFragment_to_detailLoketActivity"
             app:destination="@id/detailLoketActivity" />
     </fragment>
 
+    <!-- MonitorFragment - CONDITIONALLY ENABLED based on FeatureFlags -->
     <fragment
         android:id="@+id/monitorFragment"
         android:name="com.proyek.maganggsp.presentation.monitor.MonitorFragment"
         android:label="fragment_monitor"
         tools:layout="@layout/fragment_monitor" >
-        <action
-            android:id="@+id/action_monitorFragment_to_homeFragment"
-            app:destination="@id/homeFragment"
-            app:popUpTo="@id/nav_graph"
-            app:popUpToInclusive="true" />
+
         <action
             android:id="@+id/action_monitorFragment_to_detailLoketActivity"
             app:destination="@id/detailLoketActivity" />
     </fragment>
 
+    <!-- DetailLoketActivity - ENABLED but with feature flag controls -->
     <activity
         android:id="@+id/detailLoketActivity"
         android:name="com.proyek.maganggsp.presentation.detail_loket.DetailLoketActivity"
         android:label="activity_detail_loket"
         tools:layout="@layout/activity_detail_loket" >
+
         <argument
             android:name="noLoket"
             app:argType="string" />
     </activity>
-    -->
 
 </navigation>
+
+    <!--
+    🚩 SURGICAL CUTTING APPROACH:
+    - Keep all navigation destinations to prevent Safe Args generation errors
+    - Control access via FeatureFlags in MainActivity and individual fragments
+    - This prevents build errors while allowing runtime control of features
+    - Navigation will be safely handled by FeatureFlags checks in code
+
+    REASONING:
+    - Removing fragments from nav_graph causes Safe Args generation failures
+    - Better to keep navigation structure intact and control via runtime flags
+    - Allows gradual re-enabling of features without navigation changes
+    -->

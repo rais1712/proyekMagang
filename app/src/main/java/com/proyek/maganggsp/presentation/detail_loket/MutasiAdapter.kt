@@ -1,7 +1,7 @@
 // ENHANCED: MutasiAdapter with FIXED field mapping to match item_mutasi.xml
-// File: app/src/main/java/com/proyek/maganggsp/presentation/detailloket/MutasiAdapter.kt
+// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/MutasiAdapter.kt
 
-package com.proyek.maganggsp.presentation.detailloket
+package com.proyek.maganggsp.presentation.detail_loket
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -13,12 +13,18 @@ import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemMutasiBinding
 import com.proyek.maganggsp.domain.model.Mutasi
 import com.proyek.maganggsp.util.Formatters
+import com.proyek.maganggsp.util.FeatureFlags
+import android.util.Log
 
 /**
  * FIXED: MutasiAdapter dengan correct field mapping ke item_mutasi.xml
  * Mapping: tvTransactionDate -> tvTimestamp, tvReference -> tvDescription, etc.
  */
 class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
+
+    companion object {
+        private const val TAG = "MutasiAdapter"
+    }
 
     // Click listener with more specific callback
     private var onFlagClickListener: ((Mutasi) -> Unit)? = null
@@ -55,14 +61,24 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {
-            binding.root.setOnClickListener {
-                val position = bindingAdapterPosition
-                if (position != RecyclerView.NO_POSITION && position < differ.currentList.size) {
-                    onFlagClickListener?.invoke(differ.currentList[position])
+            // 🚩 FEATURE FLAGS: Only enable click if flag management enabled
+            if (FeatureFlags.ENABLE_FLAG_MANAGEMENT) {
+                binding.root.setOnClickListener {
+                    val position = adapterPosition // Changed from bindingAdapterPosition
+                    if (position != RecyclerView.NO_POSITION && position < differ.currentList.size) {
+                        onFlagClickListener?.invoke(differ.currentList[position])
+                    }
+                }
+            } else {
+                // Disable click functionality
+                binding.root.setOnClickListener {
+                    // Show message that flag functionality is disabled
+                    if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                        Log.w(TAG, "🚩 Mutation click disabled by feature flag")
+                    }
                 }
             }
         }
-
         fun bind(mutasi: Mutasi, payloads: List<Any>? = null) {
             // Support partial updates for better performance
             if (!payloads.isNullOrEmpty()) {
@@ -196,5 +212,12 @@ class MutasiAdapter : RecyclerView.Adapter<MutasiAdapter.MutasiViewHolder>() {
 
     fun clearData() {
         differ.submitList(emptyList())
+    }
+
+    /**
+     * 🚩 SURGICAL CUTTING: Get current feature status for UI
+     */
+    fun isInteractionEnabled(): Boolean {
+        return FeatureFlags.ENABLE_FLAG_MANAGEMENT
     }
 }

@@ -45,10 +45,8 @@ class MonitorFragment : Fragment() {
         // 🚩 FEATURE FLAGS: Conditional setup based on feature availability
         if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
             setupViewPager()
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Monitor fragment disabled - showing placeholder")
-            }
+        } else {
+            showFeatureDisabledState()
         }
     }
 
@@ -69,7 +67,7 @@ class MonitorFragment : Fragment() {
                 tab.text = when (position) {
                     0 -> "Dipantau"
                     1 -> "Diblokir"
-                    else -> null
+                    else -> "Tab $position"
                 }
             }.attach()
 
@@ -90,22 +88,38 @@ class MonitorFragment : Fragment() {
         binding.viewPager.isVisible = false
         binding.tabLayout.isVisible = false
 
-        // Show a placeholder message
-        // Note: This assumes there's a TextView for showing messages in the layout
-        // If not available, we can show a Toast instead
+        // 🚩 SURGICAL CUTTING: Create a simple disabled state message
         try {
-            // Try to find a TextView for messages (you might need to add this to layout)
-            val messageView = binding.root.findViewById<android.widget.TextView>(
-                com.proyek.maganggsp.R.id.tvMonitorMessage
-            )
+            // Create a simple TextView programmatically if needed
+            val messageView = android.widget.TextView(requireContext()).apply {
+                text = """
+                    🔧 Fitur Monitor sedang dikembangkan
+                    
+                    Fitur ini akan segera tersedia untuk memantau:
+                    • Loket yang dipantau
+                    • Loket yang diblokir
+                    • Status real-time
+                    
+                    Silakan gunakan fitur lain sementara waktu.
+                """.trimIndent()
 
-            if (messageView != null) {
-                messageView.isVisible = true
-                messageView.text = "Fitur monitoring sedang dikembangkan.\nSilakan gunakan fitur lain sementara waktu."
-                messageView.textAlignment = View.TEXT_ALIGNMENT_CENTER
-            } else {
-                // Fallback to Toast if TextView not found
-                showFeatureDisabledToast()
+                textAlignment = View.TEXT_ALIGNMENT_CENTER
+                setPadding(32, 64, 32, 64)
+                textSize = 16f
+                setTextColor(resources.getColor(com.proyek.maganggsp.R.color.text_secondary_gray, null))
+            }
+
+            // Add to the root layout
+            if (binding.root is android.view.ViewGroup) {
+                (binding.root as android.view.ViewGroup).addView(
+                    messageView,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.d(TAG, "🚩 Feature disabled state message shown")
             }
 
         } catch (e: Exception) {
@@ -113,7 +127,7 @@ class MonitorFragment : Fragment() {
             showFeatureDisabledToast()
 
             if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Could not find message TextView, using Toast", e)
+                Log.w(TAG, "🚩 Could not create disabled state view, using Toast", e)
             }
         }
     }
@@ -133,9 +147,9 @@ class MonitorFragment : Fragment() {
             Log.d(TAG, "🚩 MonitorFragment resumed")
         }
 
-        // Show reminder if feature is disabled
-        if (!FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
-            // Don't spam with toasts, just log
+        // Show reminder if feature is disabled but only once
+        if (!FeatureFlags.ENABLE_MONITOR_FRAGMENT && _binding != null) {
+            // Don't spam with toasts, message is already shown in UI
             if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
                 Log.w(TAG, "🚩 Monitor fragment feature disabled")
             }
@@ -151,10 +165,22 @@ class MonitorFragment : Fragment() {
 
         _binding = null
     }
-}
-Log.d(TAG, "🚩 Monitor ViewPager setup completed")
-}
-} else {
-    showFeatureDisabledState()
 
-    if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+    /**
+     * 🚩 SURGICAL CUTTING: Public method to check if fragment is functional
+     */
+    fun isFeatureEnabled(): Boolean {
+        return FeatureFlags.ENABLE_MONITOR_FRAGMENT
+    }
+
+    /**
+     * 🚩 SURGICAL CUTTING: Get feature status message
+     */
+    fun getFeatureStatusMessage(): String {
+        return if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
+            "Monitor fitur aktif"
+        } else {
+            "Monitor fitur sedang dikembangkan"
+        }
+    }
+}

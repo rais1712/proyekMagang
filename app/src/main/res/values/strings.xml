@@ -38,6 +38,10 @@
     <string name="label_id_loket">ID Loket</string>
     <string name="label_saldo">Saldo</string>
 
+    <!-- 🚩 FIXED: Added missing label_ref and label_sisa_saldo -->
+    <string name="label_ref">No. Ref: %1$s</string>
+    <string name="label_sisa_saldo">Sisa Saldo: %1$s</string>
+
     <!-- Bottom Navigation -->
     <string name="nav_home">Beranda</string>
     <string name="nav_monitor">Monitor Loket</string>
@@ -48,7 +52,7 @@
     <string name="no_search_results">Loket tidak ditemukan</string>
     <string name="no_recent_history">Belum ada riwayat pencarian</string>
 
-    !-- HOME FRAGMENT EMPTY STATES -->
+    <!-- HOME FRAGMENT EMPTY STATES -->
     <string name="empty_no_recent_history">Belum ada riwayat penelusuran.\nCoba cari loket menggunakan nomor telepon.</string>
     <string name="empty_no_search_results">Loket tidak ditemukan.\nPeriksa kembali nomor telepon atau coba kata kunci lain.</string>
     <string name="empty_search_hint">Mulai ketik nomor telepon untuk mencari loket</string>

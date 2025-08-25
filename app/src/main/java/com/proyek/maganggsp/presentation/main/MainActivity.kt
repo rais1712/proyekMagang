@@ -71,38 +71,75 @@ class MainActivity : AppCompatActivity() {
 
         // 🚩 FEATURE FLAGS: Conditional Bottom Navigation Setup
         if (FeatureFlags.ENABLE_BOTTOM_NAVIGATION) {
+            configureBottomNavigationForFeatureFlags()
+
+            // Setup with navController AFTER configuration
             binding.bottomNavigation.setupWithNavController(navController)
 
             // Handle navigation item reselection
             binding.bottomNavigation.setOnItemReselectedListener { item ->
                 when (item.itemId) {
                     R.id.homeFragment -> {
-                        // Could refresh home fragment
                         if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                            Log.d(TAG, "Home fragment reselected")
+                            Log.d(TAG, "🚩 Home fragment reselected")
                         }
                     }
                     R.id.historyFragment -> {
                         if (FeatureFlags.ENABLE_HISTORY_FRAGMENT) {
-                            // Could refresh history
                             if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                                Log.d(TAG, "History fragment reselected")
+                                Log.d(TAG, "🚩 History fragment reselected")
                             }
                         }
                     }
                     R.id.monitorFragment -> {
                         if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
-                            // Could refresh monitor data
                             if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                                Log.d(TAG, "Monitor fragment reselected")
+                                Log.d(TAG, "🚩 Monitor fragment reselected")
                             }
                         }
                     }
                 }
             }
 
-            // 🚩 FEATURE FLAGS: Conditional menu items
-            configureBottomNavigationForFeatureFlags()
+            // 🚩 SAFE NAVIGATION: Handle item selection with feature flag checks
+            binding.bottomNavigation.setOnItemSelectedListener { item ->
+                when (item.itemId) {
+                    R.id.homeFragment -> {
+                        // Home is always available
+                        navController.navigate(R.id.homeFragment)
+                        true
+                    }
+                    R.id.historyFragment -> {
+                        if (FeatureFlags.ENABLE_HISTORY_FRAGMENT) {
+                            try {
+                                navController.navigate(R.id.historyFragment)
+                                true
+                            } catch (e: Exception) {
+                                showFeatureTemporarilyDisabled("Riwayat")
+                                false
+                            }
+                        } else {
+                            showFeatureTemporarilyDisabled("Riwayat")
+                            false
+                        }
+                    }
+                    R.id.monitorFragment -> {
+                        if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
+                            try {
+                                navController.navigate(R.id.monitorFragment)
+                                true
+                            } catch (e: Exception) {
+                                showFeatureTemporarilyDisabled("Monitor")
+                                false
+                            }
+                        } else {
+                            showFeatureTemporarilyDisabled("Monitor")
+                            false
+                        }
+                    }
+                    else -> false
+                }
+            }
 
         } else {
             // Hide bottom navigation if disabled
@@ -158,6 +195,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showFeatureTemporarilyDisabled(featureName: String) {
+        android.widget.Toast.makeText(
+            this,
+            "Fitur $featureName sedang dikembangkan",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+
+        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            Log.w(TAG, "🚩 Feature temporarily disabled message shown: $featureName")
+        }
+    }
+
     private fun setupBackPressedHandler() {
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
@@ -180,6 +229,10 @@ class MainActivity : AppCompatActivity() {
         // 🚩 FEATURE FLAGS: Add logout menu only if enabled
         if (FeatureFlags.ENABLE_LOGOUT) {
             menuInflater.inflate(R.menu.main_menu, menu)
+
+            // 🚩 FEATURE FLAGS: Show debug info only in debug mode
+            menu?.findItem(R.id.action_debug_info)?.isVisible = FeatureFlags.ENABLE_DEBUG_LOGGING
+
             return true
         }
         return super.onCreateOptionsMenu(menu)
@@ -191,6 +244,8 @@ class MainActivity : AppCompatActivity() {
                 // 🚩 FEATURE FLAGS: Handle logout only if enabled
                 if (FeatureFlags.ENABLE_LOGOUT) {
                     showLogoutConfirmation()
+                } else {
+                    showFeatureTemporarilyDisabled("Logout")
                 }
                 true
             }
@@ -198,6 +253,8 @@ class MainActivity : AppCompatActivity() {
                 // 🚩 FEATURE FLAGS: Debug info only in debug mode
                 if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
                     showDebugInfo()
+                } else {
+                    showFeatureTemporarilyDisabled("Debug Info")
                 }
                 true
             }
@@ -214,7 +271,14 @@ class MainActivity : AppCompatActivity() {
             R.id.historyFragment -> {
                 // 🚩 FEATURE FLAGS: Only navigate if fragments are enabled
                 if (FeatureFlags.ENABLE_HISTORY_FRAGMENT) {
-                    navController.navigate(R.id.homeFragment)
+                    try {
+                        navController.navigate(R.id.homeFragment)
+                    } catch (e: Exception) {
+                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                            Log.e(TAG, "🚩 Navigation error from history to home", e)
+                        }
+                        showExitConfirmation()
+                    }
                 } else {
                     showExitConfirmation()
                 }
@@ -222,7 +286,14 @@ class MainActivity : AppCompatActivity() {
             R.id.monitorFragment -> {
                 // 🚩 FEATURE FLAGS: Only navigate if fragments are enabled
                 if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
-                    navController.navigate(R.id.homeFragment)
+                    try {
+                        navController.navigate(R.id.homeFragment)
+                    } catch (e: Exception) {
+                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                            Log.e(TAG, "🚩 Navigation error from monitor to home", e)
+                        }
+                        showExitConfirmation()
+                    }
                 } else {
                     showExitConfirmation()
                 }
@@ -230,7 +301,14 @@ class MainActivity : AppCompatActivity() {
             else -> {
                 // Try to pop back stack, fallback to home
                 if (!navController.popBackStack()) {
-                    navController.navigate(R.id.homeFragment)
+                    try {
+                        navController.navigate(R.id.homeFragment)
+                    } catch (e: Exception) {
+                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                            Log.e(TAG, "🚩 Navigation error to home fallback", e)
+                        }
+                        showExitConfirmation()
+                    }
                 }
             }
         }
@@ -261,13 +339,13 @@ class MainActivity : AppCompatActivity() {
             .setMessage("Apakah Anda yakin ingin keluar dari GesPay Admin?")
             .setPositiveButton("Ya") { _, _ ->
                 if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "User confirmed app exit")
+                    Log.d(TAG, "🚩 User confirmed app exit")
                 }
                 finish()
             }
             .setNegativeButton("Tidak") { _, _ ->
                 if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "User cancelled app exit")
+                    Log.d(TAG, "🚩 User cancelled app exit")
                 }
             }
             .show()
@@ -278,6 +356,7 @@ class MainActivity : AppCompatActivity() {
             if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
                 Log.w(TAG, "🚩 Logout attempt blocked by feature flag")
             }
+            showFeatureTemporarilyDisabled("Logout")
             return
         }
 
@@ -288,11 +367,11 @@ class MainActivity : AppCompatActivity() {
                 if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
                     Log.d(TAG, "🚩 User confirmed logout")
                 }
-                viewModel.confirmLogout()
+                viewModel.logout()
             }
             .setNegativeButton("Tidak") { _, _ ->
                 if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "User cancelled logout")
+                    Log.d(TAG, "🚩 User cancelled logout")
                 }
             }
             .show()
@@ -353,9 +432,6 @@ class MainActivity : AppCompatActivity() {
                     }
                     is MainViewModel.UiEvent.ShowMessage -> {
                         android.widget.Toast.makeText(this@MainActivity, event.message, android.widget.Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {
-                        // Handle other events
                     }
                 }
             }

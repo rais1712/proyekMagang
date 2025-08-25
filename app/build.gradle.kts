@@ -17,12 +17,22 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
+        buildConfigField("int", "VERSION_CODE", "${versionCode}")
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            buildConfigField("String", "BUILD_TYPE", "\"debug\"")
+            buildConfigField("String", "BASE_URL", "\"http://192.168.168.6:8180/api/\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            buildConfigField("String", "BUILD_TYPE", "\"release\"")
+            buildConfigField("String", "BASE_URL", "\"https://api.gespay.com/api/\"")
         }
     }
 
@@ -37,6 +47,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 

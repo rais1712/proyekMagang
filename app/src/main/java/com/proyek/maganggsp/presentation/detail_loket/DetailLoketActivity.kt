@@ -362,9 +362,9 @@ class DetailLoketActivity : AppCompatActivity() {
                     Log.d(TAG, "🚩 Toast event: ${event.message}")
                 }
             }
+            else -> {} // Handle all other cases
         }
     }
-
     private fun setButtonsEnabled(isEnabled: Boolean) {
         if (!FeatureFlags.ENABLE_LOKET_ACTIONS) return
 
