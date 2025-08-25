@@ -47,4 +47,40 @@
     <string name="history_title">Riwayat Penelusuran</string>
     <string name="no_search_results">Loket tidak ditemukan</string>
     <string name="no_recent_history">Belum ada riwayat pencarian</string>
+
+    !-- HOME FRAGMENT EMPTY STATES -->
+    <string name="empty_no_recent_history">Belum ada riwayat penelusuran.\nCoba cari loket menggunakan nomor telepon.</string>
+    <string name="empty_no_search_results">Loket tidak ditemukan.\nPeriksa kembali nomor telepon atau coba kata kunci lain.</string>
+    <string name="empty_search_hint">Mulai ketik nomor telepon untuk mencari loket</string>
+
+    <!-- HISTORY FRAGMENT EMPTY STATES -->
+    <string name="empty_history_full">Belum ada riwayat penelusuran loket.\nKembali ke Beranda untuk mulai mencari.</string>
+    <string name="empty_history_suggestion">💡 Gunakan fitur pencarian di Beranda untuk melihat detail loket</string>
+
+    <!-- MONITOR FRAGMENT EMPTY STATES -->
+    <string name="empty_flagged_lokets">Tidak ada loket yang dipantau saat ini.\n✅ Semua loket dalam kondisi normal.</string>
+    <string name="empty_blocked_lokets">Tidak ada loket yang diblokir.\n✅ Semua loket aktif dan dapat digunakan.</string>
+    <string name="empty_monitor_suggestion">💡 Loket bermasalah akan muncul di sini secara otomatis</string>
+
+    <!-- DETAIL LOKET EMPTY STATES -->
+    <string name="empty_mutations_no_data">Belum ada riwayat transaksi untuk loket ini.\nData mutasi akan muncul setelah ada aktivitas.</string>
+    <string name="empty_mutations_loading_failed">Gagal memuat riwayat transaksi.\nTarik ke bawah untuk mencoba lagi.</string>
+
+    <!-- ACTION SUGGESTIONS -->
+    <string name="suggestion_try_search">Coba pencarian dengan kata kunci lain</string>
+    <string name="suggestion_check_connection">Periksa koneksi internet Anda</string>
+    <string name="suggestion_pull_refresh">Tarik ke bawah untuk memperbarui</string>
+    <string name="suggestion_back_to_home">Kembali ke Beranda</string>
+
+    <!-- SEARCH STATES -->
+    <string name="search_placeholder_hint">Ketik nomor telepon loket...</string>
+    <string name="search_minimum_chars">Minimal 3 karakter untuk pencarian</string>
+    <string name="search_no_connection">Tidak ada koneksi internet.\nPencarian tidak tersedia.</string>
+
+    <!-- LOADING MESSAGES -->
+    <string name="loading_search_results">Mencari loket...</string>
+    <string name="loading_loket_details">Memuat detail loket...</string>
+    <string name="loading_mutations">Memuat riwayat transaksi...</string>
+    <string name="loading_history">Memuat riwayat...</string>
+    <string name="loading_monitor_data">Memuat data pemantauan...</string>
 </resources>

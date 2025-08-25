@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeFragment.kt
 package com.proyek.maganggsp.presentation.home
 
 import android.os.Bundle
@@ -15,6 +16,7 @@ import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.FragmentHomeBinding
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.applyToStandardLoadingViews
+import com.proyek.maganggsp.util.EmptyStateHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -85,10 +87,10 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // ENHANCED: Using new standardized loading state management
+        // ENHANCED: Using standardized loading + smart empty states
         lifecycleScope.launch {
             viewModel.uiState.collectLatest { resource ->
-                // FIXED: Using new applyToStandardLoadingViews with standardized shimmer ID
+                // Standardized loading management
                 resource.applyToStandardLoadingViews(
                     shimmerView = binding.standardShimmerLayout,
                     contentView = binding.rvLoketList,
@@ -100,18 +102,31 @@ class HomeFragment : Fragment() {
 
                 when (resource) {
                     is Resource.Success -> {
-                        loketAdapter.differ.submitList(resource.data ?: emptyList())
+                        val data = resource.data ?: emptyList()
+                        loketAdapter.differ.submitList(data)
 
-                        // ENHANCED: Context-aware empty state message
-                        val isSearchMode = binding.etSearch.text.toString().trim().isNotEmpty()
-                        binding.tvEmptyHistory.text = if (isSearchMode) {
-                            getString(R.string.no_search_results)
-                        } else {
-                            getString(R.string.no_recent_history)
-                        }
+                        // ENHANCED: Smart contextual empty state
+                        val currentQuery = binding.etSearch.text.toString().trim()
+                        val isSearchMode = currentQuery.isNotEmpty()
+
+                        EmptyStateHandler.applySmartEmptyState(
+                            textView = binding.tvEmptyHistory,
+                            context = "home",
+                            itemCount = data.size,
+                            isSearchMode = isSearchMode,
+                            searchQuery = currentQuery,
+                            hasNetworkConnection = true // TODO: Add actual network check
+                        )
                     }
                     is Resource.Error -> {
                         Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show()
+
+                        // Show network-aware empty state
+                        EmptyStateHandler.applyEmptyState(
+                            textView = binding.tvEmptyHistory,
+                            emptyStateType = EmptyStateHandler.EmptyStateType.NoConnection,
+                            isVisible = true
+                        )
                     }
                     else -> Unit // Loading dan Empty state sudah dihandle oleh extension
                 }
