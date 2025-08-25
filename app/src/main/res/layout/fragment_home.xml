@@ -16,6 +16,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- ADDED: Logout button in header -->
+    <ImageButton
+        android:id="@+id/btnLogout"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginEnd="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Logout"
+        android:padding="8dp"
+        android:src="@drawable/ic_logout_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
     <TextView
         android:id="@+id/tvAdminName"
         android:layout_width="0dp"
@@ -27,7 +42,7 @@
         android:textColor="@color/yellow_secondary_accent"
         android:textSize="22sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnLogout"
         app:layout_constraintStart_toStartOf="@id/tvGreeting"
         app:layout_constraintTop_toBottomOf="@id/tvGreeting"
         tools:text="Nama Admin Panjang Sekali" />
@@ -88,6 +103,7 @@
                 android:layout_height="wrap_content"
                 android:paddingBottom="24dp">
 
+                <!-- SIMPLIFIED: Show recent history title only when not in search mode -->
                 <TextView
                     android:id="@+id/tvRecentHistoryTitle"
                     android:layout_width="wrap_content"
@@ -113,7 +129,6 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@id/tvRecentHistoryTitle" />
 
-                <!-- FIXED: Renamed from shimmerLayoutHistory to standardShimmerLayout -->
                 <com.facebook.shimmer.ShimmerFrameLayout
                     android:id="@+id/standardShimmerLayout"
                     android:layout_width="0dp"

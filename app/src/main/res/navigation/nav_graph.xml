@@ -5,26 +5,23 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
+    <!-- SIMPLIFIED: Only HomeFragment for basic login-logout flow -->
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.proyek.maganggsp.presentation.home.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" >
-        <action
-            android:id="@+id/action_homeFragment_to_historyFragment"
-            app:destination="@id/historyFragment"
-            app:popUpTo="@id/nav_graph"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/action_homeFragment_to_monitorFragment"
-            app:destination="@id/monitorFragment"
-            app:popUpTo="@id/nav_graph"
-            app:popUpToInclusive="true" />
+
+        <!-- FUTURE: Uncomment when DetailLoketActivity is stable -->
+        <!--
         <action
             android:id="@+id/action_homeFragment_to_detailLoketActivity"
             app:destination="@id/detailLoketActivity" />
+        -->
     </fragment>
 
+    <!-- DISABLED TEMPORARILY: Uncomment when these fragments are ready -->
+    <!--
     <fragment
         android:id="@+id/historyFragment"
         android:name="com.proyek.maganggsp.presentation.history.HistoryFragment"
@@ -33,11 +30,6 @@
         <action
             android:id="@+id/action_historyFragment_to_homeFragment"
             app:destination="@id/homeFragment"
-            app:popUpTo="@id/nav_graph"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/action_historyFragment_to_monitorFragment"
-            app:destination="@id/monitorFragment"
             app:popUpTo="@id/nav_graph"
             app:popUpToInclusive="true" />
         <action
@@ -56,12 +48,6 @@
             app:popUpTo="@id/nav_graph"
             app:popUpToInclusive="true" />
         <action
-            android:id="@+id/action_monitorFragment_to_historyFragment"
-            app:destination="@id/historyFragment"
-            app:popUpTo="@id/nav_graph"
-            app:popUpToInclusive="true" />
-
-        <action
             android:id="@+id/action_monitorFragment_to_detailLoketActivity"
             app:destination="@id/detailLoketActivity" />
     </fragment>
@@ -71,11 +57,10 @@
         android:name="com.proyek.maganggsp.presentation.detail_loket.DetailLoketActivity"
         android:label="activity_detail_loket"
         tools:layout="@layout/activity_detail_loket" >
-
         <argument
             android:name="noLoket"
             app:argType="string" />
-
     </activity>
+    -->
 
 </navigation>

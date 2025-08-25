@@ -1,5 +1,7 @@
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt
 package com.proyek.maganggsp.presentation.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.Admin
@@ -7,6 +9,7 @@ import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.usecase.auth.GetAdminProfileUseCase
 import com.proyek.maganggsp.domain.usecase.history.GetRecentHistoryUseCase
 import com.proyek.maganggsp.domain.usecase.loket.SearchLoketUseCase
+import com.proyek.maganggsp.util.FeatureFlags
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -28,52 +31,27 @@ class HomeViewModel @Inject constructor(
     private val _adminProfileState = MutableStateFlow<Admin?>(null)
     val adminProfileState = _adminProfileState.asStateFlow()
 
-    // FIXED: Gunakan Resource.Empty sebagai object
     private val _uiState = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
     val uiState = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
     private var lastRecentHistory: List<Loket> = emptyList()
 
+    companion object {
+        private const val TAG = "HomeViewModel"
+    }
+
     init {
+        if (FeatureFlags.ENABLE_DEBUG_LOGS) {
+            Log.d(TAG, "=== HOME VIEWMODEL INITIALIZED ===")
+            Log.d(TAG, "Admin Profile Enabled: ${FeatureFlags.ENABLE_ADMIN_PROFILE_DISPLAY}")
+            Log.d(TAG, "Real Data Loading: ${FeatureFlags.ENABLE_REAL_DATA_LOADING}")
+            Log.d(TAG, "API Calls Enabled: ${FeatureFlags.ENABLE_LOKET_API_CALLS}")
+        }
+
         loadAdminProfile()
-        loadRecentHistory()
+        loadInitialData()
     }
 
-    fun loadAdminProfile() {
-        viewModelScope.launch {
-            _adminProfileState.value = getAdminProfileUseCase()
-        }
-    }
-
-    fun loadRecentHistory() {
-        getRecentHistoryUseCase().onEach { result ->
-            if (result is Resource.Success) {
-                lastRecentHistory = result.data ?: emptyList()
-            }
-            _uiState.value = result
-        }.launchIn(viewModelScope)
-    }
-
-    fun searchLoket(query: String) {
-        searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            delay(500L)
-            if (query.isBlank()) {
-                clearSearch()
-            } else {
-                searchLoketUseCase(query).onEach { result ->
-                    _uiState.value = result
-                }.launchIn(viewModelScope)
-            }
-        }
-    }
-
-    fun clearSearch() {
-        _uiState.value = Resource.Success(lastRecentHistory)
-    }
-
-    fun refresh() {
-        loadRecentHistory()
-    }
-}
+    private fun loadAdminProfile() {
+        if (FeatureFlags.ENABLE_ADMIN_PROFILE

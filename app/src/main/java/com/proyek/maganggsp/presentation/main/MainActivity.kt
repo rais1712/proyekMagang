@@ -1,11 +1,14 @@
-// MODERNIZED: Updated MainActivity with latest Android practices
-// File: app/src/main/java/com/proyek/maganggsp/presentation/MainActivity.kt
-
+// File: app/src/main/java/com/proyek/maganggsp/presentation/main/MainActivity.kt
 package com.proyek.maganggsp.presentation.main
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
@@ -14,6 +17,8 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityMainBinding
+import com.proyek.maganggsp.presentation.login.LoginActivity
+import com.proyek.maganggsp.util.FeatureFlags
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -26,7 +31,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private val viewModel: MainViewModel by viewModels()
 
-    // MODERNIZED: Use OnBackPressedCallback instead of deprecated onBackPressed
+    companion object {
+        private const val TAG = "MainActivity"
+    }
+
+    // Modern back press handling
     private val onBackPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             handleBackNavigation()
@@ -35,11 +44,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 🚩 FEATURE FLAGS: Log current configuration
+        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            Log.i(TAG, "🚩 Starting MainActivity with Feature Flags:")
+            Log.i(TAG, FeatureFlags.getFeatureSummary())
+        }
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupNavigation()
         setupBackPressedHandler()
+        setupLogoutFeature()
         observeViewModel()
 
         // Check session validity on app start
@@ -52,79 +69,254 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
-        // Setup BottomNavigation with NavController
-        binding.bottomNavigation.setupWithNavController(navController)
+        // 🚩 FEATURE FLAGS: Conditional Bottom Navigation Setup
+        if (FeatureFlags.ENABLE_BOTTOM_NAVIGATION) {
+            binding.bottomNavigation.setupWithNavController(navController)
 
-        // ENHANCED: Handle navigation item reselection
-        binding.bottomNavigation.setOnItemReselectedListener { item ->
-            when (item.itemId) {
-                R.id.homeFragment -> {
-                    // Scroll to top or refresh if already on home
-                    // This can be enhanced with fragment communication
+            // Handle navigation item reselection
+            binding.bottomNavigation.setOnItemReselectedListener { item ->
+                when (item.itemId) {
+                    R.id.homeFragment -> {
+                        // Could refresh home fragment
+                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                            Log.d(TAG, "Home fragment reselected")
+                        }
+                    }
+                    R.id.historyFragment -> {
+                        if (FeatureFlags.ENABLE_HISTORY_FRAGMENT) {
+                            // Could refresh history
+                            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                                Log.d(TAG, "History fragment reselected")
+                            }
+                        }
+                    }
+                    R.id.monitorFragment -> {
+                        if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
+                            // Could refresh monitor data
+                            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                                Log.d(TAG, "Monitor fragment reselected")
+                            }
+                        }
+                    }
                 }
-                R.id.historyFragment -> {
-                    // Refresh history if already on history fragment
-                }
-                R.id.monitorFragment -> {
-                    // Refresh monitor data if already on monitor fragment
-                }
+            }
+
+            // 🚩 FEATURE FLAGS: Conditional menu items
+            configureBottomNavigationForFeatureFlags()
+
+        } else {
+            // Hide bottom navigation if disabled
+            binding.bottomNavigation.isVisible = false
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.w(TAG, "🚩 Bottom navigation disabled by feature flag")
             }
         }
 
-        // ENHANCED: Navigation destination change listener
+        // Navigation destination listener
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            // Show/hide bottom navigation based on destination
+            // 🚩 FEATURE FLAGS: Conditional navigation visibility
             when (destination.id) {
-                R.id.homeFragment,
-                R.id.historyFragment,
+                R.id.homeFragment -> {
+                    binding.bottomNavigation.isVisible = FeatureFlags.ENABLE_BOTTOM_NAVIGATION
+                    updateActionBarForHome()
+                }
+                R.id.historyFragment -> {
+                    binding.bottomNavigation.isVisible = FeatureFlags.ENABLE_BOTTOM_NAVIGATION && FeatureFlags.ENABLE_HISTORY_FRAGMENT
+                    updateActionBarForHistory()
+                }
                 R.id.monitorFragment -> {
-                    binding.bottomNavigation.isVisible = true
+                    binding.bottomNavigation.isVisible = FeatureFlags.ENABLE_BOTTOM_NAVIGATION && FeatureFlags.ENABLE_MONITOR_FRAGMENT
+                    updateActionBarForMonitor()
                 }
                 else -> {
                     binding.bottomNavigation.isVisible = false
                 }
             }
 
-            // Update back button behavior based on destination
-            onBackPressedCallback.isEnabled = true
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.d(TAG, "🚩 Navigated to: ${destination.label}")
+            }
+        }
+    }
+
+    private fun configureBottomNavigationForFeatureFlags() {
+        val menu = binding.bottomNavigation.menu
+
+        // 🚩 FEATURE FLAGS: Hide disabled fragments
+        if (!FeatureFlags.ENABLE_HISTORY_FRAGMENT) {
+            menu.findItem(R.id.historyFragment)?.isVisible = false
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.w(TAG, "🚩 History fragment hidden by feature flag")
+            }
+        }
+
+        if (!FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
+            menu.findItem(R.id.monitorFragment)?.isVisible = false
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.w(TAG, "🚩 Monitor fragment hidden by feature flag")
+            }
         }
     }
 
     private fun setupBackPressedHandler() {
-        // MODERNIZED: Use OnBackPressedDispatcher
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+    }
+
+    private fun setupLogoutFeature() {
+        // 🚩 FEATURE FLAGS: Only setup logout if enabled
+        if (FeatureFlags.ENABLE_LOGOUT) {
+            // We'll add logout menu in onCreateOptionsMenu
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.d(TAG, "🚩 Logout feature enabled")
+            }
+        } else {
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.w(TAG, "🚩 Logout feature disabled")
+            }
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        // 🚩 FEATURE FLAGS: Add logout menu only if enabled
+        if (FeatureFlags.ENABLE_LOGOUT) {
+            menuInflater.inflate(R.menu.main_menu, menu)
+            return true
+        }
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_logout -> {
+                // 🚩 FEATURE FLAGS: Handle logout only if enabled
+                if (FeatureFlags.ENABLE_LOGOUT) {
+                    showLogoutConfirmation()
+                }
+                true
+            }
+            R.id.action_debug_info -> {
+                // 🚩 FEATURE FLAGS: Debug info only in debug mode
+                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                    showDebugInfo()
+                }
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun handleBackNavigation() {
         when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
-                // If on HomeFragment, exit app with confirmation
+                // From home, show exit confirmation
                 showExitConfirmation()
             }
-            R.id.historyFragment,
+            R.id.historyFragment -> {
+                // 🚩 FEATURE FLAGS: Only navigate if fragments are enabled
+                if (FeatureFlags.ENABLE_HISTORY_FRAGMENT) {
+                    navController.navigate(R.id.homeFragment)
+                } else {
+                    showExitConfirmation()
+                }
+            }
             R.id.monitorFragment -> {
-                // From other main fragments, go to HomeFragment
-                navController.navigate(R.id.homeFragment)
+                // 🚩 FEATURE FLAGS: Only navigate if fragments are enabled
+                if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
+                    navController.navigate(R.id.homeFragment)
+                } else {
+                    showExitConfirmation()
+                }
             }
             else -> {
-                // For other destinations, use default back behavior
+                // Try to pop back stack, fallback to home
                 if (!navController.popBackStack()) {
-                    // If no back stack, go to home
                     navController.navigate(R.id.homeFragment)
                 }
             }
         }
     }
 
+    private fun updateActionBarForHome() {
+        supportActionBar?.title = "GesPay Admin"
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+    }
+
+    private fun updateActionBarForHistory() {
+        if (FeatureFlags.ENABLE_HISTORY_FRAGMENT) {
+            supportActionBar?.title = "Riwayat"
+            supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        }
+    }
+
+    private fun updateActionBarForMonitor() {
+        if (FeatureFlags.ENABLE_MONITOR_FRAGMENT) {
+            supportActionBar?.title = "Monitor"
+            supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        }
+    }
+
     private fun showExitConfirmation() {
-        // ENHANCED: Exit confirmation dialog
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Keluar Aplikasi")
             .setMessage("Apakah Anda yakin ingin keluar dari GesPay Admin?")
             .setPositiveButton("Ya") { _, _ ->
+                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                    Log.d(TAG, "User confirmed app exit")
+                }
                 finish()
             }
-            .setNegativeButton("Tidak", null)
+            .setNegativeButton("Tidak") { _, _ ->
+                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                    Log.d(TAG, "User cancelled app exit")
+                }
+            }
+            .show()
+    }
+
+    private fun showLogoutConfirmation() {
+        if (!FeatureFlags.ENABLE_LOGOUT) {
+            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                Log.w(TAG, "🚩 Logout attempt blocked by feature flag")
+            }
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Logout")
+            .setMessage("Apakah Anda yakin ingin logout?")
+            .setPositiveButton("Ya") { _, _ ->
+                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                    Log.d(TAG, "🚩 User confirmed logout")
+                }
+                viewModel.confirmLogout()
+            }
+            .setNegativeButton("Tidak") { _, _ ->
+                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                    Log.d(TAG, "User cancelled logout")
+                }
+            }
+            .show()
+    }
+
+    private fun showDebugInfo() {
+        if (!FeatureFlags.ENABLE_DEBUG_LOGGING) return
+
+        val debugInfo = """
+            🚩 FEATURE FLAGS STATUS:
+            ${FeatureFlags.getFeatureSummary()}
+            
+            📱 SESSION INFO:
+            ${viewModel.getSessionDebugInfo()}
+            
+            🧭 NAVIGATION INFO:
+            Current: ${navController.currentDestination?.label}
+            Enabled Items: ${FeatureFlags.getEnabledBottomNavItems().joinToString(", ")}
+        """.trimIndent()
+
+        AlertDialog.Builder(this)
+            .setTitle("Debug Info")
+            .setMessage(debugInfo)
+            .setPositiveButton("OK", null)
             .show()
     }
 
@@ -133,14 +325,18 @@ class MainActivity : AppCompatActivity() {
             viewModel.sessionState.collectLatest { resource ->
                 when (resource) {
                     is Resource.Error -> {
-                        // Session invalid, redirect to login
+                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                            Log.e(TAG, "🚩 Session error: ${resource.message}")
+                        }
                         handleSessionExpired()
                     }
                     is Resource.Success -> {
-                        // Session valid, continue normal operation
+                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                            Log.d(TAG, "🚩 Session valid")
+                        }
                     }
                     else -> {
-                        // Handle loading or empty states if needed
+                        // Handle loading or empty states
                     }
                 }
             }
@@ -150,17 +346,16 @@ class MainActivity : AppCompatActivity() {
             viewModel.eventFlow.collectLatest { event ->
                 when (event) {
                     is MainViewModel.UiEvent.SessionExpired -> {
+                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                            Log.w(TAG, "🚩 Session expired event received")
+                        }
                         handleSessionExpired()
                     }
                     is MainViewModel.UiEvent.ShowMessage -> {
-                        // Show toast or snackbar
-                        androidx.core.content.ContextCompat.getMainExecutor(this@MainActivity).execute {
-                            android.widget.Toast.makeText(
-                                this@MainActivity,
-                                event.message,
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                        android.widget.Toast.makeText(this@MainActivity, event.message, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        // Handle other events
                     }
                 }
             }
@@ -168,29 +363,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleSessionExpired() {
-        // ENHANCED: Session expiry handling
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Sesi Berakhir")
             .setMessage("Sesi login Anda telah berakhir. Silakan login kembali.")
             .setPositiveButton("Login") { _, _ ->
-                // Navigate to login screen
-                val intent = android.content.Intent(this, com.proyek.maganggsp.presentation.login.LoginActivity::class.java)
-                intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                finish()
+                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                    Log.d(TAG, "🚩 Redirecting to login after session expiry")
+                }
+                navigateToLogin()
             }
             .setCancelable(false)
             .show()
     }
 
-    // ENHANCED: Handle configuration changes gracefully
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        // Save any necessary state
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        // Restore any necessary state
+    private fun navigateToLogin() {
+        val intent = Intent(this, LoginActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
+        finish()
     }
 }
