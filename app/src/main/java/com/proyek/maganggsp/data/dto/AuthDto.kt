@@ -10,12 +10,14 @@ data class LoginRequest(
     val password: String
 )
 
-// Respons login
+// FIXED: Respons login sesuai dengan format server yang sebenarnya
 data class LoginResponse(
-    @SerializedName("admin_name")
-    val adminName: String?,
-    @SerializedName("admin_email")
-    val adminEmail: String?,
     @SerializedName("token")
-    val token: String?
+    val token: String?,
+
+    @SerializedName("email")
+    val email: String?,
+
+    @SerializedName("role")
+    val role: String?
 )

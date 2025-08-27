@@ -53,10 +53,14 @@ object NetworkModule {
             val url = originalRequest.url
 
             val requestBuilder = originalRequest.newBuilder()
-                .addHeader("Content-Type", "application/json")
+                // FIXED: Remove existing Content-Type and add clean one without charset
+                .removeHeader("Content-Type")
+                .removeHeader("content-type") // Case insensitive removal
+                .addHeader("Content-Type", "application/json") // Clean, no charset=UTF-8
                 .addHeader("Accept", "application/json")
                 .addHeader("User-Agent", "GesPay-Admin-Android/${BuildConfig.VERSION_NAME}")
 
+            // Add auth token for authenticated endpoints
             if (token != null && !url.encodedPath.contains("/auth/login")) {
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             }
@@ -94,9 +98,10 @@ object NetworkModule {
         cache: Cache
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            // IMPORTANT: Auth interceptor first to set proper headers
             .addInterceptor(authInterceptor)
             .addNetworkInterceptor(networkErrorInterceptor)
-            .addInterceptor(loggingInterceptor)
+            .addInterceptor(loggingInterceptor) // Logging last to see final request
             .connectTimeout(NetworkConfig.CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(NetworkConfig.READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(NetworkConfig.WRITE_TIMEOUT, TimeUnit.SECONDS)
