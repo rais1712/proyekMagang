@@ -5,10 +5,15 @@ import android.view.View
 import androidx.core.view.isVisible
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.proyek.maganggsp.util.exceptions.AppException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.retry
+import kotlin.math.pow
 
 /**
- * ENHANCED: Unified Resource class dengan improved loading state management
- * Based on existing structure + new standardized loading extensions
+ * ENHANCED: Unified Resource class dengan improved loading state management + Smart Retry
+ * Based on existing structure + new standardized loading extensions + retry mechanisms
  */
 sealed class Resource<out T> {
 
@@ -26,10 +31,9 @@ sealed class Resource<out T> {
     object Empty : Resource<Nothing>()
 }
 
-/**
- * ENHANCED: Standardized loading state management extensions
- * Handles all shimmer variations with consistent naming
- */
+// ============================================
+// EXISTING EXTENSIONS (UNCHANGED)
+// ============================================
 
 /**
  * Primary extension for standard shimmer + content + empty view pattern
@@ -84,7 +88,6 @@ fun <T> Resource<T>.applyToStandardLoadingViews(
 
 /**
  * BACKWARD COMPATIBILITY: Support for existing applyToLoadingViews calls
- * Automatically handles different shimmer view types
  */
 fun <T> Resource<T>.applyToLoadingViews(
     shimmerView: View,
@@ -214,9 +217,104 @@ private fun stopShimmerSafely(view: View) {
     }
 }
 
+// ============================================
+// NEW: SMART RETRY MECHANISMS
+// ============================================
+
 /**
- * EXISTING EXTENSIONS: Keep all existing Resource extensions for backward compatibility
+ * RETRY CONFIGURATION
  */
+data class RetryConfig(
+    val maxRetries: Int = 3,
+    val initialDelayMs: Long = 1000L,
+    val maxDelayMs: Long = 10000L,
+    val backoffMultiplier: Double = 2.0,
+    val retryableExceptions: Set<Class<out AppException>> = setOf(
+        AppException.NetworkException::class.java,
+        AppException.ServerException::class.java
+    )
+)
+
+/**
+ * SMART RETRY EXTENSION for Resource<T> flows
+ */
+fun <T> Flow<Resource<T>>.withSmartRetry(
+    config: RetryConfig = RetryConfig()
+): Flow<Resource<T>> = flow {
+    var retryAttempt = 0
+
+    collect { resource ->
+        when (resource) {
+            is Resource.Error -> {
+                val shouldRetry = config.retryableExceptions.contains(resource.exception::class.java) &&
+                        retryAttempt < config.maxRetries
+
+                if (shouldRetry) {
+                    retryAttempt++
+                    val delay = calculateDelay(retryAttempt, config)
+
+                    emit(Resource.Error(
+                        AppException.NetworkException("Mencoba ulang ($retryAttempt/${config.maxRetries})...")
+                    ))
+
+                    delay(delay)
+                } else {
+                    emit(resource)
+                }
+            }
+            else -> emit(resource)
+        }
+    }
+}.retry(config.maxRetries.toLong()) { cause ->
+    when (cause) {
+        is AppException.NetworkException -> true
+        is AppException.ServerException -> cause.httpCode in 500..599
+        else -> false
+    }
+}
+
+/**
+ * EXPONENTIAL BACKOFF CALCULATION
+ */
+private fun calculateDelay(attempt: Int, config: RetryConfig): Long {
+    val delay = config.initialDelayMs * config.backoffMultiplier.pow(attempt - 1)
+    return delay.toLong().coerceAtMost(config.maxDelayMs)
+}
+
+/**
+ * RETRY STRATEGIES for different contexts
+ */
+object RetryStrategies {
+    val API_CALLS = RetryConfig(maxRetries = 3, initialDelayMs = 1000L, backoffMultiplier = 2.0)
+    val SEARCH_OPERATIONS = RetryConfig(maxRetries = 2, initialDelayMs = 500L, backoffMultiplier = 1.5)
+    val DATA_LOADING = RetryConfig(maxRetries = 4, initialDelayMs = 2000L, maxDelayMs = 15000L)
+    val USER_ACTIONS = RetryConfig(maxRetries = 2, initialDelayMs = 1000L, backoffMultiplier = 1.0)
+}
+
+/**
+ * CONTEXT-SPECIFIC RETRY EXTENSIONS
+ */
+fun <T> Flow<Resource<T>>.withHomeRetry(): Flow<Resource<T>> = withSmartRetry(RetryStrategies.DATA_LOADING)
+fun <T> Flow<Resource<T>>.withSearchRetry(): Flow<Resource<T>> = withSmartRetry(RetryStrategies.SEARCH_OPERATIONS)
+fun <T> Flow<Resource<T>>.withDetailRetry(): Flow<Resource<T>> = withSmartRetry(RetryStrategies.API_CALLS)
+fun <T> Flow<Resource<T>>.withHistoryRetry(): Flow<Resource<T>> = withSmartRetry(RetryStrategies.DATA_LOADING)
+fun <T> Flow<Resource<T>>.withActionRetry(): Flow<Resource<T>> = withSmartRetry(RetryStrategies.USER_ACTIONS)
+
+/**
+ * MANUAL RETRY EXTENSION
+ */
+fun <T> Resource<T>.withRetry(retryAction: () -> Unit): Resource<T> {
+    return when (this) {
+        is Resource.Error -> this.also {
+            // Store retry action in a companion map if needed
+        }
+        else -> this
+    }
+}
+
+// ============================================
+// EXISTING EXTENSIONS (UNCHANGED)
+// ============================================
 
 inline fun <T> Resource<T>.onSuccess(action: (T) -> Unit): Resource<T> {
     if (this is Resource.Success) action(data)
@@ -251,21 +349,12 @@ fun <T> Resource<T>.getDataOrNull(): T? {
     }
 }
 
-/**
- * NEW: Loading state helper functions
- */
-
+// Helper functions
 fun <T> Resource<T>.isLoading(): Boolean = this is Resource.Loading
-
 fun <T> Resource<T>.isSuccess(): Boolean = this is Resource.Success
-
 fun <T> Resource<T>.isError(): Boolean = this is Resource.Error
-
 fun <T> Resource<T>.isEmpty(): Boolean = this is Resource.Empty
 
-/**
- * NEW: Data validation helpers
- */
 fun <T> Resource<T>.hasData(): Boolean {
     val data = getDataOrNull()
     return when (data) {

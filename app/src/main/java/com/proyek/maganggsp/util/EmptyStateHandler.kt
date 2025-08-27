@@ -188,4 +188,29 @@ object EmptyStateHandler {
         val shouldShow = itemCount == 0
         applyEmptyState(textView, emptyStateType, shouldShow)
     }
+
+    /**
+     * Apply empty state dengan error handling integration
+     */
+    fun applyErrorState(
+        textView: TextView,
+        errorMessage: String,
+        errorType: ErrorDisplayHandler.ErrorType
+    ) {
+        textView.isVisible = true
+        textView.text = errorMessage
+
+        // Apply styling khusus untuk error
+        when (errorType) {
+            ErrorDisplayHandler.ErrorType.NETWORK -> {
+                textView.setTextColor(
+                    androidx.core.content.ContextCompat.getColor(
+                        textView.context,
+                        R.color.text_error // pastikan warna ini ada di colors.xml
+                    )
+                )
+            }
+            else -> applyEmptyStateStyle(textView, EmptyStateType.NoConnection)
+        }
+    }
 }
