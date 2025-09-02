@@ -12,10 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityDetailLoketBinding
-import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.applyToLoadingViews
-import com.proyek.maganggsp.util.FeatureFlags
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch

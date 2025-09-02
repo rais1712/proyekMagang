@@ -1,9 +1,9 @@
+// File: app/src/main/java/com/proyek/maganggsp/di/NetworkModule.kt - UPDATED
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.BuildConfig
 import com.proyek.maganggsp.data.api.AuthApi
-import com.proyek.maganggsp.data.api.HistoryApi
-import com.proyek.maganggsp.data.api.LoketApi
+import com.proyek.maganggsp.data.api.ProfileApi
 import com.proyek.maganggsp.data.source.local.SessionManager
 import dagger.Module
 import dagger.Provides
@@ -53,10 +53,9 @@ object NetworkModule {
             val url = originalRequest.url
 
             val requestBuilder = originalRequest.newBuilder()
-                // FIXED: Remove existing Content-Type and add clean one without charset
                 .removeHeader("Content-Type")
-                .removeHeader("content-type") // Case insensitive removal
-                .addHeader("Content-Type", "application/json") // Clean, no charset=UTF-8
+                .removeHeader("content-type")
+                .addHeader("Content-Type", "application/json")
                 .addHeader("Accept", "application/json")
                 .addHeader("User-Agent", "GesPay-Admin-Android/${BuildConfig.VERSION_NAME}")
 
@@ -98,10 +97,9 @@ object NetworkModule {
         cache: Cache
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            // IMPORTANT: Auth interceptor first to set proper headers
             .addInterceptor(authInterceptor)
             .addNetworkInterceptor(networkErrorInterceptor)
-            .addInterceptor(loggingInterceptor) // Logging last to see final request
+            .addInterceptor(loggingInterceptor)
             .connectTimeout(NetworkConfig.CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(NetworkConfig.READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(NetworkConfig.WRITE_TIMEOUT, TimeUnit.SECONDS)
@@ -119,22 +117,18 @@ object NetworkModule {
             .build()
     }
 
+    // KEEP: Existing AuthApi for login functionality
     @Singleton
     @Provides
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return retrofit.create(AuthApi::class.java)
     }
 
+    // NEW: ProfileApi for new endpoints
     @Singleton
     @Provides
-    fun provideLoketApi(retrofit: Retrofit): LoketApi {
-        return retrofit.create(LoketApi::class.java)
-    }
-
-    @Singleton
-    @Provides
-    fun provideHistoryApi(retrofit: Retrofit): HistoryApi {
-        return retrofit.create(HistoryApi::class.java)
+    fun provideProfileApi(retrofit: Retrofit): ProfileApi {
+        return retrofit.create(ProfileApi::class.java)
     }
 
     @Singleton

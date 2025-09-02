@@ -7,7 +7,6 @@ import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.usecase.auth.LoginUseCase
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.AppException
-import com.proyek.maganggsp.util.FeatureFlags
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

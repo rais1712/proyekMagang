@@ -18,7 +18,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityMainBinding
 import com.proyek.maganggsp.presentation.login.LoginActivity
-import com.proyek.maganggsp.util.FeatureFlags
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest

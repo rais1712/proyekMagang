@@ -11,7 +11,6 @@ import com.proyek.maganggsp.domain.usecase.auth.LogoutUseCase
 import com.proyek.maganggsp.data.source.local.SessionManager
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.AppException
-import com.proyek.maganggsp.util.FeatureFlags
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

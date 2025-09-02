@@ -1,12 +1,10 @@
-// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt
+// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt - UPDATED
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.data.repositoryImpl.AuthRepositoryImpl
-import com.proyek.maganggsp.data.repositoryImpl.HistoryRepositoryImpl
-import com.proyek.maganggsp.data.repositoryImpl.LoketRepositoryImpl
+import com.proyek.maganggsp.data.repositoryImpl.ProfileRepositoryImpl
 import com.proyek.maganggsp.domain.repository.AuthRepository
-import com.proyek.maganggsp.domain.repository.HistoryRepository
-import com.proyek.maganggsp.domain.repository.LoketRepository
+import com.proyek.maganggsp.domain.repository.ProfileRepository
 import com.proyek.maganggsp.util.exceptions.ExceptionMapper
 import dagger.Binds
 import dagger.Module
@@ -19,17 +17,15 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
+    // KEEP: AuthRepository for login functionality
     @Binds
     @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
+    // NEW: ProfileRepository for receipt & transaction data
     @Binds
     @Singleton
-    abstract fun bindLoketRepository(impl: LoketRepositoryImpl): LoketRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindHistoryRepository(impl: HistoryRepositoryImpl): HistoryRepository
+    abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
 
     companion object {
         @Provides

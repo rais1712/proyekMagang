@@ -14,7 +14,6 @@ import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityLoginBinding
 import com.proyek.maganggsp.presentation.main.MainActivity
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.FeatureFlags
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch

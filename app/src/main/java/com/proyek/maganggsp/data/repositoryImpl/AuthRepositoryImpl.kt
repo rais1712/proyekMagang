@@ -11,7 +11,6 @@ import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.repository.AuthRepository
 import com.proyek.maganggsp.util.exceptions.AppException
 import com.proyek.maganggsp.util.exceptions.ExceptionMapper
-import com.proyek.maganggsp.util.FeatureFlags
 import retrofit2.HttpException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
