@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/proyek/maganggsp/presentation/login/LoginActivity.kt - SIMPLIFIED
 package com.proyek.maganggsp.presentation.login
 
 import android.content.Intent
@@ -10,7 +11,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
-import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityLoginBinding
 import com.proyek.maganggsp.presentation.main.MainActivity
 import com.proyek.maganggsp.util.Resource
@@ -34,9 +34,7 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 LoginActivity created - API integration ready")
-        }
+        Log.d(TAG, "🔄 SIMPLIFIED LoginActivity created - FeatureFlags removed")
 
         setupUI()
         setupListeners()
@@ -45,16 +43,13 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // Pre-fill email untuk testing (hanya di debug mode)
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+        // Pre-fill credentials for testing in debug builds
+        if (com.proyek.maganggsp.BuildConfig.DEBUG) {
             binding.etEmail.setText("lalan@gsp.co.id")
             binding.etPassword.setText("123456")
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "🚩 Debug mode - pre-filled test credentials")
-            }
+            Log.d(TAG, "🔧 Debug mode - pre-filled test credentials")
         }
 
-        // Setup password toggle visibility
         updatePasswordToggleIcon()
     }
 
@@ -64,10 +59,7 @@ class LoginActivity : AppCompatActivity() {
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString()
 
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "🚩 Login attempt - Email: $email, Password length: ${password.length}")
-            }
-
+            Log.d(TAG, "🚀 Login attempt - Email: $email, Password length: ${password.length}")
             performLogin(email, password)
         }
 
@@ -77,13 +69,8 @@ class LoginActivity : AppCompatActivity() {
         }
 
         // Input validation on text change
-        binding.etEmail.addTextChangedListener {
-            clearLoginError()
-        }
-
-        binding.etPassword.addTextChangedListener {
-            clearLoginError()
-        }
+        binding.etEmail.addTextChangedListener { clearLoginError() }
+        binding.etPassword.addTextChangedListener { clearLoginError() }
 
         // Enter key handling
         binding.etPassword.setOnEditorActionListener { _, _, _ ->
@@ -95,13 +82,8 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun performLogin(email: String, password: String) {
-        // Clear previous errors
         clearLoginError()
-
-        // Hide keyboard
         hideKeyboard()
-
-        // Start login process
         viewModel.login(email, password)
     }
 
@@ -131,7 +113,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun clearLoginError() {
-        // Remove error styling if any
         binding.etEmail.error = null
         binding.etPassword.error = null
     }
@@ -141,7 +122,6 @@ class LoginActivity : AppCompatActivity() {
         imm.hideSoftInputFromWindow(binding.etPassword.windowToken, 0)
     }
 
-    // Observer untuk state UI (Loading, Error)
     private fun observeUiState() {
         lifecycleScope.launch {
             viewModel.loginState.collectLatest { resource ->
@@ -149,20 +129,14 @@ class LoginActivity : AppCompatActivity() {
 
                 when (resource) {
                     is Resource.Loading -> {
-                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                            Log.d(TAG, "🚩 Login in progress...")
-                        }
+                        Log.d(TAG, "⏳ Login in progress...")
                     }
                     is Resource.Error -> {
                         handleLoginError(resource.message)
-                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                            Log.e(TAG, "🚩 Login error: ${resource.message}")
-                        }
+                        Log.e(TAG, "❌ Login error: ${resource.message}")
                     }
                     is Resource.Success -> {
-                        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                            Log.d(TAG, "🚩 Login success received in state")
-                        }
+                        Log.d(TAG, "✅ Login success received in state")
                     }
                     else -> {
                         // Empty or other states
@@ -172,7 +146,6 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    // Observer khusus untuk event sekali jalan (Navigasi)
     private fun observeUiEvents() {
         lifecycleScope.launch {
             viewModel.eventFlow.collectLatest { event ->
@@ -191,32 +164,25 @@ class LoginActivity : AppCompatActivity() {
         binding.etEmail.isEnabled = !isLoading
         binding.etPassword.isEnabled = !isLoading
 
-        if (isLoading) {
-            binding.btnLogin.text = "Masuk..."
-        } else {
-            binding.btnLogin.text = "Log In"
-        }
+        binding.btnLogin.text = if (isLoading) "Logging in..." else "Log In"
     }
 
     private fun handleLoginError(message: String) {
-        // Show user-friendly error message
         val userMessage = getUserFriendlyErrorMessage(message)
-
         Toast.makeText(this, userMessage, Toast.LENGTH_LONG).show()
 
         // Focus on appropriate field based on error type
         when {
             message.contains("email", ignoreCase = true) -> {
                 binding.etEmail.requestFocus()
-                binding.etEmail.error = "Periksa email Anda"
+                binding.etEmail.error = "Check your email"
             }
             message.contains("password", ignoreCase = true) -> {
                 binding.etPassword.requestFocus()
-                binding.etPassword.error = "Periksa password Anda"
+                binding.etPassword.error = "Check your password"
             }
-            message.contains("koneksi", ignoreCase = true) ||
+            message.contains("connection", ignoreCase = true) ||
                     message.contains("network", ignoreCase = true) -> {
-                // Network error - no specific field focus
                 binding.etEmail.requestFocus()
             }
             else -> {
@@ -227,54 +193,45 @@ class LoginActivity : AppCompatActivity() {
 
     private fun getUserFriendlyErrorMessage(originalMessage: String): String {
         return when {
-            originalMessage.contains("401") || originalMessage.contains("salah") ->
-                "Email atau password salah. Silakan coba lagi."
-            originalMessage.contains("network") || originalMessage.contains("koneksi") ->
-                "Masalah koneksi internet. Periksa jaringan Anda."
+            originalMessage.contains("401") || originalMessage.contains("wrong") ->
+                "Incorrect email or password. Please try again."
+            originalMessage.contains("network") || originalMessage.contains("connection") ->
+                "Network connection issue. Please check your internet."
             originalMessage.contains("server") || originalMessage.contains("500") ->
-                "Server sedang bermasalah. Coba lagi nanti."
-            originalMessage.contains("email") && originalMessage.contains("kosong") ->
-                "Email harus diisi."
-            originalMessage.contains("password") && originalMessage.contains("kosong") ->
-                "Password harus diisi."
+                "Server is having issues. Try again later."
+            originalMessage.contains("email") && originalMessage.contains("empty") ->
+                "Email is required."
+            originalMessage.contains("password") && originalMessage.contains("empty") ->
+                "Password is required."
             originalMessage.contains("email") && originalMessage.contains("valid") ->
-                "Format email tidak valid."
+                "Invalid email format."
             originalMessage.length > 100 ->
-                "Terjadi kesalahan saat login. Silakan coba lagi."
+                "Login error occurred. Please try again."
             else -> originalMessage
         }
     }
 
     private fun handleLoginSuccess() {
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 Login successful - navigating to MainActivity")
-        }
+        Log.d(TAG, "✅ Login successful - navigating to MainActivity")
 
-        // Show success message
-        Toast.makeText(this, "Login berhasil! Selamat datang.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Login successful! Welcome.", Toast.LENGTH_SHORT).show()
 
-        // Navigate to MainActivity
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)
         finish()
 
-        // Add transition animation
         overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
     }
 
     override fun onResume() {
         super.onResume()
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 LoginActivity resumed")
-        }
+        Log.d(TAG, "🔄 LoginActivity resumed")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 LoginActivity destroyed")
-        }
+        Log.d(TAG, "🧹 LoginActivity destroyed")
     }
 }

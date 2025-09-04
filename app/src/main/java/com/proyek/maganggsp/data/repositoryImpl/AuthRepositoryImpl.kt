@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt
+// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt - BUG FIX
 package com.proyek.maganggsp.data.repositoryImpl
 
 import android.util.Log
@@ -28,7 +28,8 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun login(email: String, password: String): Admin {
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+        // BUG FIX: Debug logging only in debug builds (no FeatureFlags)
+        if (BuildConfig.DEBUG) {
             Log.d(TAG, "🚀 Starting API login process")
             Log.d(TAG, "📧 Email: $email")
             Log.d(TAG, "🔐 Password length: ${password.length}")
@@ -41,43 +42,37 @@ class AuthRepositoryImpl @Inject constructor(
 
             // Create request
             val request = LoginRequest(email, password)
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.d(TAG, "📤 Sending API request...")
             }
 
             // Make API call
             val response = api.login(request)
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.d(TAG, "📨 API response received")
                 Log.d(TAG, "✅ HTTP Status: ${response.code()}")
                 Log.d(TAG, "📄 Response successful: ${response.isSuccessful}")
-                Log.d(TAG, "📋 Response headers: ${response.headers()}")
-                if (!response.isSuccessful) {
-                    Log.e(TAG, "❌ Error response body: ${response.errorBody()?.string()}")
-                }
             }
 
             // Handle response
             if (!response.isSuccessful) {
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                if (BuildConfig.DEBUG) {
                     Log.e(TAG, "❌ API call failed - HTTP ${response.code()}")
-                    Log.e(TAG, "📄 Error body: ${response.errorBody()?.string()}")
                 }
                 throw HttpException(response)
             }
 
             val loginResponse = response.body()
             if (loginResponse == null) {
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+                if (BuildConfig.DEBUG) {
                     Log.e(TAG, "❌ Response body is null")
                 }
-                throw AppException.ParseException("Response kosong dari server")
+                throw AppException.ParseException("Empty response from server")
             }
 
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.d(TAG, "📋 Response data:")
                 Log.d(TAG, "  🔑 Token received: ${loginResponse.token != null}")
-                Log.d(TAG, "  🔑 Token length: ${loginResponse.token?.length ?: 0}")
                 Log.d(TAG, "  📧 Email: ${loginResponse.email}")
                 Log.d(TAG, "  👤 Role: ${loginResponse.role}")
             }
@@ -87,149 +82,115 @@ class AuthRepositoryImpl @Inject constructor(
 
             // Convert to domain model
             val admin = loginResponse.toDomain()
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.d(TAG, "🔄 Converted to domain model:")
                 Log.d(TAG, "  👤 Name: ${admin.name}")
                 Log.d(TAG, "  📧 Email: ${admin.email}")
-                Log.d(TAG, "  🔑 Token: ${admin.token.take(10)}...")
             }
 
             // Save session
             val sessionSaved = saveUserSession(admin)
             if (!sessionSaved) {
-                throw AppException.UnknownException("Gagal menyimpan sesi login")
+                throw AppException.UnknownException("Failed to save login session")
             }
 
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.d(TAG, "✅ Login process completed successfully")
-                Log.d(TAG, "📊 Session state: ${sessionManager.debugSessionState()}")
             }
 
             admin
 
         } catch (e: AppException) {
-            // App exceptions are already user-friendly
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.e(TAG, "❌ Login failed with AppException: ${e.message}", e)
             }
             throw e
         } catch (e: HttpException) {
-            // HTTP exceptions need mapping
             val mappedException = mapHttpException(e)
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.e(TAG, "❌ HTTP error: ${e.code()} -> ${mappedException.message}")
             }
             throw mappedException
         } catch (e: UnknownHostException) {
             val exception = AppException.NetworkException(
-                "Server tidak dapat dijangkau. Pastikan server development berjalan di 192.168.168.6:8180"
+                "Server unreachable. Ensure development server is running at 192.168.168.6:8180"
             )
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.e(TAG, "❌ UnknownHostException: ${exception.message}")
             }
             throw exception
         } catch (e: ConnectException) {
             val exception = AppException.NetworkException(
-                "Tidak dapat terhubung ke server. Pastikan server berjalan dan jaringan aktif."
+                "Cannot connect to server. Ensure server is running and network is active."
             )
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.e(TAG, "❌ ConnectException: ${exception.message}")
             }
             throw exception
         } catch (e: SocketTimeoutException) {
             val exception = AppException.NetworkException(
-                "Koneksi timeout. Server mungkin sedang lambat."
+                "Connection timeout. Server may be slow."
             )
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
+            if (BuildConfig.DEBUG) {
                 Log.e(TAG, "❌ SocketTimeoutException: ${exception.message}")
             }
             throw exception
         } catch (e: Exception) {
-            // Unexpected exceptions
-            val mappedException = exceptionMapper.mapToAppException(e)
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.e(TAG, "❌ Unexpected exception: ${e.message}", e)
-                Log.e(TAG, "🔄 Mapped to: ${mappedException.message}")
+            if (BuildConfig.DEBUG) {
+                Log.e(TAG, "❌ Unexpected error during login", e)
             }
-            throw mappedException
+            throw AppException.UnknownException("An unexpected error occurred: ${e.message}")
         }
     }
 
     private fun validateLoginInputs(email: String, password: String) {
-        when {
-            email.isBlank() -> throw AppException.ValidationException("Email tidak boleh kosong")
-            password.isBlank() -> throw AppException.ValidationException("Password tidak boleh kosong")
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
-                throw AppException.ValidationException("Format email tidak valid")
-            password.length < 6 ->
-                throw AppException.ValidationException("Password minimal 6 karakter")
+        if (email.isBlank()) {
+            throw AppException.ValidationException("Email cannot be empty")
+        }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            throw AppException.ValidationException("Invalid email format")
+        }
+        if (password.isBlank()) {
+            throw AppException.ValidationException("Password cannot be empty")
+        }
+        if (password.length < 6) {
+            throw AppException.ValidationException("Password must be at least 6 characters")
         }
     }
 
-    private fun validateLoginResponse(loginResponse: com.proyek.maganggsp.data.dto.LoginResponse) {
-        when {
-            loginResponse.token.isNullOrBlank() ->
-                throw AppException.AuthenticationException("Token tidak diterima dari server")
-            loginResponse.email.isNullOrBlank() ->
-                throw AppException.ParseException("Email tidak diterima dari server")
-            loginResponse.role.isNullOrBlank() ->
-                throw AppException.ParseException("Role tidak diterima dari server")
+    private fun validateLoginResponse(response: com.proyek.maganggsp.data.dto.LoginResponse) {
+        if (response.token.isNullOrBlank()) {
+            throw AppException.ParseException("Invalid token received from server")
+        }
+        if (response.email.isNullOrBlank()) {
+            throw AppException.ParseException("Invalid email received from server")
+        }
+        if (response.role.isNullOrBlank()) {
+            throw AppException.ParseException("Invalid role received from server")
         }
     }
 
     private fun saveUserSession(admin: Admin): Boolean {
         return try {
-            val tokenSaved = sessionManager.saveAuthToken(admin.token)
-            val profileSaved = sessionManager.saveAdminProfile(admin)
-
-            val success = tokenSaved && profileSaved
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "💾 Session save result - Token: $tokenSaved, Profile: $profileSaved")
-            }
-            success
+            sessionManager.saveAuthToken(admin.token)
+            sessionManager.saveUserEmail(admin.email)
+            sessionManager.saveUserRole(admin.role)
+            true
         } catch (e: Exception) {
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.e(TAG, "❌ Failed to save session", e)
+            if (BuildConfig.DEBUG) {
+                Log.e(TAG, "Failed to save session", e)
             }
             false
         }
     }
 
-    private fun mapHttpException(httpException: HttpException): AppException {
-        val code = httpException.code()
-        return when (code) {
-            401 -> AppException.AuthenticationException("Email atau password salah")
-            404 -> AppException.NetworkException("Server tidak ditemukan (404)")
-            422 -> AppException.ValidationException("Data login tidak sesuai format")
-            500 -> AppException.ServerException(code, "Server mengalami masalah internal")
-            502, 503 -> AppException.NetworkException("Server sedang maintenance")
-            else -> AppException.ServerException(code, "Kesalahan server HTTP $code")
+    private fun mapHttpException(e: HttpException): AppException {
+        return when (e.code()) {
+            401 -> AppException.AuthenticationException("Invalid email or password")
+            403 -> AppException.AuthenticationException("Access denied")
+            404 -> AppException.ParseException("Login endpoint not found")
+            500 -> AppException.ServerException("Internal server error")
+            else -> AppException.UnknownException("Unknown error occurred: HTTP ${e.code()}")
         }
-    }
-
-    override suspend fun logout() {
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚪 Starting logout process")
-        }
-
-        try {
-            sessionManager.clearSession()
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "✅ Logout completed - session cleared")
-            }
-        } catch (e: Exception) {
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.e(TAG, "❌ Logout error: ${e.message}", e)
-            }
-            throw AppException.UnknownException("Gagal melakukan logout", e)
-        }
-    }
-
-    override fun isLoggedIn(): Boolean {
-        val isValid = sessionManager.isSessionValid()
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🔍 Session check: $isValid")
-        }
-        return isValid
     }
 }

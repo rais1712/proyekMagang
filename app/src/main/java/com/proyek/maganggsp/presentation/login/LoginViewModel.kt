@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/proyek/maganggsp/presentation/login/LoginViewModel.kt - SIMPLIFIED
 package com.proyek.maganggsp.presentation.login
 
 import android.util.Log
@@ -24,7 +25,7 @@ class LoginViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "LoginViewModel"
-        private const val MIN_LOADING_DURATION = 1000L // Minimum 1 second untuk UX yang baik
+        private const val MIN_LOADING_DURATION = 1000L // Minimum loading for good UX
     }
 
     private val _loginState = MutableStateFlow<Resource<Admin>>(Resource.Empty)
@@ -34,34 +35,24 @@ class LoginViewModel @Inject constructor(
     val eventFlow = _eventFlow.asSharedFlow()
 
     init {
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 LoginViewModel initialized - API integration ready")
-            // Print debug info saat ViewModel dibuat
-            com.proyek.maganggsp.util.TestingHelper.printDebugInfo()
-        }
+        Log.d(TAG, "🔄 SIMPLIFIED LoginViewModel initialized - FeatureFlags removed")
     }
 
     fun login(email: String, password: String) {
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 Login requested - Email: $email, Password length: ${password.length}")
-            Log.d(TAG, "🚩 Target API: ${getBuildConfigBaseUrl()}/auth/login")
-        }
+        Log.d(TAG, "🚀 Login requested - Email: $email, Password length: ${password.length}")
 
         // Quick client-side validation
         if (email.isBlank() || password.isBlank()) {
             val message = when {
-                email.isBlank() && password.isBlank() -> "Email dan password harus diisi"
-                email.isBlank() -> "Email harus diisi"
-                else -> "Password harus diisi"
+                email.isBlank() && password.isBlank() -> "Email and password are required"
+                email.isBlank() -> "Email is required"
+                else -> "Password is required"
             }
 
             _loginState.value = Resource.Error(
                 AppException.ValidationException(message)
             )
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Login validation failed: $message")
-            }
+            Log.w(TAG, "⚠️ Login validation failed: $message")
             return
         }
 
@@ -71,9 +62,7 @@ class LoginViewModel @Inject constructor(
             when (result) {
                 is Resource.Loading -> {
                     _loginState.value = Resource.Loading()
-                    if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                        Log.d(TAG, "🚩 API call in progress...")
-                    }
+                    Log.d(TAG, "⏳ API call in progress...")
                 }
                 is Resource.Success -> {
                     // Ensure minimum loading duration for good UX
@@ -82,10 +71,7 @@ class LoginViewModel @Inject constructor(
                         delay(MIN_LOADING_DURATION - elapsedTime)
                     }
 
-                    if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                        Log.d(TAG, "🚩 Login API success - Admin: ${result.data?.name}")
-                        Log.d(TAG, "🚩 Token received: ${result.data?.token?.take(10)}...") // Show only first 10 chars
-                    }
+                    Log.d(TAG, "✅ Login API success - Admin: ${result.data?.name}")
 
                     // Clear login state and emit success event
                     _loginState.value = Resource.Empty
@@ -103,90 +89,50 @@ class LoginViewModel @Inject constructor(
                         AppException.UnknownException(enhancedMessage)
                     )
 
-                    if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                        Log.e(TAG, "🚩 Login API error: ${result.exception.message}")
-                        Log.e(TAG, "🚩 Enhanced message: $enhancedMessage")
-                    }
+                    Log.e(TAG, "❌ Login API error: ${result.exception.message}")
                 }
                 else -> {
-                    // Handle other states if needed
-                    if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                        Log.d(TAG, "🚩 Login state: ${result::class.simpleName}")
-                    }
+                    Log.d(TAG, "📋 Login state: ${result::class.simpleName}")
                 }
             }
         }.launchIn(viewModelScope)
     }
 
-    /**
-     * Enhanced error message berdasarkan jenis exception
-     */
     private fun enhanceErrorMessage(exception: AppException): String {
         return when (exception) {
             is AppException.NetworkException -> {
-                "Tidak dapat terhubung ke server. Pastikan koneksi internet aktif dan server development berjalan di 192.168.168.6:8180."
+                "Cannot connect to server. Check your internet connection and ensure development server is running at 192.168.168.6:8180."
             }
             is AppException.AuthenticationException -> {
-                "Email atau password salah. Silakan periksa kembali kredensial Anda."
+                "Incorrect email or password. Please check your credentials."
             }
             is AppException.ServerException -> {
                 when (exception.httpCode) {
-                    401 -> "Email atau password salah. Silakan coba lagi."
-                    404 -> "Server tidak ditemukan. Pastikan server development berjalan."
-                    500 -> "Server sedang mengalami masalah. Coba lagi dalam beberapa saat."
-                    422 -> "Data login tidak sesuai format. Periksa email dan password Anda."
-                    else -> "Terjadi kesalahan server (${exception.httpCode}). Silakan coba lagi."
+                    401 -> "Incorrect email or password. Please try again."
+                    404 -> "Server not found. Make sure development server is running."
+                    500 -> "Server is experiencing issues. Try again in a moment."
+                    422 -> "Login data format is incorrect. Check your email and password."
+                    else -> "Server error (${exception.httpCode}). Please try again."
                 }
             }
             is AppException.ValidationException -> {
-                exception.message // Pesan validasi sudah user-friendly
+                exception.message // Validation messages are already user-friendly
             }
             is AppException.ParseException -> {
-                "Terjadi kesalahan dalam memproses respons server. Coba lagi nanti."
+                "Error processing server response. Try again later."
             }
             is AppException.UnauthorizedException -> {
-                "Akses tidak diizinkan. Hubungi administrator sistem."
+                "Access not authorized. Contact system administrator."
             }
             is AppException.UnknownException -> {
-                "Terjadi kesalahan yang tidak terduga. Silakan coba lagi atau hubungi dukungan teknis."
+                "An unexpected error occurred. Please try again or contact technical support."
             }
-        }
-    }
-
-    /**
-     * Get base URL for debugging (safe access to BuildConfig)
-     */
-    private fun getBuildConfigBaseUrl(): String {
-        return try {
-            // Safe access to BuildConfig
-            "http://192.168.168.6:8180/api"
-        } catch (e: Exception) {
-            "Unknown"
-        }
-    }
-
-    /**
-     * Debug helper untuk troubleshooting
-     */
-    fun getDebugInfo(): String {
-        return if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            """
-            🚩 LOGIN DEBUG INFO:
-            Current State: ${_loginState.value::class.simpleName}
-            Target API: ${getBuildConfigBaseUrl()}/auth/login
-            Use Case: LoginUseCase
-            ViewModel: ${this::class.simpleName}
-            """.trimIndent()
-        } else {
-            "Debug info disabled"
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 LoginViewModel cleared")
-        }
+        Log.d(TAG, "🧹 LoginViewModel cleared")
     }
 
     sealed class UiEvent {

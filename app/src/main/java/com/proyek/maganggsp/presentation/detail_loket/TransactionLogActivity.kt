@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class DetailLoketActivity : AppCompatActivity() {
+class TransactionLogActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailLoketBinding
     private val viewModel: DetailLoketViewModel by viewModels()
@@ -121,7 +121,7 @@ class DetailLoketActivity : AppCompatActivity() {
             mutasiAdapter = MutasiAdapter()
             binding.rvMutations.apply {
                 adapter = mutasiAdapter
-                layoutManager = LinearLayoutManager(this@DetailLoketActivity)
+                layoutManager = LinearLayoutManager(this@TransactionLogActivity)
                 isNestedScrollingEnabled = false
             }
 

@@ -46,7 +46,7 @@
     <!-- DetailLoketActivity - ENABLED but with feature flag controls -->
     <activity
         android:id="@+id/detailLoketActivity"
-        android:name="com.proyek.maganggsp.presentation.detail_loket.DetailLoketActivity"
+        android:name="com.proyek.maganggsp.presentation.detail_loket.TransactionLogActivity"
         android:label="activity_detail_loket"
         tools:layout="@layout/activity_detail_loket" >
 

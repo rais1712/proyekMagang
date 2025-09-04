@@ -40,7 +40,7 @@
             android:theme="@style/Theme.GesPayAdmin" />
 
         <activity
-            android:name=".presentation.detail_loket.DetailLoketActivity"
+            android:name=".presentation.detail_loket.TransactionLogActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.GesPayAdmin" />
