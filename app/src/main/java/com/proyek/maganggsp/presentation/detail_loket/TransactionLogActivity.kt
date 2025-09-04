@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/DetailLoketActivity.kt
+// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/TransactionLogActivity.kt - PHASE 3 SIMPLIFIED
 package com.proyek.maganggsp.presentation.detail_loket
 
 import android.os.Bundle
@@ -12,8 +12,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityDetailLoketBinding
+import com.proyek.maganggsp.domain.model.TransactionLog
+import com.proyek.maganggsp.util.AppUtils
+import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.applyToLoadingViews
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -22,24 +24,17 @@ import kotlinx.coroutines.launch
 class TransactionLogActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailLoketBinding
-    private val viewModel: DetailLoketViewModel by viewModels()
-    private lateinit var mutasiAdapter: MutasiAdapter
+    private val viewModel: TransactionLogViewModel by viewModels()
+    private lateinit var transactionLogAdapter: TransactionLogAdapter
 
     companion object {
-        private const val TAG = "DetailLoketActivity"
+        private const val TAG = "TransactionLogActivity"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 🚩 FEATURE FLAGS: Log current configuration
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.i(TAG, "🚩 DetailLoketActivity created with feature flags:")
-            Log.d(TAG, "Detail view enabled: ${FeatureFlags.ENABLE_LOKET_DETAIL_VIEW}")
-            Log.d(TAG, "Mutation history enabled: ${FeatureFlags.ENABLE_MUTATION_HISTORY}")
-            Log.d(TAG, "Actions enabled: ${FeatureFlags.ENABLE_LOKET_ACTIONS}")
-            Log.d(TAG, "Simplified mode: ${FeatureFlags.isDetailScreenSimplified()}")
-        }
+        Log.i(TAG, "🔄 PHASE 3: TransactionLogActivity - FeatureFlags REMOVED")
 
         binding = ActivityDetailLoketBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -52,176 +47,104 @@ class TransactionLogActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // 🚩 FEATURE FLAGS: Conditional UI setup based on enabled features
+        // ✅ PHASE 3: Simplified UI setup - no feature flag conditions
+        Log.d(TAG, "🎨 Setting up UI - all features enabled")
 
-        // Mutation History Section
-        if (FeatureFlags.ENABLE_MUTATION_HISTORY) {
-            binding.mutationsShimmerLayout.isVisible = true
-            binding.rvMutations.isVisible = true
+        // All components are always visible and functional
+        binding.mutationsShimmerLayout.isVisible = true
+        binding.rvMutations.isVisible = true
+        binding.btnBlock.isVisible = true
+        binding.btnUnblock.isVisible = true
+        binding.btnClearFlags.isVisible = false // Keep hidden for now
 
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "🚩 Mutation history section enabled")
-            }
-        } else {
-            binding.mutationsShimmerLayout.isVisible = false
-            binding.rvMutations.isVisible = false
-            binding.tvMutationsError.isVisible = true
-            binding.tvMutationsError.text = "Fitur riwayat mutasi sedang dikembangkan"
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Mutation history section disabled")
-            }
-        }
-
-        // Action Buttons
-        if (FeatureFlags.ENABLE_LOKET_ACTIONS) {
-            binding.btnBlock.isVisible = true
-            binding.btnUnblock.isVisible = true
-            binding.btnClearFlags.isVisible = FeatureFlags.ENABLE_FLAG_MANAGEMENT
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "🚩 Action buttons enabled")
-            }
-        } else {
-            binding.btnBlock.isVisible = false
-            binding.btnUnblock.isVisible = false
-            binding.btnClearFlags.isVisible = false
-
-            // Show info message
-            Toast.makeText(this, "Mode hanya-baca: Fitur aksi sedang dikembangkan", Toast.LENGTH_LONG).show()
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Action buttons disabled - read-only mode")
-            }
-        }
-
-        // Flag Management
-        if (!FeatureFlags.ENABLE_FLAG_MANAGEMENT) {
-            binding.btnClearFlags.isVisible = false
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Flag management disabled")
-            }
-        }
+        // Update labels for Transaction Log context
+        binding.tvMutasiTitle.text = "Transaction Logs"
     }
 
     private fun setupToolbar() {
         binding.toolbar.setNavigationOnClickListener {
             onBackPressedDispatcher.onBackPressed()
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "🚩 Back navigation triggered")
-            }
+            Log.d(TAG, "📱 Back navigation triggered")
         }
     }
 
     private fun setupRecyclerView() {
-        // 🚩 FEATURE FLAGS: Only setup RecyclerView if mutation history is enabled
-        if (FeatureFlags.ENABLE_MUTATION_HISTORY) {
-            mutasiAdapter = MutasiAdapter()
-            binding.rvMutations.apply {
-                adapter = mutasiAdapter
-                layoutManager = LinearLayoutManager(this@TransactionLogActivity)
-                isNestedScrollingEnabled = false
-            }
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.d(TAG, "🚩 Mutation RecyclerView setup completed")
-            }
-        } else {
-            // Create empty adapter to prevent crashes
-            mutasiAdapter = MutasiAdapter()
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Empty adapter created - mutation history disabled")
-            }
+        // ✅ PHASE 3: Always setup RecyclerView - no conditional logic
+        transactionLogAdapter = TransactionLogAdapter()
+        binding.rvMutations.apply {
+            adapter = transactionLogAdapter
+            layoutManager = LinearLayoutManager(this@TransactionLogActivity)
+            isNestedScrollingEnabled = false
         }
+
+        // Optional: Add click listener for transaction items
+        transactionLogAdapter.setOnItemClickListener { transactionLog ->
+            showTransactionDetails(transactionLog)
+        }
+
+        Log.d(TAG, "✅ TransactionLog RecyclerView setup completed")
     }
 
     private fun setupActionListeners() {
-        // 🚩 FEATURE FLAGS: Only setup listeners if actions are enabled
-        if (FeatureFlags.ENABLE_LOKET_ACTIONS) {
-            binding.btnBlock.setOnClickListener {
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "🚩 Block button clicked")
-                }
-                viewModel.blockLoket()
-            }
+        // ✅ PHASE 3: Always setup listeners - no feature flag conditions
+        binding.btnBlock.setOnClickListener {
+            Log.d(TAG, "🚫 Block action requested")
+            showActionNotImplemented("Block Profile")
+        }
 
-            binding.btnUnblock.setOnClickListener {
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "🚩 Unblock button clicked")
-                }
-                viewModel.unblockLoket()
-            }
+        binding.btnUnblock.setOnClickListener {
+            Log.d(TAG, "✅ Unblock action requested")
+            showActionNotImplemented("Unblock Profile")
+        }
 
-            if (FeatureFlags.ENABLE_FLAG_MANAGEMENT) {
-                binding.btnClearFlags.setOnClickListener {
-                    if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                        Log.d(TAG, "🚩 Clear flags button clicked")
-                    }
-                    viewModel.clearAllFlags()
-                }
-            }
-        } else {
-            // Disable button interactions
-            binding.btnBlock.setOnClickListener {
-                showFeatureDisabledMessage("Fitur blokir")
-            }
-
-            binding.btnUnblock.setOnClickListener {
-                showFeatureDisabledMessage("Fitur buka blokir")
-            }
-
-            binding.btnClearFlags.setOnClickListener {
-                showFeatureDisabledMessage("Fitur hapus penanda")
-            }
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Action listeners disabled - showing info messages instead")
-            }
+        binding.btnClearFlags.setOnClickListener {
+            Log.d(TAG, "🧹 Clear flags action requested")
+            showActionNotImplemented("Clear Flags")
         }
     }
 
-    private fun showFeatureDisabledMessage(featureName: String) {
-        Toast.makeText(this, "$featureName sedang dikembangkan", Toast.LENGTH_SHORT).show()
+    private fun showActionNotImplemented(actionName: String) {
+        Toast.makeText(this, "$actionName: Coming soon in future release", Toast.LENGTH_SHORT).show()
+    }
 
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.w(TAG, "🚩 Feature disabled message shown: $featureName")
-        }
+    private fun showTransactionDetails(transactionLog: TransactionLog) {
+        val details = """
+        Transaction Details:
+        
+        Reference: ${transactionLog.tldRefnum}
+        PAN: ${transactionLog.tldPan}
+        ID Pelanggan: ${transactionLog.tldIdpel}
+        Amount: ${transactionLog.getFormattedAmount()}
+        Balance: ${transactionLog.getFormattedBalance()}
+        Date: ${transactionLog.getFormattedDate()}
+        PPID: ${transactionLog.tldPpid}
+        """.trimIndent()
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Transaction Details")
+            .setMessage(details)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun observeStates() {
-        // Observer untuk detail loket
+        // ✅ PHASE 3: Simplified state observation - no conditional observers
+
+        // Observe transaction logs
         lifecycleScope.launch {
-            viewModel.loketDetailsState.collectLatest { resource ->
-                handleLoketDetailsState(resource)
+            viewModel.transactionLogsState.collectLatest { resource ->
+                handleTransactionLogsState(resource)
             }
         }
 
-        // Observer untuk mutations (hanya jika enabled)
-        if (FeatureFlags.ENABLE_MUTATION_HISTORY) {
-            lifecycleScope.launch {
-                viewModel.mutationsState.collectLatest { resource ->
-                    handleMutationsState(resource)
-                }
-            }
-        } else {
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Skipping mutation state observer - feature disabled")
+        // Observe action state
+        lifecycleScope.launch {
+            viewModel.actionState.collectLatest { resource ->
+                handleActionState(resource)
             }
         }
 
-        // Observer untuk action state (hanya jika actions enabled)
-        if (FeatureFlags.ENABLE_LOKET_ACTIONS) {
-            lifecycleScope.launch {
-                viewModel.actionState.collectLatest { resource ->
-                    handleActionState(resource)
-                }
-            }
-        }
-
-        // Observer untuk events
+        // Observe events
         lifecycleScope.launch {
             viewModel.eventFlow.collectLatest { event ->
                 handleViewModelEvents(event)
@@ -229,216 +152,99 @@ class TransactionLogActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleLoketDetailsState(resource: Resource<Loket>) {
-        // 🚩 FEATURE FLAGS: Conditional loading management
-        if (FeatureFlags.ENABLE_SHIMMER_LOADING) {
-            resource.applyToLoadingViews(
-                shimmerView = binding.shimmerCardInfo,
-                contentView = binding.cardLoketInfo
-            )
-        } else {
-            // Simple loading
-            binding.shimmerCardInfo.isVisible = resource is Resource.Loading
-            binding.cardLoketInfo.isVisible = resource is Resource.Success
-
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Using simple loading - shimmer disabled")
-            }
-        }
-
-        when (resource) {
-            is Resource.Success -> {
-                updateLoketInfo(resource.data)
-
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "🚩 Loket details loaded: ${resource.data.noLoket}")
-                }
-            }
-            is Resource.Error -> {
-                val errorMessage = if (FeatureFlags.ENABLE_DETAILED_ERROR_MESSAGES) {
-                    resource.exception.message
-                } else {
-                    "Gagal memuat detail loket"
-                }
-
-                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
-
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.e(TAG, "🚩 Loket details error: ${resource.exception.message}")
-                }
-            }
-            else -> Unit
-        }
-    }
-
-    private fun handleMutationsState(resource: Resource<List<com.proyek.maganggsp.domain.model.Mutasi>>) {
-        if (!FeatureFlags.ENABLE_MUTATION_HISTORY) return
-
-        // 🚩 FEATURE FLAGS: Conditional loading management
-        if (FeatureFlags.ENABLE_SHIMMER_LOADING) {
-            resource.applyToLoadingViews(
-                shimmerView = binding.mutationsShimmerLayout,
-                contentView = binding.rvMutations,
-                emptyView = binding.tvMutationsError
-            )
-        } else {
-            binding.mutationsShimmerLayout.isVisible = resource is Resource.Loading
-            binding.rvMutations.isVisible = resource is Resource.Success && (resource.data?.isNotEmpty() == true)
-            binding.tvMutationsError.isVisible = resource !is Resource.Loading && (resource !is Resource.Success || resource.data?.isEmpty() == true)
-        }
+    private fun handleTransactionLogsState(resource: Resource<List<TransactionLog>>) {
+        // ✅ PHASE 3: Use AppUtils for consistent state management
+        AppUtils.handleLoadingState(
+            shimmerView = binding.mutationsShimmerLayout,
+            contentView = binding.rvMutations,
+            emptyView = binding.tvMutationsError,
+            resource = resource
+        )
 
         when (resource) {
             is Resource.Success -> {
                 val data = resource.data ?: emptyList()
+                Log.d(TAG, "✅ Transaction logs loaded: ${data.size} items")
 
                 if (data.isEmpty()) {
-                    binding.tvMutationsError.text = "Tidak ada riwayat mutasi."
+                    binding.tvMutationsError.text = "No transaction logs available for this profile."
                 } else {
-                    mutasiAdapter.differ.submitList(data)
-                }
-
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "🚩 Mutations loaded: ${data.size} items")
+                    transactionLogAdapter.updateData(data)
+                    updateProfileInfo(data.firstOrNull()) // Use first transaction for profile context
                 }
             }
             is Resource.Error -> {
-                val errorMessage = if (FeatureFlags.ENABLE_DETAILED_ERROR_MESSAGES) {
-                    getString(R.string.error_load_mutations)
-                } else {
-                    "Gagal memuat data"
-                }
-                binding.tvMutationsError.text = errorMessage
-
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.e(TAG, "🚩 Mutations error: ${resource.exception.message}")
-                }
+                Log.e(TAG, "❌ Transaction logs error: ${resource.message}")
+                binding.tvMutationsError.text = "Failed to load transaction logs.\nPull down to refresh."
+                AppUtils.showError(this, resource.exception)
             }
-            is Resource.Empty -> {
-                binding.tvMutationsError.text = "Tidak ada riwayat mutasi."
+            is Resource.Loading -> {
+                Log.d(TAG, "⏳ Loading transaction logs...")
             }
             else -> Unit
         }
     }
 
     private fun handleActionState(resource: Resource<Unit>) {
-        if (!FeatureFlags.ENABLE_LOKET_ACTIONS) return
-
         binding.mainProgressBar.isVisible = resource is Resource.Loading
         setButtonsEnabled(resource !is Resource.Loading)
 
         when (resource) {
             is Resource.Error -> {
-                val errorMessage = if (FeatureFlags.ENABLE_DETAILED_ERROR_MESSAGES) {
-                    resource.exception.message
-                } else {
-                    "Aksi gagal"
-                }
-                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+                AppUtils.showError(this, resource.exception)
                 viewModel.onActionConsumed()
-
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.e(TAG, "🚩 Action error: ${resource.exception.message}")
-                }
+                Log.e(TAG, "❌ Action error: ${resource.message}")
             }
             is Resource.Success -> {
+                Toast.makeText(this, "Action completed successfully", Toast.LENGTH_SHORT).show()
                 viewModel.onActionConsumed()
-
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "🚩 Action completed successfully")
-                }
+                Log.d(TAG, "✅ Action completed successfully")
             }
             else -> Unit
         }
     }
 
-    private fun handleViewModelEvents(event: DetailLoketViewModel.UiEvent) {
+    private fun handleViewModelEvents(event: TransactionLogViewModel.UiEvent) {
         when (event) {
-            is DetailLoketViewModel.UiEvent.ShowToast -> {
+            is TransactionLogViewModel.UiEvent.ShowToast -> {
                 Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show()
-
-                if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                    Log.d(TAG, "🚩 Toast event: ${event.message}")
-                }
+                Log.d(TAG, "📢 Toast event: ${event.message}")
             }
-            else -> {} // Handle all other cases
+            is TransactionLogViewModel.UiEvent.NavigateBack -> {
+                finish()
+            }
         }
     }
-    private fun setButtonsEnabled(isEnabled: Boolean) {
-        if (!FeatureFlags.ENABLE_LOKET_ACTIONS) return
 
+    private fun setButtonsEnabled(isEnabled: Boolean) {
         binding.btnBlock.isEnabled = isEnabled
         binding.btnUnblock.isEnabled = isEnabled
-
-        if (FeatureFlags.ENABLE_FLAG_MANAGEMENT) {
-            binding.btnClearFlags.isEnabled = isEnabled
-        }
-
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 Buttons enabled state: $isEnabled")
-        }
+        Log.d(TAG, "🔘 Buttons enabled state: $isEnabled")
     }
 
-    private fun updateLoketInfo(loket: Loket) {
-        if (!FeatureFlags.ENABLE_LOKET_DETAIL_VIEW) {
-            if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-                Log.w(TAG, "🚩 Detail view disabled - skipping UI update")
-            }
+    private fun updateProfileInfo(transactionLog: TransactionLog?) {
+        if (transactionLog == null) {
+            Log.w(TAG, "⚠️ No transaction data available for profile info")
             return
         }
 
-        binding.tvLoketId.text = loket.noLoket
-        binding.tvLoketName.text = loket.namaLoket
-        binding.tvPhoneValue.text = loket.nomorTelepon
-        binding.tvEmailValue.text = loket.email
+        // ✅ PHASE 3: Update UI with TransactionLog data (repurposed from old Loket fields)
+        binding.tvLoketId.text = "PPID: ${transactionLog.tldPpid}"
+        binding.tvLoketName.text = "Profile ${transactionLog.tldIdpel}"
+        binding.tvPhoneValue.text = "PAN: ${transactionLog.tldPan}"
+        binding.tvEmailValue.text = "Balance: ${transactionLog.getFormattedBalance()}"
 
-        // Status handling with feature flag consideration
-        when (loket.status.uppercase()) {
-            "DIBLOKIR" -> {
-                binding.chipStatus.text = getString(R.string.status_diblokir)
-                binding.chipStatus.setChipBackgroundColor(
-                    ContextCompat.getColorStateList(this, R.color.chip_blocked_background)
-                )
+        // Set default status (since we don't have status in TransactionLog)
+        binding.chipStatus.text = "Active"
+        binding.chipStatus.setChipBackgroundColor(
+            ContextCompat.getColorStateList(this, R.color.chip_normal_background)
+        )
 
-                // 🚩 FEATURE FLAGS: Conditional button visibility
-                if (FeatureFlags.ENABLE_LOKET_ACTIONS) {
-                    binding.btnBlock.isVisible = false
-                    binding.btnUnblock.isVisible = true
-                }
-            }
-            "DIPANTAU" -> {
-                binding.chipStatus.text = getString(R.string.status_ditandai)
-                binding.chipStatus.setChipBackgroundColor(
-                    ContextCompat.getColorStateList(this, R.color.chip_flagged_background)
-                )
-
-                if (FeatureFlags.ENABLE_LOKET_ACTIONS) {
-                    binding.btnBlock.isVisible = true
-                    binding.btnUnblock.isVisible = false
-                }
-            }
-            else -> { // AKTIF / NORMAL
-                binding.chipStatus.text = getString(R.string.status_normal)
-                binding.chipStatus.setChipBackgroundColor(
-                    ContextCompat.getColorStateList(this, R.color.chip_normal_background)
-                )
-
-                if (FeatureFlags.ENABLE_LOKET_ACTIONS) {
-                    binding.btnBlock.isVisible = true
-                    binding.btnUnblock.isVisible = false
-                }
-            }
-        }
-
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 Loket info updated - Status: ${loket.status}")
-        }
+        Log.d(TAG, "🔄 Profile info updated from transaction data")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-
-        if (FeatureFlags.ENABLE_DEBUG_LOGGING) {
-            Log.d(TAG, "🚩 DetailLoketActivity destroyed")
-        }
+        Log.d(TAG, "🧹 TransactionLogActivity destroyed")
     }
 }

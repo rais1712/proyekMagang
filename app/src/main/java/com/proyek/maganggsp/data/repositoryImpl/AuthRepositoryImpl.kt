@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt - BUG FIX
+// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt - COMPLETED
 package com.proyek.maganggsp.data.repositoryImpl
 
 import android.util.Log
@@ -28,7 +28,6 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun login(email: String, password: String): Admin {
-        // BUG FIX: Debug logging only in debug builds (no FeatureFlags)
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "🚀 Starting API login process")
             Log.d(TAG, "📧 Email: $email")
@@ -143,6 +142,49 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    // ✅ PHASE 1 FIX: Implement missing logout method
+    override suspend fun logout() {
+        try {
+            Log.d(TAG, "🚪 Starting logout process")
+
+            // Clear local session data
+            val sessionCleared = sessionManager.clearSession()
+
+            if (sessionCleared) {
+                Log.d(TAG, "✅ Session cleared successfully")
+            } else {
+                Log.w(TAG, "⚠️ Session clear returned false, but continuing")
+            }
+
+            // NOTE: No API call needed for logout in current implementation
+            // Server doesn't maintain session state, token invalidation is client-side only
+
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error during logout", e)
+            // Still try to clear session even if other operations fail
+            sessionManager.clearSession()
+            throw AppException.UnknownException("Logout failed: ${e.message}")
+        }
+    }
+
+    // ✅ PHASE 1 FIX: Implement missing isLoggedIn method
+    override fun isLoggedIn(): Boolean {
+        return try {
+            val isValid = sessionManager.isSessionValid()
+            Log.d(TAG, "🔍 Session validity check: $isValid")
+
+            if (!isValid && BuildConfig.DEBUG) {
+                Log.d(TAG, "🔍 Session debug info: ${sessionManager.debugSessionState()}")
+            }
+
+            isValid
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error checking login status", e)
+            false
+        }
+    }
+
+    // Helper methods (keep existing)
     private fun validateLoginInputs(email: String, password: String) {
         if (email.isBlank()) {
             throw AppException.ValidationException("Email cannot be empty")
@@ -172,10 +214,16 @@ class AuthRepositoryImpl @Inject constructor(
 
     private fun saveUserSession(admin: Admin): Boolean {
         return try {
-            sessionManager.saveAuthToken(admin.token)
-            sessionManager.saveUserEmail(admin.email)
-            sessionManager.saveUserRole(admin.role)
-            true
+            val tokenSaved = sessionManager.saveAuthToken(admin.token)
+            val profileSaved = sessionManager.saveAdminProfile(admin)
+
+            val success = tokenSaved && profileSaved
+
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "💾 Session save results - Token: $tokenSaved, Profile: $profileSaved")
+            }
+
+            success
         } catch (e: Exception) {
             if (BuildConfig.DEBUG) {
                 Log.e(TAG, "Failed to save session", e)
@@ -189,7 +237,7 @@ class AuthRepositoryImpl @Inject constructor(
             401 -> AppException.AuthenticationException("Invalid email or password")
             403 -> AppException.AuthenticationException("Access denied")
             404 -> AppException.ParseException("Login endpoint not found")
-            500 -> AppException.ServerException("Internal server error")
+            500 -> AppException.ServerException(500, "Internal server error")
             else -> AppException.UnknownException("Unknown error occurred: HTTP ${e.code()}")
         }
     }

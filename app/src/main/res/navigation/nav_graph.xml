@@ -1,3 +1,4 @@
+<!-- File: app/src/main/res/navigation/nav_graph.xml - PHASE 2 UPDATE -->
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -5,67 +6,81 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
-    <!-- 🚩 SURGICAL CUTTING: CORE NAVIGATION ONLY -->
-    <!-- PHASE 1: Only HomeFragment for basic login-logout flow -->
+    <!-- ✅ PHASE 2: STREAMLINED NAVIGATION - All features enabled -->
+
+    <!-- Home Fragment - Receipt List -->
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.proyek.maganggsp.presentation.home.HomeFragment"
-        android:label="fragment_home"
-        tools:layout="@layout/fragment_home" >
+        android:label="Home - Receipt List"
+        tools:layout="@layout/fragment_home">
 
-        <!-- Navigation to DetailLoketActivity - ENABLED but conditional -->
+        <!-- ✅ PHASE 2 FIX: Updated argument from noLoket to ppid -->
         <action
             android:id="@+id/action_homeFragment_to_detailLoketActivity"
-            app:destination="@id/detailLoketActivity" />
+            app:destination="@id/transactionLogActivity"
+            app:enterAnim="@android:anim/slide_in_left"
+            app:exitAnim="@android:anim/slide_out_right" />
     </fragment>
 
-    <!-- HistoryFragment - CONDITIONALLY ENABLED based on FeatureFlags -->
+    <!-- History Fragment - SIMPLIFIED: Just receipt history -->
     <fragment
         android:id="@+id/historyFragment"
         android:name="com.proyek.maganggsp.presentation.history.HistoryFragment"
-        android:label="fragment_history"
-        tools:layout="@layout/fragment_history" >
+        android:label="Receipt History"
+        tools:layout="@layout/fragment_history">
 
         <action
-            android:id="@+id/action_historyFragment_to_detailLoketActivity"
-            app:destination="@id/detailLoketActivity" />
+            android:id="@+id/action_historyFragment_to_transactionLogActivity"
+            app:destination="@id/transactionLogActivity"
+            app:enterAnim="@android:anim/slide_in_left"
+            app:exitAnim="@android:anim/slide_out_right" />
     </fragment>
 
-    <!-- MonitorFragment - CONDITIONALLY ENABLED based on FeatureFlags -->
+    <!-- Monitor Fragment - SIMPLIFIED: Basic monitoring -->
     <fragment
         android:id="@+id/monitorFragment"
         android:name="com.proyek.maganggsp.presentation.monitor.MonitorFragment"
-        android:label="fragment_monitor"
-        tools:layout="@layout/fragment_monitor" >
+        android:label="Receipt Monitor"
+        tools:layout="@layout/fragment_monitor">
 
         <action
-            android:id="@+id/action_monitorFragment_to_detailLoketActivity"
-            app:destination="@id/detailLoketActivity" />
+            android:id="@+id/action_monitorFragment_to_transactionLogActivity"
+            app:destination="@id/transactionLogActivity"
+            app:enterAnim="@android:anim/slide_in_left"
+            app:exitAnim="@android:anim/slide_out_right" />
     </fragment>
 
-    <!-- DetailLoketActivity - ENABLED but with feature flag controls -->
+    <!-- ✅ PHASE 2 FIX: Transaction Log Activity with updated arguments -->
     <activity
-        android:id="@+id/detailLoketActivity"
+        android:id="@+id/transactionLogActivity"
         android:name="com.proyek.maganggsp.presentation.detail_loket.TransactionLogActivity"
-        android:label="activity_detail_loket"
-        tools:layout="@layout/activity_detail_loket" >
+        android:label="Transaction Log Detail"
+        tools:layout="@layout/activity_detail_loket">
 
+        <!-- ✅ PHASE 2 FIX: Updated argument name and type -->
+        <argument
+            android:name="ppid"
+            android:defaultValue=""
+            app:argType="string" />
+
+        <!-- BACKUP: Keep old argument for backward compatibility during transition -->
         <argument
             android:name="noLoket"
+            android:defaultValue=""
             app:argType="string" />
     </activity>
 
 </navigation>
 
     <!--
-    🚩 SURGICAL CUTTING APPROACH:
-    - Keep all navigation destinations to prevent Safe Args generation errors
-    - Control access via FeatureFlags in MainActivity and individual fragments
-    - This prevents build errors while allowing runtime control of features
-    - Navigation will be safely handled by FeatureFlags checks in code
+    ✅ PHASE 2 NAVIGATION UPDATES:
+    1. Changed main argument from "noLoket" to "ppid"
+    2. Updated action names to reflect new purpose
+    3. Simplified fragment purposes
+    4. Added backward compatibility argument
+    5. Removed complex conditional logic
+    6. All destinations enabled by default
 
-    REASONING:
-    - Removing fragments from nav_graph causes Safe Args generation failures
-    - Better to keep navigation structure intact and control via runtime flags
-    - Allows gradual re-enabling of features without navigation changes
+    NEXT: Update NavigationConstants and direction calls
     -->
