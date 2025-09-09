@@ -2,40 +2,60 @@
 package com.proyek.maganggsp.domain.model
 
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * ✅ PHASE 1: Enhanced Receipt model with utility functions
- * This represents receipt data from /profiles/ppid/{ppid}
- * Action: navigate to log detail when clicked
+ * ENHANCED: Receipt model with better formatting and PPID reference
+ * This represents individual transactions/receipts within a loket
  */
 data class Receipt(
     val refNumber: String,
     val idPelanggan: String,
-    val amount: Long,
-    val logged: String
+    val tanggal: String,
+    val mutasi: Long,
+    val totalSaldo: Long,
+    val ppid: String, // Reference to parent loket
+    val tipeTransaksi: String = "Receipt" // For future transaction type handling
 ) {
 
-    // Utility functions for Receipt model
-    fun getFormattedAmount(): String {
+    fun getFormattedMutasi(): String {
         val localeID = Locale("in", "ID")
         val numberFormat = NumberFormat.getCurrencyInstance(localeID)
         numberFormat.maximumFractionDigits = 0
-        return numberFormat.format(amount)
+
+        return if (mutasi >= 0) {
+            "+${numberFormat.format(mutasi)}"
+        } else {
+            numberFormat.format(mutasi)
+        }
     }
 
-    fun getDisplayTitle(): String = "Receipt #$refNumber"
+    fun getFormattedSaldo(): String {
+        val localeID = Locale("in", "ID")
+        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
+        numberFormat.maximumFractionDigits = 0
+        return numberFormat.format(totalSaldo)
+    }
 
+    fun getFormattedTanggal(): String {
+        return try {
+            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            isoFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val date = isoFormat.parse(tanggal)
+
+            val readableFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("in", "ID"))
+            readableFormat.format(date!!)
+        } catch (e: Exception) {
+            tanggal
+        }
+    }
+
+    fun isIncomingTransaction(): Boolean = mutasi >= 0
+    fun isOutgoingTransaction(): Boolean = mutasi < 0
+
+    fun getDisplayTitle(): String = "Receipt #$refNumber"
     fun getDisplaySubtitle(): String = "ID: $idPelanggan"
 
     fun hasValidData(): Boolean = refNumber.isNotBlank() && idPelanggan.isNotBlank()
-
-    fun isLargeAmount(): Boolean = amount >= 1_000_000 // 1 million rupiah
-
-    fun getLoggedDisplayText(): String = when {
-        logged.isBlank() || logged == "-" -> "No timestamp available"
-        else -> "Logged: $logged"
-    }
-
-    fun toDebugString(): String = "Receipt(ref='$refNumber', id='$idPelanggan', amount=$amount)"
 }

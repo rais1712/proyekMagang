@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.usecase.auth.GetAdminProfileUseCase
-import com.proyek.maganggsp.domain.usecase.profile.GetProfileUseCase
-import com.proyek.maganggsp.domain.usecase.profile.SearchProfilesUseCase
+import com.proyek.maganggsp.domain.usecase.loket.GetProfileUseCase
+import com.proyek.maganggsp.domain.usecase.loket.SearchProfilesUseCase
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

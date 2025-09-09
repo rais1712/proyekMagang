@@ -1,34 +1,35 @@
-// File: app/src/main/java/com/proyek/maganggsp/util/NavigationConstants.kt - PHASE 2 UPDATE
+// File: app/src/main/java/com/proyek/maganggsp/util/NavigationConstants.kt - FIXED FINAL
 package com.proyek.maganggsp.util
 
 /**
- * ✅ PHASE 2: Updated navigation constants for Receipt/TransactionLog data structure
- * Simplified and streamlined - removed unused constants
+ * FIXED: Updated navigation constants untuk Receipt/TransactionLog data structure
+ * Focus pada ppid-based navigation dengan Indonesian context
  */
 object NavigationConstants {
 
-    // ✅ NAVIGATION ARGUMENTS - Updated for new data structure
-    const val ARG_PPID = "ppid"                    // NEW: For receipt/transaction identification
-    const val ARG_NO_LOKET = "noLoket"            // LEGACY: Keep for backward compatibility
-    const val ARG_RECEIPT_REF = "receiptRef"       // NEW: For receipt reference numbers
+    // ✅ NAVIGATION ARGUMENTS - Fixed untuk ppid flow
+    const val ARG_PPID = "ppid"                       // PRIMARY: ppid identifier
+    const val ARG_NO_LOKET = "noLoket"               // LEGACY: backward compatibility
+    const val ARG_RECEIPT_REF = "receiptRef"         // Receipt reference
+    const val ARG_CURRENT_PPID = "currentPpid"       // For update profile
 
-    // ✅ SHARED PREFERENCES KEYS - Keep existing
+    // ✅ SHARED PREFERENCES KEYS
     const val PREF_AUTH_TOKEN = "auth_token"
     const val PREF_ADMIN_NAME = "admin_name"
     const val PREF_ADMIN_EMAIL = "admin_email"
-    const val PREF_ADMIN_ROLE = "admin_role"       // NEW: Store user role
+    const val PREF_ADMIN_ROLE = "admin_role"
 
-    // ✅ INTENT EXTRAS - Updated for new structure
+    // ✅ INTENT EXTRAS
     const val EXTRA_PPID = "extra_ppid"
     const val EXTRA_RECEIPT_DATA = "extra_receipt_data"
     const val EXTRA_SESSION_EXPIRED = "extra_session_expired"
-    const val EXTRA_TRANSACTION_REF = "extra_transaction_ref"
+    const val EXTRA_UPDATE_RESULT = "extra_update_result"
 
-    // ✅ REQUEST CODES - Simplified
+    // ✅ REQUEST CODES
     const val REQUEST_CODE_LOGIN = 1001
-    const val REQUEST_CODE_TRANSACTION_DETAIL = 1002
+    const val REQUEST_CODE_UPDATE_PROFILE = 1002
 
-    // ✅ NAVIGATION DESTINATION IDs - Runtime values with better naming
+    // ✅ NAVIGATION DESTINATION IDs
     object Destinations {
         @JvmStatic
         val HOME_FRAGMENT: Int
@@ -46,17 +47,16 @@ object NavigationConstants {
         val TRANSACTION_LOG_ACTIVITY: Int
             get() = com.proyek.maganggsp.R.id.transactionLogActivity
 
-        // LEGACY: Keep for backward compatibility
         @JvmStatic
-        val DETAIL_LOKET_ACTIVITY: Int
-            get() = com.proyek.maganggsp.R.id.transactionLogActivity
+        val UPDATE_PROFILE_ACTIVITY: Int
+            get() = com.proyek.maganggsp.R.id.updateProfileActivity
     }
 
-    // ✅ ACTION IDs - Updated for new navigation structure
+    // ✅ ACTION IDs - Fixed untuk ppid navigation
     object Actions {
         @JvmStatic
         val HOME_TO_TRANSACTION_LOG: Int
-            get() = com.proyek.maganggsp.R.id.action_homeFragment_to_detailLoketActivity
+            get() = com.proyek.maganggsp.R.id.action_homeFragment_to_transactionLogActivity
 
         @JvmStatic
         val HISTORY_TO_TRANSACTION_LOG: Int
@@ -67,32 +67,18 @@ object NavigationConstants {
             get() = com.proyek.maganggsp.R.id.action_monitorFragment_to_transactionLogActivity
     }
 
-    // ✅ FRAGMENT TAGS - Simplified
+    // ✅ FRAGMENT TAGS
     const val TAG_HOME_FRAGMENT = "HomeFragment"
     const val TAG_HISTORY_FRAGMENT = "HistoryFragment"
     const val TAG_MONITOR_FRAGMENT = "MonitorFragment"
     const val TAG_TRANSACTION_LOG_ACTIVITY = "TransactionLogActivity"
+    const val TAG_UPDATE_PROFILE_ACTIVITY = "UpdateProfileActivity"
 
-    // ✅ BUNDLE KEYS - For fragment communication
+    // ✅ BUNDLE KEYS
     const val BUNDLE_RECEIPT_LIST = "bundle_receipt_list"
     const val BUNDLE_TRANSACTION_LOGS = "bundle_transaction_logs"
     const val BUNDLE_SEARCH_QUERY = "bundle_search_query"
-    const val BUNDLE_FILTER_CRITERIA = "bundle_filter_criteria"
-
-    // ✅ DEEP LINK PATTERNS - For future use
-    const val DEEP_LINK_HOME = "gespay://home"
-    const val DEEP_LINK_RECEIPT = "gespay://receipt/{ppid}"
-    const val DEEP_LINK_TRANSACTION = "gespay://transaction/{ppid}"
-
-    // ✅ TRANSITION ANIMATIONS - Consistent animations
-    object Animations {
-        const val ENTER_FROM_RIGHT = android.R.anim.slide_in_left
-        const val EXIT_TO_LEFT = android.R.anim.slide_out_right
-        const val ENTER_FROM_LEFT = android.R.anim.slide_in_left
-        const val EXIT_TO_RIGHT = android.R.anim.slide_out_right
-        const val FADE_IN = android.R.anim.fade_in
-        const val FADE_OUT = android.R.anim.fade_out
-    }
+    const val BUNDLE_CURRENT_PPID = "bundle_current_ppid"
 
     // ✅ VALIDATION HELPERS
     fun isValidPpid(ppid: String?): Boolean {
@@ -103,10 +89,18 @@ object NavigationConstants {
         return !refNumber.isNullOrBlank() && refNumber.length >= 3
     }
 
-    // ✅ NAVIGATION HELPERS
+    // ✅ NAVIGATION HELPERS - Fixed untuk ppid flow
     fun createTransactionLogBundle(ppid: String): android.os.Bundle {
         return android.os.Bundle().apply {
             putString(ARG_PPID, ppid)
+            android.util.Log.d("NavigationConstants", "📦 Created bundle dengan ppid: $ppid")
+        }
+    }
+
+    fun createUpdateProfileBundle(currentPpid: String): android.os.Bundle {
+        return android.os.Bundle().apply {
+            putString(ARG_CURRENT_PPID, currentPpid)
+            android.util.Log.d("NavigationConstants", "📦 Created update profile bundle dengan ppid: $currentPpid")
         }
     }
 
@@ -116,34 +110,85 @@ object NavigationConstants {
         }
     }
 
+    // ✅ ERROR MESSAGES - Indonesian
+    object ErrorMessages {
+        const val INVALID_PPID = "Format PPID tidak valid"
+        const val NAVIGATION_FAILED = "Navigasi gagal"
+        const val MISSING_ARGUMENT = "Argument navigasi tidak lengkap"
+        const val INVALID_RECEIPT_REF = "Nomor referensi tidak valid"
+    }
+
+    // ✅ SUCCESS MESSAGES - Indonesian
+    object SuccessMessages {
+        const val NAVIGATION_SUCCESS = "Navigasi berhasil"
+        const val PROFILE_UPDATED = "Profil berhasil diupdate"
+        const val DATA_LOADED = "Data berhasil dimuat"
+    }
+
     // ✅ DEBUG HELPERS
     fun getNavigationDebugInfo(): String {
         return """
         NavigationConstants Debug Info:
+        - Primary Argument: $ARG_PPID
         - Available Destinations: ${Destinations::class.java.declaredFields.size}
         - Available Actions: ${Actions::class.java.declaredFields.size}
-        - Supported Args: ppid, receiptRef, noLoket (legacy)
-        - Deep Links: Configured for receipt and transaction flows
+        - Core Flow: Home → TransactionLog → UpdateProfile
+        - Language: Indonesian
+        """.trimIndent()
+    }
+
+    fun validateNavigationArguments(bundle: android.os.Bundle?): String {
+        if (bundle == null) return "Bundle is null"
+
+        val ppid = bundle.getString(ARG_PPID)
+        val noLoket = bundle.getString(ARG_NO_LOKET)
+        val receiptRef = bundle.getString(ARG_RECEIPT_REF)
+
+        return """
+        Navigation Arguments Validation:
+        - ppid: ${if (isValidPpid(ppid)) "✅ $ppid" else "❌ Invalid/Missing"}
+        - noLoket (legacy): ${if (noLoket != null) "⚠️ $noLoket" else "❌ Missing"}
+        - receiptRef: ${if (isValidReceiptRef(receiptRef)) "✅ $receiptRef" else "❌ Invalid/Missing"}
+        
+        Recommendation: ${when {
+            isValidPpid(ppid) -> "Use ppid: $ppid"
+            noLoket != null -> "Convert noLoket to ppid: $noLoket"
+            else -> "Provide valid ppid argument"
+        }}
         """.trimIndent()
     }
 }
 
 /**
- * ✅ PHASE 2: Extension functions for easier navigation
+ * FIXED: Extension functions untuk easier navigation dengan ppid
  */
 
-// Navigation argument extensions
+// Navigation argument extensions - Fixed
 fun android.os.Bundle.getPpid(): String? = getString(NavigationConstants.ARG_PPID)
 fun android.os.Bundle.getReceiptRef(): String? = getString(NavigationConstants.ARG_RECEIPT_REF)
 fun android.os.Bundle.getNoLoket(): String? = getString(NavigationConstants.ARG_NO_LOKET) // Legacy
+fun android.os.Bundle.getCurrentPpid(): String? = getString(NavigationConstants.ARG_CURRENT_PPID)
 
-// Bundle creation extensions
-fun String.toNavigationBundle(): android.os.Bundle {
-    return android.os.Bundle().apply {
-        putString(NavigationConstants.ARG_PPID, this@toNavigationBundle)
-    }
+// Bundle creation extensions - Fixed
+fun String.toPpidNavigationBundle(): android.os.Bundle {
+    return NavigationConstants.createTransactionLogBundle(this)
 }
 
-// Validation extensions
-fun String?.isValidNavigationId(): Boolean = NavigationConstants.isValidPpid(this)
+fun String.toUpdateProfileBundle(): android.os.Bundle {
+    return NavigationConstants.createUpdateProfileBundle(this)
+}
+
+// Validation extensions - Fixed
+fun String?.isValidNavigationPpid(): Boolean = NavigationConstants.isValidPpid(this)
 fun String?.isValidReceiptReference(): Boolean = NavigationConstants.isValidReceiptRef(this)
+
+// Safe navigation extension
+fun String?.extractPpidSafely(fallbackPpid: String = "PIDLKTD0025blok"): String {
+    return when {
+        NavigationConstants.isValidPpid(this) -> this!!
+        !this.isNullOrBlank() && this.length > 10 -> this
+        else -> fallbackPpid
+    }.also { result ->
+        android.util.Log.d("NavigationConstants", "📋 Extracted ppid: $result from input: $this")
+    }
+}

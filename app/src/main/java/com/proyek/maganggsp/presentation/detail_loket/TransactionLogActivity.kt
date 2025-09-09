@@ -1,9 +1,11 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/TransactionLogActivity.kt - PHASE 3 SIMPLIFIED
+// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/TransactionLogActivity.kt - FIXED FINAL
 package com.proyek.maganggsp.presentation.detail_loket
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -12,7 +14,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityDetailLoketBinding
+import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.model.TransactionLog
+import com.proyek.maganggsp.presentation.profile.UpdateProfileActivity
 import com.proyek.maganggsp.util.AppUtils
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
@@ -31,10 +35,21 @@ class TransactionLogActivity : AppCompatActivity() {
         private const val TAG = "TransactionLogActivity"
     }
 
+    // Activity result launcher untuk update profile
+    private val updateProfileLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            Log.d(TAG, "✅ Profile updated successfully, refreshing data")
+            viewModel.refreshData()
+            AppUtils.showSuccess(this, "Profil berhasil diupdate")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.i(TAG, "🔄 PHASE 3: TransactionLogActivity - FeatureFlags REMOVED")
+        Log.i(TAG, "🔄 FIXED TransactionLogActivity - Complete dengan profile info")
 
         binding = ActivityDetailLoketBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -47,18 +62,16 @@ class TransactionLogActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // ✅ PHASE 3: Simplified UI setup - no feature flag conditions
-        Log.d(TAG, "🎨 Setting up UI - all features enabled")
+        // Update labels untuk Transaction Log context (Bahasa Indonesia)
+        binding.tvMutasiTitle.text = "Log Transaksi"
 
-        // All components are always visible and functional
-        binding.mutationsShimmerLayout.isVisible = true
-        binding.rvMutations.isVisible = true
-        binding.btnBlock.isVisible = true
-        binding.btnUnblock.isVisible = true
-        binding.btnClearFlags.isVisible = false // Keep hidden for now
+        // Hide unused buttons dan show yang dibutuhkan
+        binding.btnBlock.isVisible = false
+        binding.btnUnblock.isVisible = false
+        binding.btnClearFlags.isVisible = false
+        binding.btnDiblokir.isVisible = false
 
-        // Update labels for Transaction Log context
-        binding.tvMutasiTitle.text = "Transaction Logs"
+        Log.d(TAG, "🎨 UI setup completed dengan Indonesian labels")
     }
 
     private fun setupToolbar() {
@@ -66,10 +79,11 @@ class TransactionLogActivity : AppCompatActivity() {
             onBackPressedDispatcher.onBackPressed()
             Log.d(TAG, "📱 Back navigation triggered")
         }
+
+        binding.toolbar.title = "Detail Transaction Log"
     }
 
     private fun setupRecyclerView() {
-        // ✅ PHASE 3: Always setup RecyclerView - no conditional logic
         transactionLogAdapter = TransactionLogAdapter()
         binding.rvMutations.apply {
             adapter = transactionLogAdapter
@@ -77,7 +91,7 @@ class TransactionLogActivity : AppCompatActivity() {
             isNestedScrollingEnabled = false
         }
 
-        // Optional: Add click listener for transaction items
+        // Setup click listener untuk transaction items
         transactionLogAdapter.setOnItemClickListener { transactionLog ->
             showTransactionDetails(transactionLog)
         }
@@ -86,51 +100,66 @@ class TransactionLogActivity : AppCompatActivity() {
     }
 
     private fun setupActionListeners() {
-        // ✅ PHASE 3: Always setup listeners - no feature flag conditions
-        binding.btnBlock.setOnClickListener {
-            Log.d(TAG, "🚫 Block action requested")
-            showActionNotImplemented("Block Profile")
-        }
+        // UPDATE: Repurpose Block button sebagai Update Profile button
+        binding.btnBlock.apply {
+            text = "Update Profile"
+            setBackgroundColor(ContextCompat.getColor(this@TransactionLogActivity, R.color.blue_accent_action))
+            isVisible = true
 
-        binding.btnUnblock.setOnClickListener {
-            Log.d(TAG, "✅ Unblock action requested")
-            showActionNotImplemented("Unblock Profile")
-        }
-
-        binding.btnClearFlags.setOnClickListener {
-            Log.d(TAG, "🧹 Clear flags action requested")
-            showActionNotImplemented("Clear Flags")
+            setOnClickListener {
+                Log.d(TAG, "🔄 Update profile button clicked")
+                navigateToUpdateProfile()
+            }
         }
     }
 
-    private fun showActionNotImplemented(actionName: String) {
-        Toast.makeText(this, "$actionName: Coming soon in future release", Toast.LENGTH_SHORT).show()
+    private fun navigateToUpdateProfile() {
+        val currentPpid = viewModel.getCurrentPpid()
+
+        if (currentPpid.isNullOrBlank()) {
+            AppUtils.showError(this, "PPID tidak tersedia")
+            return
+        }
+
+        val intent = Intent(this, UpdateProfileActivity::class.java).apply {
+            putExtra(NavigationConstants.ARG_PPID, currentPpid)
+        }
+
+        updateProfileLauncher.launch(intent)
+        Log.d(TAG, "🚀 Navigating to UpdateProfileActivity dengan ppid: $currentPpid")
     }
 
     private fun showTransactionDetails(transactionLog: TransactionLog) {
         val details = """
-        Transaction Details:
+        Detail Transaksi:
         
-        Reference: ${transactionLog.tldRefnum}
+        Referensi: ${transactionLog.tldRefnum}
         PAN: ${transactionLog.tldPan}
         ID Pelanggan: ${transactionLog.tldIdpel}
-        Amount: ${transactionLog.getFormattedAmount()}
-        Balance: ${transactionLog.getFormattedBalance()}
-        Date: ${transactionLog.getFormattedDate()}
+        Nominal: ${transactionLog.getFormattedAmount()}
+        Saldo: ${transactionLog.getFormattedBalance()}
+        Tanggal: ${transactionLog.getFormattedDate()}
         PPID: ${transactionLog.tldPpid}
         """.trimIndent()
 
-        android.app.AlertDialog.Builder(this)
-            .setTitle("Transaction Details")
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Detail Transaksi")
             .setMessage(details)
             .setPositiveButton("OK", null)
             .show()
+
+        Log.d(TAG, "📋 Showing transaction details for: ${transactionLog.tldRefnum}")
     }
 
     private fun observeStates() {
-        // ✅ PHASE 3: Simplified state observation - no conditional observers
+        // Observe profile info state
+        lifecycleScope.launch {
+            viewModel.profileState.collectLatest { resource ->
+                handleProfileInfoState(resource)
+            }
+        }
 
-        // Observe transaction logs
+        // Observe transaction logs state
         lifecycleScope.launch {
             viewModel.transactionLogsState.collectLatest { resource ->
                 handleTransactionLogsState(resource)
@@ -152,8 +181,78 @@ class TransactionLogActivity : AppCompatActivity() {
         }
     }
 
+    private fun handleProfileInfoState(resource: Resource<Receipt>) {
+        when (resource) {
+            is Resource.Success -> {
+                val receipt = resource.data
+                if (receipt != null) {
+                    updateProfileInfoUI(receipt)
+                    Log.d(TAG, "✅ Profile info loaded: ${receipt.refNumber}")
+                }
+            }
+            is Resource.Error -> {
+                Log.e(TAG, "❌ Profile info error: ${resource.message}")
+                updateProfileInfoPlaceholder()
+            }
+            is Resource.Loading -> {
+                Log.d(TAG, "⏳ Loading profile info...")
+                showProfileInfoShimmer(true)
+            }
+            else -> Unit
+        }
+    }
+
+    private fun updateProfileInfoUI(receipt: Receipt) {
+        showProfileInfoShimmer(false)
+
+        binding.apply {
+            // Update card dengan Receipt info
+            tvLoketId.text = "Ref: ${receipt.refNumber}"
+            tvLoketName.text = "ID: ${receipt.idPelanggan}"
+            tvPhoneValue.text = "Nominal: ${AppUtils.formatCurrency(receipt.amount)}"
+            tvEmailValue.text = "Logged: ${AppUtils.formatDate(receipt.logged)}"
+
+            // Set default status chip
+            chipStatus.text = "Aktif"
+            chipStatus.setChipBackgroundColor(
+                ContextCompat.getColorStateList(this@TransactionLogActivity, R.color.chip_normal_background)
+            )
+        }
+
+        Log.d(TAG, "🔄 Profile info UI updated dengan receipt data")
+    }
+
+    private fun updateProfileInfoPlaceholder() {
+        showProfileInfoShimmer(false)
+
+        binding.apply {
+            tvLoketId.text = "PPID: ${viewModel.getCurrentPpid() ?: "N/A"}"
+            tvLoketName.text = "Profile Data"
+            tvPhoneValue.text = "Placeholder untuk testing"
+            tvEmailValue.text = "Data tidak tersedia"
+
+            chipStatus.text = "Testing"
+            chipStatus.setChipBackgroundColor(
+                ContextCompat.getColorStateList(this@TransactionLogActivity, R.color.yellow_secondary_accent)
+            )
+        }
+
+        Log.d(TAG, "📋 Profile info placeholder displayed")
+    }
+
+    private fun showProfileInfoShimmer(show: Boolean) {
+        binding.shimmerCardInfo.isVisible = show
+        binding.cardLoketInfo.isVisible = !show
+
+        if (show) {
+            binding.shimmerCardInfo.startShimmer()
+        } else {
+            binding.shimmerCardInfo.stopShimmer()
+        }
+    }
+
     private fun handleTransactionLogsState(resource: Resource<List<TransactionLog>>) {
-        // ✅ PHASE 3: Use AppUtils for consistent state management
+        // Gunakan AppUtils untuk consistent state management
         AppUtils.handleLoadingState(
             shimmerView = binding.mutationsShimmerLayout,
             contentView = binding.rvMutations,
@@ -166,16 +265,18 @@ class TransactionLogActivity : AppCompatActivity() {
                 val data = resource.data ?: emptyList()
                 Log.d(TAG, "✅ Transaction logs loaded: ${data.size} items")
 
-                if (data.isEmpty()) {
-                    binding.tvMutationsError.text = "No transaction logs available for this profile."
-                } else {
-                    transactionLogAdapter.updateData(data)
-                    updateProfileInfo(data.firstOrNull()) // Use first transaction for profile context
-                }
+                transactionLogAdapter.updateData(data)
+
+                // Apply contextual empty state (Indonesian)
+                AppUtils.applyEmptyState(
+                    textView = binding.tvMutationsError,
+                    context = "transactions",
+                    itemCount = data.size
+                )
             }
             is Resource.Error -> {
                 Log.e(TAG, "❌ Transaction logs error: ${resource.message}")
-                binding.tvMutationsError.text = "Failed to load transaction logs.\nPull down to refresh."
+                binding.tvMutationsError.text = "Gagal memuat log transaksi.\nTarik ke bawah untuk refresh."
                 AppUtils.showError(this, resource.exception)
             }
             is Resource.Loading -> {
@@ -187,7 +288,7 @@ class TransactionLogActivity : AppCompatActivity() {
 
     private fun handleActionState(resource: Resource<Unit>) {
         binding.mainProgressBar.isVisible = resource is Resource.Loading
-        setButtonsEnabled(resource !is Resource.Loading)
+        binding.btnBlock.isEnabled = resource !is Resource.Loading
 
         when (resource) {
             is Resource.Error -> {
@@ -196,7 +297,7 @@ class TransactionLogActivity : AppCompatActivity() {
                 Log.e(TAG, "❌ Action error: ${resource.message}")
             }
             is Resource.Success -> {
-                Toast.makeText(this, "Action completed successfully", Toast.LENGTH_SHORT).show()
+                AppUtils.showSuccess(this, "Aksi berhasil")
                 viewModel.onActionConsumed()
                 Log.d(TAG, "✅ Action completed successfully")
             }
@@ -213,34 +314,10 @@ class TransactionLogActivity : AppCompatActivity() {
             is TransactionLogViewModel.UiEvent.NavigateBack -> {
                 finish()
             }
+            is TransactionLogViewModel.UiEvent.NavigateToUpdateProfile -> {
+                navigateToUpdateProfile()
+            }
         }
-    }
-
-    private fun setButtonsEnabled(isEnabled: Boolean) {
-        binding.btnBlock.isEnabled = isEnabled
-        binding.btnUnblock.isEnabled = isEnabled
-        Log.d(TAG, "🔘 Buttons enabled state: $isEnabled")
-    }
-
-    private fun updateProfileInfo(transactionLog: TransactionLog?) {
-        if (transactionLog == null) {
-            Log.w(TAG, "⚠️ No transaction data available for profile info")
-            return
-        }
-
-        // ✅ PHASE 3: Update UI with TransactionLog data (repurposed from old Loket fields)
-        binding.tvLoketId.text = "PPID: ${transactionLog.tldPpid}"
-        binding.tvLoketName.text = "Profile ${transactionLog.tldIdpel}"
-        binding.tvPhoneValue.text = "PAN: ${transactionLog.tldPan}"
-        binding.tvEmailValue.text = "Balance: ${transactionLog.getFormattedBalance()}"
-
-        // Set default status (since we don't have status in TransactionLog)
-        binding.chipStatus.text = "Active"
-        binding.chipStatus.setChipBackgroundColor(
-            ContextCompat.getColorStateList(this, R.color.chip_normal_background)
-        )
-
-        Log.d(TAG, "🔄 Profile info updated from transaction data")
     }
 
     override fun onDestroy() {

@@ -1,60 +1,68 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/dto/ProfileDto.kt
+// File: app/src/main/java/com/proyek/maganggsp/data/dto/LoketMapper.kt - ENHANCED
 package com.proyek.maganggsp.data.dto
 
-import com.google.gson.annotations.SerializedName
+import com.proyek.maganggsp.domain.model.Loket
+import com.proyek.maganggsp.domain.model.LoketStatus
+import com.proyek.maganggsp.domain.model.Receipt
 
 /**
- * NEW DTO: ProfileResponse untuk mapping dari /profiles/ppid/{ppid} ke Receipt model
- * API Response structure yang akan di-map ke Receipt domain model
+ * ENHANCED: Mapping functions for Loket management
  */
-data class ProfileResponse(
-    @SerializedName("refNumber")
-    val refNumber: String?,
 
-    @SerializedName("idPelanggan")
-    val idPelanggan: String?,
+// LoketProfileResponse -> Loket mapping
+fun LoketProfileResponse.toDomain(): Loket {
+    return Loket(
+        ppid = this.ppid ?: "",
+        namaLoket = this.namaLoket ?: "Loket Tidak Dikenal",
+        nomorHP = this.nomorHP ?: "-",
+        alamat = this.alamat ?: "-",
+        email = this.email ?: "-",
+        status = parseLoketStatus(this.status),
+        saldoTerakhir = this.saldoTerakhir ?: 0L,
+        tanggalAkses = this.tanggalAkses ?: "",
+        receipts = this.receipts?.mapNotNull { it.toDomain() } ?: emptyList()
+    )
+}
 
-    @SerializedName("amount")
-    val amount: Long?,
+// ReceiptResponse -> Receipt mapping
+fun ReceiptResponse.toDomain(): Receipt? {
+    // Validate required fields
+    val refNum = this.refNumber
+    val idPel = this.idPelanggan
+    val ppidVal = this.ppid
 
-    @SerializedName("logged")
-    val logged: String?
-)
+    if (refNum.isNullOrBlank() || idPel.isNullOrBlank() || ppidVal.isNullOrBlank()) {
+        return null
+    }
 
-/**
- * NEW DTO: TransactionResponse untuk mapping dari /trx/ppid/{ppid} ke TransactionLog model
- * API Response structure untuk transaction logs
- */
-data class TransactionResponse(
-    @SerializedName("tldRefnum")
-    val tldRefnum: String?,
+    return Receipt(
+        refNumber = refNum,
+        idPelanggan = idPel,
+        tanggal = this.tanggal ?: "",
+        mutasi = this.mutasi ?: 0L,
+        totalSaldo = this.totalSaldo ?: 0L,
+        ppid = ppidVal,
+        tipeTransaksi = this.tipeTransaksi ?: "Receipt"
+    )
+}
 
-    @SerializedName("tldPan")
-    val tldPan: String?,
+// Status parsing helper
+private fun parseLoketStatus(status: String?): LoketStatus {
+    return when (status?.uppercase()) {
+        "BLOCKED", "DIBLOKIR" -> LoketStatus.BLOCKED
+        "FLAGGED", "DITANDAI" -> LoketStatus.FLAGGED
+        else -> LoketStatus.NORMAL
+    }
+}
 
-    @SerializedName("tldIdpel")
-    val tldIdpel: String?,
-
-    @SerializedName("tldAmount")
-    val tldAmount: Long?,
-
-    @SerializedName("tldBalance")
-    val tldBalance: Long?,
-
-    @SerializedName("tldDate")
-    val tldDate: String?,
-
-    @SerializedName("tldPpid")
-    val tldPpid: String?
-
-    // NOTE: message field NOT included as per requirements
-)
-
-/**
- * NEW DTO: UpdateProfileRequest untuk PUT /profiles/ppid/{ppid}
- * Request body untuk update profile
- */
-data class UpdateProfileRequest(
-    @SerializedName("mpPpid")
-    val mpPpid: String
-)
+// Loket -> LoketProfileResponse mapping (for updates)
+fun Loket.toUpdateRequest(): UpdateLoketProfileRequest {
+    return UpdateLoketProfileRequest(
+        mpPpid = this.ppid,
+        namaLoket = this.namaLoket,
+        nomorHP = this.nomorHP,
+        alamat = this.alamat,
+        email = this.email,
+        status = this.status.name
+    )
+}

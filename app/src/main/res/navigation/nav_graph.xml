@@ -1,4 +1,3 @@
-<!-- File: app/src/main/res/navigation/nav_graph.xml - PHASE 2 UPDATE -->
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -6,7 +5,7 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
-    <!-- ✅ PHASE 2: STREAMLINED NAVIGATION - All features enabled -->
+    <!-- FIXED: Navigation dengan ppid argument yang benar -->
 
     <!-- Home Fragment - Receipt List -->
     <fragment
@@ -15,15 +14,15 @@
         android:label="Home - Receipt List"
         tools:layout="@layout/fragment_home">
 
-        <!-- ✅ PHASE 2 FIX: Updated argument from noLoket to ppid -->
+        <!-- FIXED: Action dengan ppid argument -->
         <action
-            android:id="@+id/action_homeFragment_to_detailLoketActivity"
+            android:id="@+id/action_homeFragment_to_transactionLogActivity"
             app:destination="@id/transactionLogActivity"
             app:enterAnim="@android:anim/slide_in_left"
             app:exitAnim="@android:anim/slide_out_right" />
     </fragment>
 
-    <!-- History Fragment - SIMPLIFIED: Just receipt history -->
+    <!-- HIDDEN: History & Monitor fragments tidak ditampilkan di bottom nav untuk sementara -->
     <fragment
         android:id="@+id/historyFragment"
         android:name="com.proyek.maganggsp.presentation.history.HistoryFragment"
@@ -32,12 +31,9 @@
 
         <action
             android:id="@+id/action_historyFragment_to_transactionLogActivity"
-            app:destination="@id/transactionLogActivity"
-            app:enterAnim="@android:anim/slide_in_left"
-            app:exitAnim="@android:anim/slide_out_right" />
+            app:destination="@id/transactionLogActivity" />
     </fragment>
 
-    <!-- Monitor Fragment - SIMPLIFIED: Basic monitoring -->
     <fragment
         android:id="@+id/monitorFragment"
         android:name="com.proyek.maganggsp.presentation.monitor.MonitorFragment"
@@ -46,41 +42,33 @@
 
         <action
             android:id="@+id/action_monitorFragment_to_transactionLogActivity"
-            app:destination="@id/transactionLogActivity"
-            app:enterAnim="@android:anim/slide_in_left"
-            app:exitAnim="@android:anim/slide_out_right" />
+            app:destination="@id/transactionLogActivity" />
     </fragment>
 
-    <!-- ✅ PHASE 2 FIX: Transaction Log Activity with updated arguments -->
+    <!-- FIXED: Transaction Log Activity dengan ppid argument -->
     <activity
         android:id="@+id/transactionLogActivity"
         android:name="com.proyek.maganggsp.presentation.detail_loket.TransactionLogActivity"
         android:label="Transaction Log Detail"
         tools:layout="@layout/activity_detail_loket">
 
-        <!-- ✅ PHASE 2 FIX: Updated argument name and type -->
+        <!-- FIXED: Argument ppid yang benar -->
         <argument
             android:name="ppid"
             android:defaultValue=""
             app:argType="string" />
+    </activity>
 
-        <!-- BACKUP: Keep old argument for backward compatibility during transition -->
+    <!-- NEW: Update Profile Activity (separate screen) -->
+    <activity
+        android:id="@+id/updateProfileActivity"
+        android:name="com.proyek.maganggsp.presentation.profile.UpdateProfileActivity"
+        android:label="Update Profile">
+
         <argument
-            android:name="noLoket"
+            android:name="currentPpid"
             android:defaultValue=""
             app:argType="string" />
     </activity>
 
 </navigation>
-
-    <!--
-    ✅ PHASE 2 NAVIGATION UPDATES:
-    1. Changed main argument from "noLoket" to "ppid"
-    2. Updated action names to reflect new purpose
-    3. Simplified fragment purposes
-    4. Added backward compatibility argument
-    5. Removed complex conditional logic
-    6. All destinations enabled by default
-
-    NEXT: Update NavigationConstants and direction calls
-    -->
