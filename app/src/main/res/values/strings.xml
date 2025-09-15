@@ -1,42 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File: app/src/main/res/values/strings.xml - MVP CORE UPDATE -->
 <resources>
     <string name="app_name">GesPay Admin</string>
 
     <!-- Welcome message -->
     <string name="welcome_admin">Selamat datang, %1$s!</string>
 
-    <!-- FIXED: Updated untuk Receipt/Transaction context -->
-    <string name="detail_loket_title">Detail Transaction Log</string>
-    <string name="receipt_list_title">Daftar Receipt</string>
+    <!-- CORE MVP: Loket Management -->
+    <string name="detail_loket_title">Detail Loket</string>
+    <string name="loket_profile_title">Profil Loket</string>
     <string name="transaction_logs_title">Log Transaksi</string>
+    <string name="block_loket">Blokir Loket</string>
+    <string name="unblock_loket">Buka Blokir</string>
+    <string name="loket_diblokir">Diblokir</string>
+    <string name="hapus_semua_penanda">Hapus Semua Penanda</string>
 
-    <!-- Profile Management -->
-    <string name="update_profile">Update Profil</string>
-    <string name="current_ppid">PPID Saat Ini</string>
-    <string name="new_ppid">PPID Baru</string>
-    <string name="save_changes">Simpan Perubahan</string>
-    <string name="cancel">Batal</string>
+    <!-- Search & Results -->
+    <string name="search_loket_hint">Cari loket (No. Telepon)</string>
+    <string name="search_phone_example">Contoh: 08123456789 atau +628123456789</string>
+    <string name="search_min_chars">Ketik minimal 3 angka untuk pencarian</string>
+    <string name="search_no_results">Tidak ditemukan loket dengan nomor tersebut</string>
+    <string name="search_results_title">Hasil Pencarian</string>
+
+    <!-- Status Labels -->
+    <string name="status_normal">Normal</string>
+    <string name="status_blocked">Diblokir</string>
+    <string name="status_flagged">Ditandai</string>
 
     <!-- Error Messages - Indonesian -->
-    <string name="error_load_receipts">Gagal memuat daftar receipt.</string>
+    <string name="error_load_loket">Gagal memuat data loket.</string>
     <string name="error_load_transactions">Gagal memuat log transaksi.</string>
-    <string name="error_update_profile">Gagal mengupdate profil.</string>
+    <string name="error_load_mutasi">Gagal memuat data mutasi.</string>
+    <string name="error_block_loket">Gagal memblokir loket.</string>
+    <string name="error_unblock_loket">Gagal membuka blokir loket.</string>
+    <string name="error_search_loket">Gagal mencari loket.</string>
     <string name="error_network">Periksa koneksi internet Anda.</string>
     <string name="error_server">Terjadi kesalahan pada server.</string>
-    <string name="error_invalid_ppid">Format PPID tidak valid.</string>
+    <string name="error_invalid_phone">Format nomor telepon tidak valid.</string>
+    <string name="error_phone_too_short">Nomor telepon terlalu pendek.</string>
+    <string name="error_phone_format">Format nomor tidak valid. Gunakan format 08xxx atau +62xxx.</string>
 
     <!-- Success Messages - Indonesian -->
-    <string name="success_update_profile">Profil berhasil diupdate</string>
+    <string name="success_block_loket">Loket berhasil diblokir</string>
+    <string name="success_unblock_loket">Loket berhasil dibuka blokirnya</string>
     <string name="success_login">Login berhasil</string>
     <string name="success_logout">Logout berhasil</string>
 
     <!-- Labels - Indonesian -->
     <string name="label_ppid">PPID</string>
+    <string name="label_nama_loket">Nama Loket</string>
+    <string name="label_nomor_hp">Nomor HP</string>
+    <string name="label_email">Email</string>
+    <string name="label_alamat">Alamat</string>
+    <string name="label_status">Status</string>
     <string name="label_ref_number">Nomor Referensi</string>
     <string name="label_id_pelanggan">ID Pelanggan</string>
     <string name="label_amount">Nominal</string>
     <string name="label_balance">Saldo</string>
     <string name="label_date">Tanggal</string>
     <string name="label_pan">PAN</string>
+    <string name="mutasi_title">Riwayat Mutasi</string>
 
     <!-- Bottom Navigation - Indonesian -->
     <string name="nav_home">Beranda</string>
@@ -44,20 +67,17 @@
     <string name="nav_history">Riwayat</string>
 
     <!-- CORE FLOW: Empty States - Indonesian -->
-    <string name="empty_no_receipts">Belum ada receipt tersedia.\nTarik ke bawah untuk refresh.</string>
-    <string name="empty_no_transactions">Belum ada log transaksi untuk receipt ini.</string>
+    <string name="empty_no_lokets">Belum ada loket tersedia.\nTarik ke bawah untuk refresh.</string>
+    <string name="empty_no_transactions">Belum ada log transaksi untuk loket ini.</string>
     <string name="empty_search_results">Tidak ditemukan hasil untuk pencarian "%1$s".</string>
     <string name="empty_search_hint">Ketik minimal 3 karakter untuk pencarian</string>
+    <string name="empty_recent_history">Belum ada riwayat pencarian.\nMulai cari loket dengan nomor telepon.</string>
 
     <!-- Loading Messages - Indonesian -->
-    <string name="loading_receipts">Memuat daftar receipt...</string>
+    <string name="loading_lokets">Memuat daftar loket...</string>
     <string name="loading_transactions">Memuat log transaksi...</string>
     <string name="loading_profile">Memuat profil...</string>
-
-    <!-- Placeholder Messages - Indonesian -->
-    <string name="placeholder_receipt_data">Data receipt untuk testing</string>
-    <string name="placeholder_transaction_data">Data transaksi untuk testing</string>
-    <string name="placeholder_note">Ini adalah data placeholder untuk development.</string>
+    <string name="loading_search">Mencari loket...</string>
 
     <!-- Login - Indonesian -->
     <string name="login_email_hint">Email</string>
@@ -69,27 +89,32 @@
     <string name="login_error_wrong_credentials">Email atau password salah</string>
     <string name="login_error_network">Periksa koneksi internet</string>
 
-    <!-- Search - Indonesian -->
-    <string name="search_hint_receipt">Cari berdasarkan nomor referensi atau ID pelanggan...</string>
-    <string name="search_no_results">Tidak ada hasil ditemukan</string>
-    <string name="search_min_chars">Minimal 3 karakter untuk pencarian</string>
-
     <!-- Actions - Indonesian -->
     <string name="refresh">Refresh</string>
     <string name="retry">Coba Lagi</string>
     <string name="close">Tutup</string>
     <string name="logout">Logout</string>
     <string name="view_details">Lihat Detail</string>
-    <string name="update">Update</string>
+    <string name="search">Cari</string>
+    <string name="clear_search">Hapus Pencarian</string>
 
     <!-- Dialog Messages - Indonesian -->
     <string name="dialog_confirm_logout_title">Konfirmasi Logout</string>
     <string name="dialog_confirm_logout_message">Yakin ingin keluar dari aplikasi?</string>
-    <string name="dialog_confirm_update_title">Konfirmasi Update</string>
-    <string name="dialog_confirm_update_message">Yakin ingin mengupdate profil ini?</string>
+    <string name="dialog_confirm_block_title">Konfirmasi Blokir</string>
+    <string name="dialog_confirm_block_message">Yakin ingin memblokir loket ini?</string>
+    <string name="dialog_confirm_unblock_title">Konfirmasi Buka Blokir</string>
+    <string name="dialog_confirm_unblock_message">Yakin ingin membuka blokir loket ini?</string>
     <string name="dialog_button_yes">Ya</string>
     <string name="dialog_button_no">Tidak</string>
     <string name="dialog_button_ok">OK</string>
+    <string name="dialog_button_cancel">Batal</string>
+
+    <!-- Phone Format Instructions -->
+    <string name="phone_format_hint">Format yang didukung:\n• 08123456789\n• +628123456789\n• 628123456789</string>
+
+    <!-- MISSING STRINGS FROM EXISTING LAYOUTS - CRITICAL FIXES -->
+    <string name="error_load_mutations">Gagal memuat data mutasi</string>
 
     <!-- Validation Messages - Indonesian -->
     <string name="validation_ppid_required">PPID wajib diisi</string>

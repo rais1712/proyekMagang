@@ -1,127 +1,251 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - UPDATED FOR LOKET
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - MVP CORE
 package com.proyek.maganggsp.presentation.home
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.Admin
-import com.proyek.maganggsp.domain.model.LoketSearchHistory
+import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.usecase.auth.GetAdminProfileUseCase
+import com.proyek.maganggsp.domain.usecase.auth.LogoutUseCase
 import com.proyek.maganggsp.domain.usecase.loket.GetRecentLoketsUseCase
-import com.proyek.maganggsp.domain.usecase.loket.SearchLoketHistoryUseCase
+import com.proyek.maganggsp.domain.usecase.loket.SearchLoketUseCase
 import com.proyek.maganggsp.util.Resource
+import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * MVP CORE: HomeViewModel dengan search functionality untuk loket management
+ */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getAdminProfileUseCase: GetAdminProfileUseCase,
+    private val searchLoketUseCase: SearchLoketUseCase,
     private val getRecentLoketsUseCase: GetRecentLoketsUseCase,
-    private val searchLoketHistoryUseCase: SearchLoketHistoryUseCase
+    private val getAdminProfileUseCase: GetAdminProfileUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "HomeViewModel"
+        private const val SEARCH_DEBOUNCE_DELAY = 600L
     }
 
-    private val _adminProfileState = MutableStateFlow<Admin?>(null)
-    val adminProfileState = _adminProfileState.asStateFlow()
+    // Search state management
+    private val _searchResults = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
+    val searchResults: StateFlow<Resource<List<Loket>>> = _searchResults.asStateFlow()
 
-    private val _uiState = MutableStateFlow<Resource<List<LoketSearchHistory>>>(Resource.Loading())
-    val uiState = _uiState.asStateFlow()
+    private val _recentLokets = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
+    val recentLokets: StateFlow<Resource<List<Loket>>> = _recentLokets.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private var searchJob: Job? = null
 
     init {
-        Log.d(TAG, "REFACTORED HomeViewModel initialized for Loket search system")
-        loadAdminProfile()
         loadRecentLokets()
     }
 
-    private fun loadAdminProfile() {
-        try {
-            getAdminProfileUseCase()?.let { admin ->
-                _adminProfileState.value = admin
-                Log.d(TAG, "Admin profile loaded: ${admin.name}")
-            } ?: run {
-                Log.e(TAG, "Admin profile is null")
-                setFallbackAdmin()
+    /**
+     * Search loket by phone number with debounce
+     */
+    fun searchLoket(phoneNumber: String) {
+        // Cancel previous search job
+        searchJob?.cancel()
+
+        if (phoneNumber.isBlank()) {
+            clearSearch()
+            return
+        }
+
+        searchJob = viewModelScope.launch {
+            try {
+                _isSearching.value = true
+
+                // Debounce search to avoid too many API calls
+                delay(SEARCH_DEBOUNCE_DELAY)
+
+                Log.d(TAG, "Starting search for phone: $phoneNumber")
+
+                // Quick validation
+                val validationResult = searchLoketUseCase.validateQuick(phoneNumber)
+                if (validationResult.isError) {
+                    _searchResults.value = Resource.Error(
+                        com.proyek.maganggsp.util.exceptions.AppException.ValidationException(
+                            validationResult.message
+                        )
+                    )
+                    return@launch
+                }
+
+                // Perform search
+                searchLoketUseCase(phoneNumber).collect { resource ->
+                    _searchResults.value = resource
+
+                    when (resource) {
+                        is Resource.Success -> {
+                            Log.d(TAG, "Search successful: ${resource.data.size} results")
+                            AppUtils.logInfo(TAG, "Found ${resource.data.size} lokets for $phoneNumber")
+                        }
+                        is Resource.Error -> {
+                            Log.e(TAG, "Search error: ${resource.exception.message}")
+                            AppUtils.logError(TAG, "Search failed", resource.exception)
+                        }
+                        is Resource.Empty -> {
+                            Log.d(TAG, "No results found for $phoneNumber")
+                        }
+                        is Resource.Loading -> {
+                            Log.d(TAG, "Search loading...")
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Search error", e)
+                _searchResults.value = Resource.Error(
+                    com.proyek.maganggsp.util.exceptions.AppException.UnknownException(
+                        "Pencarian gagal: ${e.message}"
+                    )
+                )
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load admin profile", e)
-            setFallbackAdmin()
         }
     }
 
-    private fun setFallbackAdmin() {
-        _adminProfileState.value = Admin(
-            name = "Admin User",
-            email = "admin@gespay.com",
-            token = "token"
-        )
-    }
-
-    private fun loadRecentLokets() {
-        Log.d(TAG, "Loading recent loket access history")
-
-        getRecentLoketsUseCase().onEach { result ->
-            _uiState.value = when (result) {
-                is Resource.Success -> {
-                    Log.d(TAG, "Recent lokets loaded: ${result.data?.size ?: 0} items")
-                    result
-                }
-                is Resource.Error -> {
-                    Log.e(TAG, "Failed to load recent lokets: ${result.message}")
-                    result
-                }
-                is Resource.Loading -> {
-                    Log.d(TAG, "Loading recent lokets...")
-                    result
-                }
-                is Resource.Empty -> {
-                    Log.d(TAG, "No recent lokets found")
-                    Resource.Success(emptyList())
-                }
-            }
-        }.launchIn(viewModelScope)
-    }
-
-    fun searchLokets(query: String) {
-        Log.d(TAG, "Search lokets with query: '$query'")
-
-        searchLoketHistoryUseCase(query).onEach { result ->
-            _uiState.value = when (result) {
-                is Resource.Success -> {
-                    Log.d(TAG, "Search results: ${result.data?.size ?: 0} items")
-                    result
-                }
-                is Resource.Error -> {
-                    Log.e(TAG, "Search error: ${result.message}")
-                    result
-                }
-                is Resource.Loading -> {
-                    Log.d(TAG, "Searching...")
-                    result
-                }
-                is Resource.Empty -> {
-                    Log.d(TAG, "No search results")
-                    Resource.Success(emptyList())
-                }
-            }
-        }.launchIn(viewModelScope)
-    }
-
-    fun refresh() {
-        Log.d(TAG, "Refreshing home data")
-        loadAdminProfile()
+    /**
+     * Clear search and show recent lokets
+     */
+    fun clearSearch() {
+        searchJob?.cancel()
+        _isSearching.value = false
+        _searchResults.value = Resource.Empty
         loadRecentLokets()
+    }
+
+    /**
+     * Load recent accessed lokets
+     */
+    fun loadRecentLokets() {
+        if (_isSearching.value) return
+
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Loading recent lokets")
+
+                getRecentLoketsUseCase().collect { resource ->
+                    _recentLokets.value = resource
+
+                    when (resource) {
+                        is Resource.Success -> {
+                            Log.d(TAG, "Recent lokets loaded: ${resource.data.size}")
+                        }
+                        is Resource.Error -> {
+                            Log.e(TAG, "Recent lokets error: ${resource.exception.message}")
+                        }
+                        is Resource.Empty -> {
+                            Log.d(TAG, "No recent lokets available")
+                        }
+                        is Resource.Loading -> {
+                            Log.d(TAG, "Loading recent lokets...")
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Recent lokets error", e)
+                _recentLokets.value = Resource.Error(
+                    com.proyek.maganggsp.util.exceptions.AppException.UnknownException(
+                        "Gagal memuat riwayat: ${e.message}"
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * Get current admin profile
+     */
+    fun getAdminProfile(): Admin? {
+        return try {
+            getAdminProfileUseCase()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get admin profile", e)
+            null
+        }
+    }
+
+    /**
+     * Logout user
+     */
+    fun logout() {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "Starting logout process")
+                logoutUseCase().collect { resource ->
+                    when (resource) {
+                        is Resource.Success -> {
+                            Log.d(TAG, "Logout successful")
+                            AppUtils.logInfo(TAG, "User logged out successfully")
+                        }
+                        is Resource.Error -> {
+                            Log.e(TAG, "Logout error: ${resource.exception.message}")
+                            AppUtils.logError(TAG, "Logout failed", resource.exception)
+                        }
+                        is Resource.Loading -> {
+                            Log.d(TAG, "Logout in progress...")
+                        }
+                        is Resource.Empty -> { /* Not applicable for logout */ }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Logout error", e)
+                AppUtils.logError(TAG, "Logout exception", e)
+            }
+        }
+    }
+
+    /**
+     * Refresh data (pull to refresh)
+     */
+    fun refresh() {
+        if (_isSearching.value) {
+            // If currently searching, don't refresh recent - maintain search state
+            Log.d(TAG, "Refresh called during search - ignoring")
+        } else {
+            loadRecentLokets()
+        }
+    }
+
+    /**
+     * Get phone format examples for UI hints
+     */
+    fun getPhoneFormatExamples(): List<String> {
+        return searchLoketUseCase.getPhoneFormatExamples()
+    }
+
+    /**
+     * Debug info
+     */
+    fun getDebugInfo(): String {
+        val adminProfile = getAdminProfile()
+        return """
+        HomeViewModel Debug Info:
+        - Admin: ${adminProfile?.name ?: "Not found"}
+        - Email: ${adminProfile?.email ?: "Not found"}
+        - Is Searching: ${_isSearching.value}
+        - Search Results: ${(_searchResults.value as? Resource.Success)?.data?.size ?: "N/A"}
+        - Recent Lokets: ${(_recentLokets.value as? Resource.Success)?.data?.size ?: "N/A"}
+        - Search Job Active: ${searchJob?.isActive ?: false}
+        """.trimIndent()
     }
 
     override fun onCleared() {
         super.onCleared()
-        Log.d(TAG, "HomeViewModel cleared")
+        searchJob?.cancel()
+        Log.d(TAG, "ViewModel cleared")
     }
 }
-
