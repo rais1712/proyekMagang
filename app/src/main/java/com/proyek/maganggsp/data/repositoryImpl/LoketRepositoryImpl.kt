@@ -1,14 +1,13 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/LoketRepositoryImpl.kt
+// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/LoketRepositoryImpl.kt - REAL API IMPLEMENTATION
 package com.proyek.maganggsp.data.repositoryImpl
 
 import android.util.Log
 import com.proyek.maganggsp.data.api.LoketApi
-import com.proyek.maganggsp.data.dto.toDomain
-import com.proyek.maganggsp.data.dto.toUpdateRequest
+import com.proyek.maganggsp.data.dto.*
 import com.proyek.maganggsp.data.source.local.LoketHistoryManager
 import com.proyek.maganggsp.domain.model.Loket
+import com.proyek.maganggsp.domain.model.LoketStatus
 import com.proyek.maganggsp.domain.model.TransactionLog
-import com.proyek.maganggsp.domain.model.LoketSearchHistory
 import com.proyek.maganggsp.domain.repository.LoketRepository
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.AppException
@@ -29,8 +28,11 @@ class LoketRepositoryImpl @Inject constructor(
         private const val TAG = "LoketRepositoryImpl"
     }
 
+    /**
+     * REAL IMPLEMENTATION: Get comprehensive loket profile
+     */
     override fun getLoketProfile(ppid: String): Flow<Resource<Loket>> {
-        Log.d(TAG, "Getting loket profile for PPID: $ppid")
+        Log.d(TAG, "🌐 API CALL: GET /profiles/ppid/$ppid")
 
         return safeApiFlowWithItemMapping(
             apiCall = {
@@ -39,181 +41,279 @@ class LoketRepositoryImpl @Inject constructor(
             },
             mapper = { response ->
                 val loket = response.toDomain()
+                Log.d(TAG, "✅ Loket status determined: ${loket.status}")
+
                 // Save to history when successfully accessed
                 try {
                     historyManager.saveToHistory(loket)
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to save to history", e)
                 }
+
                 loket
             }
         )
     }
 
+    /**
+     * REAL IMPLEMENTATION: Get transaction logs
+     */
     override fun getLoketTransactions(ppid: String): Flow<Resource<List<TransactionLog>>> {
-        Log.d(TAG, "Getting transactions for loket PPID: $ppid")
+        Log.d(TAG, "🌐 API CALL: GET /trx/ppid/$ppid")
 
         return safeApiFlowWithMapping(
             apiCall = {
                 validatePpid(ppid)
                 api.getLoketTransactions(ppid)
             },
-            mapper = { transactionResponse ->
-                transactionResponse.toDomain()
+            mapper = { response ->
+                response.toDomain()
             }
         )
     }
 
-    override fun updateLoketProfile(ppid: String, updatedLoket: Loket): Flow<Resource<Unit>> {
-        Log.d(TAG, "Updating loket profile for PPID: $ppid")
-
-        return safeApiFlowUnit {
-            validatePpid(ppid)
-            val updateRequest = updatedLoket.toUpdateRequest()
-            api.updateLoketProfile(ppid, updateRequest)
-        }
-    }
-
-    override fun accessLoketByPpid(ppid: String): Flow<Resource<Loket>> {
-        Log.d(TAG, "Accessing loket by PPID: $ppid")
+    /**
+     * REAL IMPLEMENTATION: Block loket using profile update
+     * Logic: Add "blok" suffix to ppid
+     */
+    override fun blockLoket(ppid: String): Flow<Resource<Unit>> {
+        Log.d(TAG, "🔒 BLOCK LOKET: $ppid -> ${ppid}blok")
+        Log.d(TAG, "🌐 API CALL: PUT /profiles/ppid/$ppid with body: {\"mpPpid\": \"${ppid}blok\"}")
 
         return flow {
             emit(Resource.Loading())
 
             try {
-                // Validate PPID first
                 validatePpid(ppid)
 
-                // Try to get from API
-                val response = api.getLoketProfile(ppid)
-                val loket = response.toDomain()
+                // Create block request
+                val blockRequest = createBlockRequest(ppid)
+                Log.d(TAG, "📤 Block request: $blockRequest")
 
-                // Save to access history
-                historyManager.saveToHistory(loket)
+                // Make API call
+                val response = api.updateLoketProfile(ppid, blockRequest)
 
-                emit(Resource.Success(loket))
-                Log.d(TAG, "Successfully accessed loket: ${loket.namaLoket}")
+                if (response.isSuccessful) {
+                    Log.d(TAG, "✅ Block successful: $ppid")
+                    emit(Resource.Success(Unit))
+                } else {
+                    Log.e(TAG, "❌ Block failed: HTTP ${response.code()}")
+                    emit(Resource.Error(
+                        AppException.ServerException(
+                            response.code(),
+                            "Gagal memblokir loket: ${response.message()}"
+                        )
+                    ))
+                }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to access loket by PPID", e)
+                Log.e(TAG, "❌ Block loket error", e)
                 val appException = exceptionMapper.mapToAppException(e)
                 emit(Resource.Error(appException))
             }
         }
     }
 
-    // Implementasi method yang hilang dari interface
-    override fun searchLoket(phoneNumber: String): Flow<Resource<List<Loket>>> = flow {
-        emit(Resource.Loading())
-        try {
-            validatePhoneNumber(phoneNumber)
-            val response = api.searchLoket(phoneNumber)
-            val lokets = response.map { it.toDomain() }
-            emit(Resource.Success(lokets))
-        } catch (e: Exception) {
-            Log.e(TAG, "Search loket error", e)
-            emit(Resource.Error(exceptionMapper.mapToAppException(e)))
-        }
-    }
+    /**
+     * REAL IMPLEMENTATION: Unblock loket using profile update
+     * Logic: Remove "blok" suffix from ppid
+     */
+    override fun unblockLoket(ppid: String): Flow<Resource<Unit>> {
+        val originalPpid = ppid.removeSuffix("blok")
+        Log.d(TAG, "🔓 UNBLOCK LOKET: $ppid -> $originalPpid")
+        Log.d(TAG, "🌐 API CALL: PUT /profiles/ppid/$ppid with body: {\"mpPpid\": \"$originalPpid\"}")
 
-    override fun blockLoket(ppid: String): Flow<Resource<Unit>> = flow {
-        emit(Resource.Loading())
-        try {
-            validatePpid(ppid)
-            val response = api.blockLoket(ppid)
-            if (response.isSuccessful) {
-                emit(Resource.Success(Unit))
-            } else {
-                emit(Resource.Error(AppException.ServerException(
-                    response.code(),
-                    "Failed to block loket"
-                )))
+        return flow {
+            emit(Resource.Loading())
+
+            try {
+                validatePpid(ppid)
+
+                // Create unblock request
+                val unblockRequest = createUnblockRequest(ppid)
+                Log.d(TAG, "📤 Unblock request: $unblockRequest")
+
+                // Make API call
+                val response = api.updateLoketProfile(ppid, unblockRequest)
+
+                if (response.isSuccessful) {
+                    Log.d(TAG, "✅ Unblock successful: $ppid")
+                    emit(Resource.Success(Unit))
+                } else {
+                    Log.e(TAG, "❌ Unblock failed: HTTP ${response.code()}")
+                    emit(Resource.Error(
+                        AppException.ServerException(
+                            response.code(),
+                            "Gagal membuka blokir loket: ${response.message()}"
+                        )
+                    ))
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Unblock loket error", e)
+                val appException = exceptionMapper.mapToAppException(e)
+                emit(Resource.Error(appException))
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Block loket error", e)
-            emit(Resource.Error(exceptionMapper.mapToAppException(e)))
         }
     }
 
-    override fun unblockLoket(ppid: String): Flow<Resource<Unit>> = flow {
-        emit(Resource.Loading())
-        try {
-            validatePpid(ppid)
-            val response = api.unblockLoket(ppid)
-            if (response.isSuccessful) {
-                emit(Resource.Success(Unit))
-            } else {
-                emit(Resource.Error(AppException.ServerException(
-                    response.code(),
-                    "Failed to unblock loket"
-                )))
+    /**
+     * UPDATE PROFILE: Generic profile update method
+     */
+    override fun updateLoketProfile(ppid: String, updatedLoket: Loket): Flow<Resource<Unit>> {
+        Log.d(TAG, "🔄 UPDATE PROFILE: $ppid")
+
+        return flow {
+            emit(Resource.Loading())
+
+            try {
+                validatePpid(ppid)
+
+                // Determine new PPID based on status
+                val newPpid = when (updatedLoket.status) {
+                    LoketStatus.BLOCKED -> {
+                        if (updatedLoket.ppid.endsWith("blok")) {
+                            updatedLoket.ppid
+                        } else {
+                            "${updatedLoket.ppid}blok"
+                        }
+                    }
+                    LoketStatus.NORMAL -> {
+                        updatedLoket.ppid.removeSuffix("blok")
+                    }
+                    else -> updatedLoket.ppid
+                }
+
+                val updateRequest = UpdateProfileRequest(mpPpid = newPpid)
+                Log.d(TAG, "📤 Update request: $updateRequest")
+
+                val response = api.updateLoketProfile(ppid, updateRequest)
+
+                if (response.isSuccessful) {
+                    Log.d(TAG, "✅ Update successful")
+                    emit(Resource.Success(Unit))
+                } else {
+                    Log.e(TAG, "❌ Update failed: HTTP ${response.code()}")
+                    emit(Resource.Error(
+                        AppException.ServerException(
+                            response.code(),
+                            "Gagal mengupdate profil loket"
+                        )
+                    ))
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Update profile error", e)
+                val appException = exceptionMapper.mapToAppException(e)
+                emit(Resource.Error(appException))
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Unblock loket error", e)
-            emit(Resource.Error(exceptionMapper.mapToAppException(e)))
         }
     }
 
-    // Tambah validasi nomor telepon
-    private fun validatePhoneNumber(phoneNumber: String) {
-        if (phoneNumber.isBlank()) {
-            throw AppException.ValidationException("Nomor telepon tidak boleh kosong")
-        }
+    /**
+     * SEARCH: Since no search endpoint exists, implement manual PPID access
+     */
+    override fun searchLoket(phoneNumber: String): Flow<Resource<List<Loket>>> {
+        Log.d(TAG, "🔍 SEARCH by phone not supported by API - returning empty results")
 
-        val cleanNumber = phoneNumber.replace(Regex("[^0-9]"), "")
-        if (cleanNumber.length < 10 || cleanNumber.length > 13) {
-            throw AppException.ValidationException("Format nomor telepon tidak valid")
-        }
+        return flow {
+            emit(Resource.Loading())
 
-        if (!cleanNumber.startsWith("08") && !cleanNumber.startsWith("628")) {
-            throw AppException.ValidationException("Nomor telepon harus diawali dengan 08 atau +62")
-        }
-    }
+            // Since there's no search endpoint, return recent history that matches
+            try {
+                val recentLokets = historyManager.getRecentHistory()
+                val matchingLokets = recentLokets.filter { history ->
+                    history.nomorHP.contains(phoneNumber, ignoreCase = true)
+                }.map { history ->
+                    Loket(
+                        ppid = history.ppid,
+                        namaLoket = history.namaLoket,
+                        nomorHP = history.nomorHP,
+                        alamat = "",
+                        email = "",
+                        status = if (history.ppid.endsWith("blok")) LoketStatus.BLOCKED else LoketStatus.NORMAL
+                    )
+                }
 
-    override fun getRecentLokets(): Flow<Resource<List<Loket>>> = flow {
-        emit(Resource.Loading())
-        try {
-            val histories = historyManager.getRecentHistory()
-            val lokets = histories.map { history ->
-                Loket(
-                    ppid = history.ppid,
-                    namaLoket = history.namaLoket,
-                    nomorHP = history.nomorHP,
-                    alamat = history.alamat ?: "",
-                    email = history.email ?: "",
-                    status = history.status,
-                    receipts = emptyList()
-                )
+                Log.d(TAG, "🔍 Found ${matchingLokets.size} matching lokets in history")
+                if (matchingLokets.isEmpty()) {
+                    emit(Resource.Empty)
+                } else {
+                    emit(Resource.Success(matchingLokets))
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Search error", e)
+                emit(Resource.Error(AppException.UnknownException("Pencarian gagal")))
             }
-            emit(Resource.Success(lokets))
-        } catch (e: Exception) {
-            Log.e(TAG, "Get recent lokets error", e)
-            emit(Resource.Error(AppException.UnknownException("Failed to load recent history")))
         }
     }
 
+    /**
+     * ACCESS BY PPID: Direct loket access
+     */
+    override fun accessLoketByPpid(ppid: String): Flow<Resource<Loket>> {
+        Log.d(TAG, "🎯 ACCESS by PPID: $ppid")
+        return getLoketProfile(ppid) // Delegate to getLoketProfile
+    }
+
+    /**
+     * RECENT LOKETS: From local history
+     */
+    override fun getRecentLokets(): Flow<Resource<List<Loket>>> {
+        return flow {
+            emit(Resource.Loading())
+
+            try {
+                val histories = historyManager.getRecentHistory()
+                val lokets = histories.map { history ->
+                    Loket(
+                        ppid = history.ppid,
+                        namaLoket = history.namaLoket,
+                        nomorHP = history.nomorHP,
+                        alamat = "",
+                        email = "",
+                        status = if (history.ppid.endsWith("blok")) LoketStatus.BLOCKED else LoketStatus.NORMAL
+                    )
+                }
+
+                Log.d(TAG, "📋 Recent lokets: ${lokets.size}")
+                emit(Resource.Success(lokets))
+
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Get recent lokets error", e)
+                emit(Resource.Error(AppException.UnknownException("Gagal memuat riwayat")))
+            }
+        }
+    }
+
+    /**
+     * SAVE TO HISTORY: Local storage
+     */
     override suspend fun saveToHistory(loket: Loket) {
         try {
             historyManager.saveToHistory(loket)
-            Log.d(TAG, "Saved loket to history: ${loket.ppid}")
+            Log.d(TAG, "💾 Saved to history: ${loket.ppid}")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to save loket to history", e)
-            // Non-critical operation, don't throw
+            Log.e(TAG, "❌ Failed to save to history", e)
         }
     }
 
+    /**
+     * FAVORITES: Local storage management
+     */
     override fun getFavoriteLokets(): Flow<Resource<List<Loket>>> {
         return flow {
             emit(Resource.Loading())
 
             try {
-                val favorites = historyManager.getFavoriteLokets()
-                emit(Resource.Success(favorites))
-                Log.d(TAG, "Retrieved ${favorites.size} favorite lokets")
+                val favoriteLokets = historyManager.getFavoriteLokets()
+                Log.d(TAG, "⭐ Favorite lokets: ${favoriteLokets.size}")
+                emit(Resource.Success(favoriteLokets))
 
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to get favorite lokets", e)
-                emit(Resource.Error(AppException.UnknownException("Failed to load favorites")))
+                Log.e(TAG, "❌ Get favorite lokets error", e)
+                emit(Resource.Error(AppException.UnknownException("Gagal memuat favorit")))
             }
         }
     }
@@ -222,18 +322,20 @@ class LoketRepositoryImpl @Inject constructor(
         try {
             if (isFavorite) {
                 historyManager.addToFavorites(ppid)
-                Log.d(TAG, "Added PPID $ppid to favorites")
+                Log.d(TAG, "⭐ Added to favorites: $ppid")
             } else {
                 historyManager.removeFromFavorites(ppid)
-                Log.d(TAG, "Removed PPID $ppid from favorites")
+                Log.d(TAG, "⭐ Removed from favorites: $ppid")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to toggle favorite status", e)
-            throw AppException.UnknownException("Failed to update favorites")
+            Log.e(TAG, "❌ Toggle favorite error", e)
+            throw AppException.UnknownException("Gagal mengupdate favorit")
         }
     }
 
-    // Helper validation methods
+    /**
+     * VALIDATION: PPID format checking
+     */
     private fun validatePpid(ppid: String) {
         if (ppid.isBlank()) {
             throw AppException.ValidationException("PPID tidak boleh kosong")
@@ -241,60 +343,19 @@ class LoketRepositoryImpl @Inject constructor(
         if (ppid.length < 5) {
             throw AppException.ValidationException("PPID harus minimal 5 karakter")
         }
-        Log.d(TAG, "PPID validation passed: $ppid")
+        Log.d(TAG, "✅ PPID validation passed: $ppid")
     }
 
-    // Bulk operations for future enhancement
-    fun getMultipleLoketProfiles(ppids: List<String>): Flow<Resource<List<Loket>>> {
-        return flow {
-            emit(Resource.Loading())
-
-            try {
-                val lokets = mutableListOf<Loket>()
-
-                ppids.forEach { ppid ->
-                    try {
-                        validatePpid(ppid)
-                        val response = api.getLoketProfile(ppid)
-                        lokets.add(response.toDomain())
-                        Log.d(TAG, "Loaded loket profile: $ppid")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Failed to load profile for $ppid: ${e.message}")
-                        // Continue with other PPIDs
-                    }
-                }
-
-                emit(Resource.Success(lokets))
-                Log.d(TAG, "Bulk operation completed: ${lokets.size}/${ppids.size} profiles loaded")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Bulk operation error", e)
-                val appException = exceptionMapper.mapToAppException(e)
-                emit(Resource.Error(appException))
-            }
-        }
-    }
-
-    // Search functionality for manual PPID entry with suggestions
-    fun searchLoketSuggestions(query: String): Flow<Resource<List<LoketSearchHistory>>> {
-        return flow {
-            emit(Resource.Loading())
-
-            try {
-                val allHistory = historyManager.getRecentHistory()
-                val filtered = allHistory.filter { history ->
-                    history.ppid.contains(query, ignoreCase = true) ||
-                            history.namaLoket.contains(query, ignoreCase = true) ||
-                            history.nomorHP.contains(query, ignoreCase = true)
-                }
-
-                emit(Resource.Success(filtered))
-                Log.d(TAG, "Search suggestions found: ${filtered.size} results for '$query'")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Search suggestions error", e)
-                emit(Resource.Error(AppException.UnknownException("Failed to search history")))
-            }
-        }
+    /**
+     * DEBUG: Get repository debug info
+     */
+    fun getDebugInfo(): String {
+        return """
+        LoketRepository Debug Info:
+        - API Base URL: ${com.proyek.maganggsp.BuildConfig.BASE_URL}
+        - Block Logic: Append/Remove "blok" suffix to PPID
+        - Available Operations: profile, transactions, block, unblock
+        - Search: Local history only (no API endpoint)
+        """.trimIndent()
     }
 }
