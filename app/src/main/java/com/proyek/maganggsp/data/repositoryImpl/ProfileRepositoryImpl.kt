@@ -5,7 +5,6 @@ import android.util.Log
 import com.proyek.maganggsp.data.api.ProfileApi
 import com.proyek.maganggsp.data.dto.UpdateProfileRequest
 import com.proyek.maganggsp.data.dto.toDomain
-import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.repository.ProfileRepository
 import com.proyek.maganggsp.util.Resource

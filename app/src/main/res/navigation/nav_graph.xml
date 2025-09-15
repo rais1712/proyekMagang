@@ -48,7 +48,7 @@
     <!-- FIXED: Transaction Log Activity dengan ppid argument -->
     <activity
         android:id="@+id/transactionLogActivity"
-        android:name="com.proyek.maganggsp.presentation.detail_loket.TransactionLogActivity"
+        android:name="com.proyek.maganggsp.presentation.detail_loket.DetailLoketActivity"
         android:label="Transaction Log Detail"
         tools:layout="@layout/activity_detail_loket">
 

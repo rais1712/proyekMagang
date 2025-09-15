@@ -1,5 +1,4 @@
-
-// File: app/src/main/java/com/proyek/maganggsp/data/repository/LoketRepository.kt - NEW INTERFACE
+// File: app/src/main/java/com/proyek/maganggsp/domain/repository/LoketRepository.kt - NEW INTERFACE
 package com.proyek.maganggsp.domain.repository
 
 import com.proyek.maganggsp.domain.model.Loket

@@ -2,6 +2,7 @@
 package com.proyek.maganggsp.data.api
 
 import com.proyek.maganggsp.data.dto.LoketProfileResponse
+import com.proyek.maganggsp.data.dto.LoketResponse
 import com.proyek.maganggsp.data.dto.TransactionResponse
 import com.proyek.maganggsp.data.dto.UpdateLoketProfileRequest
 import retrofit2.Response
@@ -12,7 +13,6 @@ import retrofit2.http.*
  * Focuses on profile management with existing backend endpoints
  */
 interface LoketApi {
-
     /**
      * Get loket profile with comprehensive data
      * Maps to existing: GET /profiles/ppid/{ppid}
@@ -36,6 +36,27 @@ interface LoketApi {
         @Path("ppid") ppid: String,
         @Body request: UpdateLoketProfileRequest
     ): Response<Unit>
+
+    /**
+     * Search for loket by phone number
+     * Maps to existing: GET /search/loket
+     */
+    @GET("search/loket")
+    suspend fun searchLoket(@Query("phone") phoneNumber: String): List<LoketResponse>
+
+    /**
+     * Block a loket
+     * Maps to existing: PUT /loket/{ppid}/block
+     */
+    @PUT("loket/{ppid}/block")
+    suspend fun blockLoket(@Path("ppid") ppid: String): Response<Unit>
+
+    /**
+     * Unblock a loket
+     * Maps to existing: PUT /loket/{ppid}/unblock
+     */
+    @PUT("loket/{ppid}/unblock")
+    suspend fun unblockLoket(@Path("ppid") ppid: String): Response<Unit>
 
     /**
      * FUTURE: Batch get multiple loket profiles

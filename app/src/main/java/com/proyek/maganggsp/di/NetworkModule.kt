@@ -3,6 +3,7 @@ package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.BuildConfig
 import com.proyek.maganggsp.data.api.AuthApi
+import com.proyek.maganggsp.data.api.LoketApi
 import com.proyek.maganggsp.data.api.ProfileApi
 import com.proyek.maganggsp.data.source.local.SessionManager
 import dagger.Module
@@ -124,7 +125,14 @@ object NetworkModule {
         return retrofit.create(AuthApi::class.java)
     }
 
-    // NEW: ProfileApi for new endpoints
+    // NEW: LoketApi for loket management
+    @Singleton
+    @Provides
+    fun provideLoketApi(retrofit: Retrofit): LoketApi {
+        return retrofit.create(LoketApi::class.java)
+    }
+
+    // KEEP: ProfileApi for backward compatibility
     @Singleton
     @Provides
     fun provideProfileApi(retrofit: Retrofit): ProfileApi {
@@ -137,3 +145,6 @@ object NetworkModule {
         return application.applicationContext
     }
 }
+
+
+

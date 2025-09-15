@@ -169,19 +169,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     // ✅ PHASE 1 FIX: Implement missing isLoggedIn method
     override fun isLoggedIn(): Boolean {
-        return try {
-            val isValid = sessionManager.isSessionValid()
-            Log.d(TAG, "🔍 Session validity check: $isValid")
-
-            if (!isValid && BuildConfig.DEBUG) {
-                Log.d(TAG, "🔍 Session debug info: ${sessionManager.debugSessionState()}")
-            }
-
-            isValid
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error checking login status", e)
-            false
-        }
+        return sessionManager.isSessionValid()
     }
 
     // Helper methods (keep existing)
@@ -234,11 +222,9 @@ class AuthRepositoryImpl @Inject constructor(
 
     private fun mapHttpException(e: HttpException): AppException {
         return when (e.code()) {
-            401 -> AppException.AuthenticationException("Invalid email or password")
-            403 -> AppException.AuthenticationException("Access denied")
-            404 -> AppException.ParseException("Login endpoint not found")
-            500 -> AppException.ServerException(500, "Internal server error")
-            else -> AppException.UnknownException("Unknown error occurred: HTTP ${e.code()}")
+            401 -> AppException.AuthenticationException("Email atau password salah")
+            403 -> AppException.AuthenticationException("Akses ditolak")
+            else -> AppException.ServerException(e.code(), "Terjadi kesalahan server")
         }
     }
 }

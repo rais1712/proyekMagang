@@ -1,14 +1,14 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - REFACTORED
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - UPDATED FOR LOKET
 package com.proyek.maganggsp.presentation.home
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.Admin
-import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.domain.model.LoketSearchHistory
 import com.proyek.maganggsp.domain.usecase.auth.GetAdminProfileUseCase
-import com.proyek.maganggsp.domain.usecase.loket.GetProfileUseCase
-import com.proyek.maganggsp.domain.usecase.loket.SearchProfilesUseCase
+import com.proyek.maganggsp.domain.usecase.loket.GetRecentLoketsUseCase
+import com.proyek.maganggsp.domain.usecase.loket.SearchLoketHistoryUseCase
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,38 +20,37 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getAdminProfileUseCase: GetAdminProfileUseCase,
-    private val getProfileUseCase: GetProfileUseCase,
-    private val searchProfilesUseCase: SearchProfilesUseCase
+    private val getRecentLoketsUseCase: GetRecentLoketsUseCase,
+    private val searchLoketHistoryUseCase: SearchLoketHistoryUseCase
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "HomeViewModel"
-        private const val DEFAULT_PPID = "PIDLKTD0025blok" // Default PPID for initial data
     }
 
     private val _adminProfileState = MutableStateFlow<Admin?>(null)
     val adminProfileState = _adminProfileState.asStateFlow()
 
-    private val _uiState = MutableStateFlow<Resource<List<Receipt>>>(Resource.Loading())
+    private val _uiState = MutableStateFlow<Resource<List<LoketSearchHistory>>>(Resource.Loading())
     val uiState = _uiState.asStateFlow()
 
     init {
-        Log.d(TAG, "🔄 REFACTORED HomeViewModel initialized for Receipt data structure")
+        Log.d(TAG, "REFACTORED HomeViewModel initialized for Loket search system")
         loadAdminProfile()
-        loadInitialData()
+        loadRecentLokets()
     }
 
     private fun loadAdminProfile() {
         try {
             getAdminProfileUseCase()?.let { admin ->
                 _adminProfileState.value = admin
-                Log.d(TAG, "👤 Admin profile loaded: ${admin.name}")
+                Log.d(TAG, "Admin profile loaded: ${admin.name}")
             } ?: run {
-                Log.e(TAG, "❌ Admin profile is null")
+                Log.e(TAG, "Admin profile is null")
                 setFallbackAdmin()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to load admin profile", e)
+            Log.e(TAG, "Failed to load admin profile", e)
             setFallbackAdmin()
         }
     }
@@ -64,83 +63,65 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun loadInitialData() {
-        Log.d(TAG, "📡 Loading initial receipt data from /profiles/ppid/${DEFAULT_PPID}")
+    private fun loadRecentLokets() {
+        Log.d(TAG, "Loading recent loket access history")
 
-        try {
-            getProfileUseCase(DEFAULT_PPID).onEach { result ->
-                _uiState.value = when (result) {
-                    is Resource.Success -> {
-                        Log.d(TAG, "✅ Profile data received: ${result.data?.refNumber}")
-                        Resource.Success(listOfNotNull(result.data))
-                    }
-                    is Resource.Error -> {
-                        Log.e(TAG, "❌ Profile data error: ${result.message}")
-                        Resource.Error(result.message ?: "Unknown error occurred")
-                    }
-                    is Resource.Loading -> {
-                        Log.d(TAG, "⏳ Loading profile data...")
-                        Resource.Loading()
-                    }
-                    is Resource.Empty -> {
-                        Log.d(TAG, "📋 Empty profile data")
-                        Resource.Success(emptyList())
-                    }
+        getRecentLoketsUseCase().onEach { result ->
+            _uiState.value = when (result) {
+                is Resource.Success -> {
+                    Log.d(TAG, "Recent lokets loaded: ${result.data?.size ?: 0} items")
+                    result
                 }
-            }.launchIn(viewModelScope)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to load initial data", e)
-            _uiState.value = Resource.Error("Failed to load data: ${e.message}")
-        }
-    }
-
-    fun searchReceipts(query: String) {
-        Log.d(TAG, "🔍 Search receipts with query: '$query'")
-
-        try {
-            when {
-                query.isBlank() -> {
-                    Log.d(TAG, "📋 Empty query - loading initial data")
-                    loadInitialData()
+                is Resource.Error -> {
+                    Log.e(TAG, "Failed to load recent lokets: ${result.message}")
+                    result
                 }
-                query.length < 3 -> {
-                    Log.d(TAG, "⚠️ Query too short: ${query.length} chars")
-                    _uiState.value = Resource.Success(emptyList())
+                is Resource.Loading -> {
+                    Log.d(TAG, "Loading recent lokets...")
+                    result
                 }
-                else -> {
-                    searchProfilesUseCase(query).onEach { result ->
-                        _uiState.value = when (result) {
-                            is Resource.Success -> {
-                                Log.d(TAG, "✅ Search results: ${result.data?.size ?: 0} items")
-                                result
-                            }
-                            is Resource.Error -> {
-                                Log.e(TAG, "❌ Search error: ${result.message}")
-                                Resource.Error(result.message ?: "Search failed")
-                            }
-                            is Resource.Loading -> {
-                                Log.d(TAG, "⏳ Searching...")
-                                Resource.Loading()
-                            }
-                            is Resource.Empty -> {
-                                Log.d(TAG, "📋 No search results")
-                                Resource.Success(emptyList())
-                            }
-                        }
-                    }.launchIn(viewModelScope)
+                is Resource.Empty -> {
+                    Log.d(TAG, "No recent lokets found")
+                    Resource.Success(emptyList())
                 }
             }
-        }
+        }.launchIn(viewModelScope)
+    }
+
+    fun searchLokets(query: String) {
+        Log.d(TAG, "Search lokets with query: '$query'")
+
+        searchLoketHistoryUseCase(query).onEach { result ->
+            _uiState.value = when (result) {
+                is Resource.Success -> {
+                    Log.d(TAG, "Search results: ${result.data?.size ?: 0} items")
+                    result
+                }
+                is Resource.Error -> {
+                    Log.e(TAG, "Search error: ${result.message}")
+                    result
+                }
+                is Resource.Loading -> {
+                    Log.d(TAG, "Searching...")
+                    result
+                }
+                is Resource.Empty -> {
+                    Log.d(TAG, "No search results")
+                    Resource.Success(emptyList())
+                }
+            }
+        }.launchIn(viewModelScope)
     }
 
     fun refresh() {
-        Log.d(TAG, "🔄 Refreshing receipt data")
+        Log.d(TAG, "Refreshing home data")
         loadAdminProfile()
-        loadInitialData()
+        loadRecentLokets()
     }
 
     override fun onCleared() {
         super.onCleared()
-        Log.d(TAG, "🧹 HomeViewModel cleared")
+        Log.d(TAG, "HomeViewModel cleared")
     }
 }
+

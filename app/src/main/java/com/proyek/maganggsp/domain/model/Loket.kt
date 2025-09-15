@@ -5,8 +5,8 @@ import java.text.NumberFormat
 import java.util.*
 
 /**
- * ENHANCED: Loket domain model with comprehensive profile management
- * Maps from ProfileResponse (/profiles/ppid/{ppid}) with additional UI enhancements
+ * ENHANCED: Loket domain model dengan comprehensive profile management
+ * Maps dari ProfileResponse (/profiles/ppid/{ppid}) dengan additional UI enhancements
  */
 data class Loket(
     val ppid: String,
@@ -41,11 +41,12 @@ data class Loket(
 }
 
 /**
- * ENHANCED: Loket status with flagged option for monitoring
+ * ENHANCED: Loket status dengan flagged option untuk monitoring
  */
 enum class LoketStatus {
     NORMAL,
     BLOCKED,
     FLAGGED
 }
+
 

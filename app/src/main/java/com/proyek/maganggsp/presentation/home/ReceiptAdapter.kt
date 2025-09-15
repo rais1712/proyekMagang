@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.databinding.ItemLoketHistoryBinding
-import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.util.AppUtils
 
 /**

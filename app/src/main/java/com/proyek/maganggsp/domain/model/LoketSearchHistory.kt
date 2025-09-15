@@ -5,7 +5,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * NEW: Model for loket search/access history
+ * NEW: Model untuk loket search/access history
  * Since we can't search by phone, track PPID access history
  */
 data class LoketSearchHistory(

@@ -102,19 +102,93 @@ class LoketRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getRecentLokets(): Flow<Resource<List<LoketSearchHistory>>> {
-        return flow {
-            emit(Resource.Loading())
+    // Implementasi method yang hilang dari interface
+    override fun searchLoket(phoneNumber: String): Flow<Resource<List<Loket>>> = flow {
+        emit(Resource.Loading())
+        try {
+            validatePhoneNumber(phoneNumber)
+            val response = api.searchLoket(phoneNumber)
+            val lokets = response.map { it.toDomain() }
+            emit(Resource.Success(lokets))
+        } catch (e: Exception) {
+            Log.e(TAG, "Search loket error", e)
+            emit(Resource.Error(exceptionMapper.mapToAppException(e)))
+        }
+    }
 
-            try {
-                val recentLokets = historyManager.getRecentHistory()
-                emit(Resource.Success(recentLokets))
-                Log.d(TAG, "Retrieved ${recentLokets.size} recent lokets from history")
-
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to get recent lokets", e)
-                emit(Resource.Error(AppException.UnknownException("Failed to load recent history")))
+    override fun blockLoket(ppid: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
+        try {
+            validatePpid(ppid)
+            val response = api.blockLoket(ppid)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error(AppException.ServerException(
+                    response.code(),
+                    "Failed to block loket"
+                )))
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Block loket error", e)
+            emit(Resource.Error(exceptionMapper.mapToAppException(e)))
+        }
+    }
+
+    override fun unblockLoket(ppid: String): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
+        try {
+            validatePpid(ppid)
+            val response = api.unblockLoket(ppid)
+            if (response.isSuccessful) {
+                emit(Resource.Success(Unit))
+            } else {
+                emit(Resource.Error(AppException.ServerException(
+                    response.code(),
+                    "Failed to unblock loket"
+                )))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Unblock loket error", e)
+            emit(Resource.Error(exceptionMapper.mapToAppException(e)))
+        }
+    }
+
+    // Tambah validasi nomor telepon
+    private fun validatePhoneNumber(phoneNumber: String) {
+        if (phoneNumber.isBlank()) {
+            throw AppException.ValidationException("Nomor telepon tidak boleh kosong")
+        }
+
+        val cleanNumber = phoneNumber.replace(Regex("[^0-9]"), "")
+        if (cleanNumber.length < 10 || cleanNumber.length > 13) {
+            throw AppException.ValidationException("Format nomor telepon tidak valid")
+        }
+
+        if (!cleanNumber.startsWith("08") && !cleanNumber.startsWith("628")) {
+            throw AppException.ValidationException("Nomor telepon harus diawali dengan 08 atau +62")
+        }
+    }
+
+    override fun getRecentLokets(): Flow<Resource<List<Loket>>> = flow {
+        emit(Resource.Loading())
+        try {
+            val histories = historyManager.getRecentHistory()
+            val lokets = histories.map { history ->
+                Loket(
+                    ppid = history.ppid,
+                    namaLoket = history.namaLoket,
+                    nomorHP = history.nomorHP,
+                    alamat = history.alamat ?: "",
+                    email = history.email ?: "",
+                    status = history.status,
+                    receipts = emptyList()
+                )
+            }
+            emit(Resource.Success(lokets))
+        } catch (e: Exception) {
+            Log.e(TAG, "Get recent lokets error", e)
+            emit(Resource.Error(AppException.UnknownException("Failed to load recent history")))
         }
     }
 
