@@ -121,4 +121,45 @@
     <string name="validation_ppid_min_length">PPID minimal 5 karakter</string>
     <string name="validation_ppid_format">Format PPID tidak sesuai</string>
 
+    <!-- MISSING STRINGS FROM EXISTING LAYOUTS - CRITICAL FIXES -->
+    <string name="error_load_mutations">Gagal memuat data mutasi</string>
+
+    <!-- CRITICAL MISSING: Referenced in TransactionLogViewModel.kt -->
+    <string name="mutasi_title">Riwayat Mutasi</string>
+    <string name="transaction_logs_title">Log Transaksi</string>
+    <string name="profile_info_title">Info Profil</string>
+    <string name="receipt_details_title">Detail Receipt</string>
+
+    <!-- CRITICAL MISSING: Referenced in adapters -->
+    <string name="transaction_type_incoming">Dana Masuk</string>
+    <string name="transaction_type_outgoing">Dana Keluar</string>
+    <string name="balance_info">Saldo</string>
+    <string name="transaction_date">Tanggal</string>
+    <string name="transaction_amount">Nominal</string>
+
+    <!-- CRITICAL MISSING: Referenced in DetailLoketActivity -->
+    <string name="block_success">Loket berhasil diblokir</string>
+    <string name="unblock_success">Loket berhasil dibuka blokirnya</string>
+    <string name="action_processing">Memproses...</string>
+    <string name="confirm_action">Konfirmasi Aksi</string>
+
+    <!-- CRITICAL MISSING: Referenced in HomeFragment/ViewModel -->
+    <string name="search_placeholder">Cari berdasarkan nomor telepon</string>
+    <string name="recent_access_title">Akses Terakhir</string>
+    <string name="no_recent_data">Belum ada data akses terakhir</string>
+
+    <!-- CRITICAL MISSING: Referenced in error handling -->
+    <string name="network_error_title">Masalah Jaringan</string>
+    <string name="server_error_title">Masalah Server</string>
+    <string name="unknown_error_title">Kesalahan Tidak Diketahui</string>
+
+    <!-- CRITICAL MISSING: Navigation and arguments -->
+    <string name="invalid_navigation_args">Parameter navigasi tidak valid</string>
+    <string name="navigation_error">Gagal melakukan navigasi</string>
+
+    <!-- CRITICAL MISSING: Loading and empty states -->
+    <string name="loading_data">Memuat data...</string>
+    <string name="no_data_available">Tidak ada data tersedia</string>
+    <string name="pull_to_refresh">Tarik untuk refresh</string>
+
 </resources>
