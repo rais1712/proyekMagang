@@ -6,7 +6,6 @@ import com.proyek.maganggsp.data.api.ProfileApi
 import com.proyek.maganggsp.data.dto.*
 import com.proyek.maganggsp.data.source.local.LoketHistoryManager
 import com.proyek.maganggsp.domain.model.Receipt
-import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.repository.ProfileRepository
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.ExceptionMapper

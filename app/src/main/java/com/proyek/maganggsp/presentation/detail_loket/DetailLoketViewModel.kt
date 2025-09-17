@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.LoketProfile
-import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.usecase.profile.GetProfileUseCase
 import com.proyek.maganggsp.domain.usecase.profile.GetTransactionLogsUseCase
 import com.proyek.maganggsp.domain.usecase.profile.BlockUnblockUseCase

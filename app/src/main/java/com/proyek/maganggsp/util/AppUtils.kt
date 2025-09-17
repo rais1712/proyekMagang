@@ -9,7 +9,6 @@ import androidx.core.view.isVisible
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.domain.model.Receipt
-import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.util.exceptions.AppException
 import java.text.NumberFormat
 import java.text.SimpleDateFormat

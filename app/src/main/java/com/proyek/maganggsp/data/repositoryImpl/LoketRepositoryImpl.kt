@@ -7,7 +7,6 @@ import com.proyek.maganggsp.data.api.*
 import com.proyek.maganggsp.data.source.local.LoketHistoryManager
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.model.LoketStatus
-import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.repository.LoketRepository
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.AppException

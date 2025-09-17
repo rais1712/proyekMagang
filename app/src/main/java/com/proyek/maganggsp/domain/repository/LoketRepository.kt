@@ -2,7 +2,6 @@
 package com.proyek.maganggsp.domain.repository
 
 import com.proyek.maganggsp.domain.model.Loket
-import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.util.Resource
 import kotlinx.coroutines.flow.Flow
 

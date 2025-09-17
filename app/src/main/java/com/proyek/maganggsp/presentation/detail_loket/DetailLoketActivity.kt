@@ -12,7 +12,6 @@ import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityDetailLoketBinding
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.model.LoketStatus
-import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.presentation.adapters.TransactionLogAdapter
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource

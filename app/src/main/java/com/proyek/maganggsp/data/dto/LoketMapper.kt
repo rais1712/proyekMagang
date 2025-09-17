@@ -4,7 +4,6 @@ package com.proyek.maganggsp.data.dto
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.model.LoketStatus
 import com.proyek.maganggsp.domain.model.Receipt
-import com.proyek.maganggsp.domain.model.TransactionLog
 
 /**
  * ENHANCED: Mapping functions for Loket management

@@ -4,7 +4,6 @@ package com.proyek.maganggsp.presentation.detail_loket
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.usecase.loketprofile.GetProfileUseCase
 import com.proyek.maganggsp.domain.usecase.loketprofile.GetTransactionLogsUseCase
 import com.proyek.maganggsp.domain.usecase.loketprofile.UpdateProfileUseCase

@@ -206,7 +206,8 @@ class LoketHistoryManager @Inject constructor(
         - Storage: ${if (_sharedPreferences != null) "Initialized" else "Not initialized"}
         """.trimIndent()
     }
-}trimmedHistory)
+}
+trimmedHistory)
 sharedPreferences.edit()
 .putString(KEY_RECENT_HISTORY, json)
 .apply()
