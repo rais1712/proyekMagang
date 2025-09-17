@@ -1,96 +1,98 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/model/Receipt.kt - CREATED
+// File: app/src/main/java/com/proyek/maganggsp/domain/model/Receipt.kt - UNIFIED SINGLE SOURCE
 package com.proyek.maganggsp.domain.model
 
-import com.proyek.maganggsp.util.AppUtils
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
- * CRITICAL FIX: Receipt domain model untuk TransactionLogViewModel compatibility
- * Maps to profile response data dengan receipt information
+ * UNIFIED: Single Receipt domain model - eliminates all confusion
+ * Compatible dengan TransactionLogViewModel dan semua existing usage
  */
 data class Receipt(
     val refNumber: String,
     val idPelanggan: String,
-    val tanggal: String = "",
-    val mutasi: Long = 0L,
-    val totalSaldo: Long = 0L,
+    val tanggal: String,
+    val mutasi: Long,
+    val totalSaldo: Long,
     val ppid: String,
-
-    // Compatibility aliases untuk existing code
-    val amount: Long = mutasi,
-    val logged: String = tanggal,
     val tipeTransaksi: String = "Receipt"
 ) {
 
+    // BACKWARD COMPATIBILITY: Legacy properties untuk existing code
+    val amount: Long get() = mutasi
+    val logged: String get() = tanggal
+
     /**
-     * Display formatted amount dengan proper currency
+     * Format amount dengan proper currency formatting
      */
     fun getFormattedAmount(): String {
-        val sign = if (mutasi >= 0) "+" else ""
-        return "$sign${AppUtils.formatCurrency(mutasi)}"
+        val localeID = Locale("in", "ID")
+        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
+        numberFormat.maximumFractionDigits = 0
+        return if (mutasi >= 0) {
+            "+${numberFormat.format(mutasi)}"
+        } else {
+            numberFormat.format(mutasi)
+        }
     }
 
     /**
-     * Display formatted date dalam bahasa Indonesia
+     * Format saldo dengan currency
+     */
+    fun getFormattedSaldo(): String {
+        val localeID = Locale("in", "ID")
+        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
+        numberFormat.maximumFractionDigits = 0
+        return numberFormat.format(totalSaldo)
+    }
+
+    /**
+     * Format date untuk display
      */
     fun getFormattedDate(): String {
-        return if (tanggal.isNotBlank()) {
-            AppUtils.formatDate(tanggal)
-        } else {
-            "Tanggal tidak tersedia"
+        return try {
+            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            isoFormat.timeZone = TimeZone.getTimeZone("UTC")
+            val date = isoFormat.parse(tanggal)
+
+            val readableFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("in", "ID"))
+            readableFormat.format(date!!)
+        } catch (e: Exception) {
+            tanggal // Return original if parsing fails
         }
     }
 
     /**
-     * Get transaction type description
+     * Transaction type helpers
      */
-    fun getTransactionTypeDescription(): String {
-        return when {
-            mutasi > 0 -> "Penambahan Saldo"
-            mutasi < 0 -> "Pengurangan Saldo"
-            else -> "Info Saldo"
+    fun isIncomingTransaction(): Boolean = mutasi >= 0
+    fun isOutgoingTransaction(): Boolean = mutasi < 0
+
+    /**
+     * Display helpers
+     */
+    fun getDisplayDescription(): String = "Ref: $refNumber | ID: $idPelanggan"
+    fun getSaldoDisplayText(): String = "Saldo: ${getFormattedSaldo()}"
+
+    /**
+     * Validation
+     */
+    fun hasValidData(): Boolean = refNumber.isNotBlank() && idPelanggan.isNotBlank() && ppid.isNotBlank()
+
+    companion object {
+        /**
+         * Create placeholder untuk testing
+         */
+        fun createPlaceholder(ppid: String): Receipt {
+            return Receipt(
+                refNumber = "REF-PLACEHOLDER-${System.currentTimeMillis().toString().takeLast(4)}",
+                idPelanggan = ppid,
+                tanggal = "2024-01-15T10:30:00.000Z",
+                mutasi = (50000..500000L).random(),
+                totalSaldo = (500000..2000000L).random(),
+                ppid = ppid
+            )
         }
     }
-
-    /**
-     * Check if this is a positive transaction
-     */
-    fun isPositiveTransaction(): Boolean = mutasi > 0
-
-    /**
-     * Get display summary untuk UI
-     */
-    fun getDisplaySummary(): String {
-        return "${getTransactionTypeDescription()}: ${getFormattedAmount()}"
-    }
 }
-
-/**
- * EXTENSION: Convert from API response to Receipt
- */
-fun com.proyek.maganggsp.data.dto.ReceiptResponse.toDomain(): Receipt {
-    return Receipt(
-        refNumber = refNumber ?: "REF-UNKNOWN",
-        idPelanggan = idPelanggan ?: "",
-        tanggal = tanggal ?: "",
-        mutasi = mutasi ?: 0L,
-        totalSaldo = totalSaldo ?: 0L,
-        ppid = ppid ?: ""
-    )
-}
-
-/**
- * HELPER: Create placeholder receipt untuk testing
- */
-fun Receipt.Companion.createPlaceholder(ppid: String): Receipt {
-    return Receipt(
-        refNumber = "REF-PLACEHOLDER-${System.currentTimeMillis().toString().takeLast(4)}",
-        idPelanggan = ppid,
-        tanggal = "2024-01-15T10:30:00.000Z",
-        mutasi = (50000..500000L).random(),
-        totalSaldo = (500000..2000000L).random(),
-        ppid = ppid
-    )
-}
-
-// Companion object untuk static functions
-companion object Receipt

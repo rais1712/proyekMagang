@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/proyek/maganggsp/domain/usecase/loket/SearchLoketUseCase.kt - UPDATED PPID SEARCH
 package com.proyek.maganggsp.domain.usecase.loket
 
 import com.proyek.maganggsp.domain.model.Loket
@@ -11,14 +12,21 @@ class SearchLoketUseCase @Inject constructor(
 ) {
 
     /**
-     * Search loket by phone number (LOCAL CACHE ONLY - NO API)
+     * UPDATED: Search loket by PPID (LOCAL CACHE ONLY - NO API)
+     * Searches through local history and tries direct API access if exact PPID match
      */
-    operator fun invoke(phoneNumber: String): Flow<Resource<List<Loket>>> {
-        return loketRepository.searchLoket(phoneNumber)
+    operator fun invoke(ppid: String): Flow<Resource<List<Loket>>> {
+        return if (isValidPpidFormat(ppid)) {
+            // If valid PPID format, try direct access + search history
+            loketRepository.searchLoket(ppid)
+        } else {
+            // Invalid format, search in local cache only
+            loketRepository.searchLoket(ppid)
+        }
     }
 
     /**
-     * Quick validation untuk phone number format
+     * UPDATED: Quick validation untuk PPID format
      */
     data class ValidationResult(
         val isValid: Boolean,
@@ -26,26 +34,53 @@ class SearchLoketUseCase @Inject constructor(
         val message: String
     )
 
-    fun validateQuick(phoneNumber: String): ValidationResult {
+    fun validateQuick(ppid: String): ValidationResult {
         return when {
-            phoneNumber.isBlank() -> ValidationResult(false, true, "Nomor telepon tidak boleh kosong")
-            phoneNumber.length < 3 -> ValidationResult(false, false, "Ketik minimal 3 angka")
-            phoneNumber.length < 8 -> ValidationResult(false, true, "Nomor telepon terlalu pendek")
-            !phoneNumber.matches(Regex("^(\\+62|62|08)[0-9]+$")) -> {
-                ValidationResult(false, true, "Format nomor tidak valid. Gunakan 08xxx atau +62xxx")
+            ppid.isBlank() -> ValidationResult(false, true, "PPID tidak boleh kosong")
+            ppid.length < 5 -> ValidationResult(false, false, "Ketik minimal 5 karakter PPID")
+            ppid.length < 8 -> ValidationResult(false, true, "PPID terlalu pendek")
+            !isValidPpidFormat(ppid) -> {
+                ValidationResult(false, true, "Format PPID tidak valid. Gunakan format PIDLKTD0025")
             }
             else -> ValidationResult(true, false, "Valid")
         }
     }
 
     /**
+     * PPID format validation
+     */
+    private fun isValidPpidFormat(ppid: String): Boolean {
+        // Check if PPID matches common patterns
+        val patterns = listOf(
+            "^PIDLKTD\\d+.*$".toRegex(), // PIDLKTD0025, PIDLKTD0025blok
+            "^[A-Z]{3,}[0-9]+.*$".toRegex() // Generic pattern
+        )
+
+        return patterns.any { it.matches(ppid) }
+    }
+
+    /**
      * Get example formats untuk UI hints
      */
-    fun getPhoneFormatExamples(): List<String> {
+    fun getPpidFormatExamples(): List<String> {
         return listOf(
-            "08123456789",
-            "+628123456789",
-            "628123456789"
+            "PIDLKTD0025",
+            "PIDLKTD0025blok",
+            "PIDLKTD0030"
         )
+    }
+
+    /**
+     * Extract clean PPID (remove blok suffix for search)
+     */
+    fun extractCleanPpid(ppid: String): String {
+        return ppid.removeSuffix("blok")
+    }
+
+    /**
+     * Check if PPID is blocked version
+     */
+    fun isBlockedPpid(ppid: String): Boolean {
+        return ppid.endsWith("blok")
     }
 }

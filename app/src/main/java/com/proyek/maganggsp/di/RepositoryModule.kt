@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt - UPDATED
+// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt - UNIFIED DEPENDENCIES
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.data.repositoryImpl.AuthRepositoryImpl
@@ -19,17 +19,25 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    // KEEP: AuthRepository for login functionality
+    /**
+     * KEEP: AuthRepository untuk login functionality dengan AuthApi
+     */
     @Binds
     @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
-    // NEW: LoketRepository for loket management system
+    /**
+     * UNIFIED: LoketRepository menggunakan ProfileApi untuk real endpoints
+     * Handles: Profile data, Transaction logs, Block/Unblock operations
+     */
     @Binds
     @Singleton
     abstract fun bindLoketRepository(impl: LoketRepositoryImpl): LoketRepository
 
-    // KEEP: ProfileRepository for receipt & transaction data
+    /**
+     * UNIFIED: ProfileRepository juga menggunakan ProfileApi
+     * Backward compatibility untuk existing ProfileRepository usage
+     */
     @Binds
     @Singleton
     abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository

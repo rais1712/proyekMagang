@@ -1,11 +1,10 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeFragment.kt - MVP CORE
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeFragment.kt - SEARCH BY PPID
 package com.proyek.maganggsp.presentation.home
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -23,7 +22,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * MVP CORE: HomeFragment dengan search functionality dan navigation ke DetailLoketActivity
+ * UPDATED: HomeFragment dengan search by PPID functionality
  */
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -61,8 +60,8 @@ class HomeFragment : Fragment() {
             binding.tvAdminName.text = admin.getDisplayName()
         }
 
-        // Update search hint untuk phone number
-        binding.etSearch.hint = "Cari loket (No. Telepon)"
+        // UPDATED: Search hint untuk PPID
+        binding.etSearch.hint = getString(R.string.search_placeholder)
 
         // Logout button
         binding.btnLogout.setOnClickListener {
@@ -71,7 +70,6 @@ class HomeFragment : Fragment() {
 
         // See all button
         binding.tvSeeAll.setOnClickListener {
-            // TODO: Navigate to history when implemented
             AppUtils.showSuccess(requireContext(), "Fitur riwayat akan segera hadir")
         }
     }
@@ -121,18 +119,18 @@ class HomeFragment : Fragment() {
                 viewModel.clearSearch()
                 binding.tvRecentHistoryTitle.text = "Riwayat Terakhir"
                 binding.tvSeeAll.visibility = View.VISIBLE
-            } else if (query.length >= 3) {
-                // Start search when query is >= 3 characters
+            } else if (query.length >= 5) {
+                // UPDATED: Start search when query is >= 5 characters (PPID minimum)
                 viewModel.searchLoket(query)
                 binding.tvRecentHistoryTitle.text = "Hasil Pencarian"
                 binding.tvSeeAll.visibility = View.GONE
             } else {
                 // Show hint for short query
-                binding.tvRecentHistoryTitle.text = "Ketik minimal 3 angka"
+                binding.tvRecentHistoryTitle.text = getString(R.string.empty_search_hint)
                 binding.tvSeeAll.visibility = View.GONE
                 searchAdapter.submitList(emptyList())
                 binding.tvEmptyHistory.visibility = View.VISIBLE
-                binding.tvEmptyHistory.text = "Ketik minimal 3 angka untuk pencarian"
+                binding.tvEmptyHistory.text = getString(R.string.empty_search_hint)
             }
         }
     }
@@ -148,13 +146,18 @@ class HomeFragment : Fragment() {
             is Resource.Success -> {
                 searchAdapter.submitList(resource.data)
                 AppUtils.logInfo(TAG, "Search results: ${resource.data.size} lokets")
+
+                // Update empty message for search context
+                if (resource.data.isEmpty()) {
+                    binding.tvEmptyHistory.text = "Tidak ditemukan loket dengan PPID tersebut.\nCoba cari dengan format yang tepat."
+                }
             }
             is Resource.Error -> {
                 AppUtils.showError(requireContext(), resource.exception)
                 AppUtils.logError(TAG, "Search error: ${resource.exception.message}")
             }
             is Resource.Empty -> {
-                binding.tvEmptyHistory.text = "Tidak ditemukan loket dengan nomor tersebut"
+                binding.tvEmptyHistory.text = getString(R.string.empty_search_results, "")
             }
             is Resource.Loading -> {
                 // Handled by applyToStandardLoadingViews
@@ -182,7 +185,7 @@ class HomeFragment : Fragment() {
                 binding.tvEmptyHistory.text = "Gagal memuat riwayat pencarian"
             }
             is Resource.Empty -> {
-                binding.tvEmptyHistory.text = "Belum ada riwayat pencarian.\nMulai cari loket dengan nomor telepon."
+                binding.tvEmptyHistory.text = getString(R.string.empty_recent_history)
             }
             is Resource.Loading -> {
                 // Handled by applyToStandardLoadingViews
@@ -202,7 +205,7 @@ class HomeFragment : Fragment() {
 
     private fun navigateToLoketDetail(ppid: String) {
         try {
-            val bundle = NavigationConstants.createTransactionLogBundle(ppid)
+            val bundle = NavigationConstants.createDetailLoketBundle(ppid)
             findNavController().navigate(
                 R.id.action_homeFragment_to_transactionLogActivity,
                 bundle
@@ -216,13 +219,13 @@ class HomeFragment : Fragment() {
 
     private fun showLogoutConfirmation() {
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Konfirmasi Logout")
-            .setMessage("Yakin ingin keluar dari aplikasi?")
-            .setPositiveButton("Ya") { _, _ ->
+            .setTitle(getString(R.string.dialog_confirm_logout_title))
+            .setMessage(getString(R.string.dialog_confirm_logout_message))
+            .setPositiveButton(getString(R.string.dialog_button_yes)) { _, _ ->
                 viewModel.logout()
                 requireActivity().finish()
             }
-            .setNegativeButton("Tidak", null)
+            .setNegativeButton(getString(R.string.dialog_button_no), null)
             .show()
     }
 

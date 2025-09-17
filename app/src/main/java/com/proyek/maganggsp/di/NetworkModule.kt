@@ -1,9 +1,8 @@
-// File: app/src/main/java/com/proyek/maganggsp/di/NetworkModule.kt - UPDATED
+// File: app/src/main/java/com/proyek/maganggsp/di/NetworkModule.kt - UNIFIED API INTEGRATION
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.BuildConfig
 import com.proyek.maganggsp.data.api.AuthApi
-import com.proyek.maganggsp.data.api.LoketApi
 import com.proyek.maganggsp.data.api.ProfileApi
 import com.proyek.maganggsp.data.source.local.SessionManager
 import dagger.Module
@@ -60,7 +59,7 @@ object NetworkModule {
                 .addHeader("Accept", "application/json")
                 .addHeader("User-Agent", "GesPay-Admin-Android/${BuildConfig.VERSION_NAME}")
 
-            // Add auth token for authenticated endpoints
+            // Add auth token for authenticated endpoints (all except login)
             if (token != null && !url.encodedPath.contains("/auth/login")) {
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             }
@@ -75,8 +74,20 @@ object NetworkModule {
     fun provideNetworkErrorInterceptor(): Interceptor {
         return Interceptor { chain ->
             try {
-                chain.proceed(chain.request())
+                val response = chain.proceed(chain.request())
+
+                // Enhanced logging untuk debug
+                if (BuildConfig.DEBUG) {
+                    val url = chain.request().url.toString()
+                    val code = response.code
+                    android.util.Log.d("NetworkModule", "🌐 API Response: $url -> HTTP $code")
+                }
+
+                response
             } catch (e: Exception) {
+                if (BuildConfig.DEBUG) {
+                    android.util.Log.e("NetworkModule", "❌ Network error: ${e.message}", e)
+                }
                 throw e
             }
         }
@@ -118,21 +129,19 @@ object NetworkModule {
             .build()
     }
 
-    // KEEP: Existing AuthApi for login functionality
+    /**
+     * KEEP: AuthApi untuk login functionality (separate interface)
+     */
     @Singleton
     @Provides
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return retrofit.create(AuthApi::class.java)
     }
 
-    // NEW: LoketApi for loket management
-    @Singleton
-    @Provides
-    fun provideLoketApi(retrofit: Retrofit): LoketApi {
-        return retrofit.create(LoketApi::class.java)
-    }
-
-    // KEEP: ProfileApi for backward compatibility
+    /**
+     * UNIFIED: ProfileApi untuk semua loket operations
+     * Replaces LoketApi - single source of truth untuk real endpoints
+     */
     @Singleton
     @Provides
     fun provideProfileApi(retrofit: Retrofit): ProfileApi {
@@ -145,6 +154,3 @@ object NetworkModule {
         return application.applicationContext
     }
 }
-
-
-

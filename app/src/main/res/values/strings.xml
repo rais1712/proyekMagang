@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- File: app/src/main/res/values/strings.xml - MVP CORE UPDATE -->
+<!-- File: app/src/main/res/values/strings.xml - COMPLETE BUILD FIX -->
 <resources>
     <string name="app_name">GesPay Admin</string>
 
@@ -15,11 +15,11 @@
     <string name="loket_diblokir">Diblokir</string>
     <string name="hapus_semua_penanda">Hapus Semua Penanda</string>
 
-    <!-- Search & Results -->
-    <string name="search_loket_hint">Cari loket (No. Telepon)</string>
-    <string name="search_phone_example">Contoh: 08123456789 atau +628123456789</string>
-    <string name="search_min_chars">Ketik minimal 3 angka untuk pencarian</string>
-    <string name="search_no_results">Tidak ditemukan loket dengan nomor tersebut</string>
+    <!-- FIXED CRITICAL: Search by PPID (Updated) -->
+    <string name="search_loket_hint">Cari loket (PPID)</string>
+    <string name="search_ppid_example">Contoh: PIDLKTD0025 atau PIDLKTD0025blok</string>
+    <string name="search_min_chars">Ketik minimal 5 karakter PPID</string>
+    <string name="search_no_results">Tidak ditemukan loket dengan PPID tersebut</string>
     <string name="search_results_title">Hasil Pencarian</string>
 
     <!-- Status Labels -->
@@ -31,20 +31,24 @@
     <string name="error_load_loket">Gagal memuat data loket.</string>
     <string name="error_load_transactions">Gagal memuat log transaksi.</string>
     <string name="error_load_mutasi">Gagal memuat data mutasi.</string>
+    <string name="error_load_mutations">Gagal memuat data mutasi</string>
     <string name="error_block_loket">Gagal memblokir loket.</string>
     <string name="error_unblock_loket">Gagal membuka blokir loket.</string>
     <string name="error_search_loket">Gagal mencari loket.</string>
     <string name="error_network">Periksa koneksi internet Anda.</string>
     <string name="error_server">Terjadi kesalahan pada server.</string>
-    <string name="error_invalid_phone">Format nomor telepon tidak valid.</string>
-    <string name="error_phone_too_short">Nomor telepon terlalu pendek.</string>
-    <string name="error_phone_format">Format nomor tidak valid. Gunakan format 08xxx atau +62xxx.</string>
+    <string name="error_invalid_ppid">Format PPID tidak valid.</string>
+    <string name="error_ppid_too_short">PPID terlalu pendek.</string>
+    <string name="error_ppid_format">Format PPID tidak valid. Gunakan format PIDLKTDxxxx.</string>
 
     <!-- Success Messages - Indonesian -->
     <string name="success_block_loket">Loket berhasil diblokir</string>
     <string name="success_unblock_loket">Loket berhasil dibuka blokirnya</string>
     <string name="success_login">Login berhasil</string>
     <string name="success_logout">Logout berhasil</string>
+    <string name="block_success">Loket berhasil diblokir</string>
+    <string name="unblock_success">Loket berhasil dibuka blokirnya</string>
+    <string name="action_processing">Memproses...</string>
 
     <!-- Labels - Indonesian -->
     <string name="label_ppid">PPID</string>
@@ -70,14 +74,15 @@
     <string name="empty_no_lokets">Belum ada loket tersedia.\nTarik ke bawah untuk refresh.</string>
     <string name="empty_no_transactions">Belum ada log transaksi untuk loket ini.</string>
     <string name="empty_search_results">Tidak ditemukan hasil untuk pencarian "%1$s".</string>
-    <string name="empty_search_hint">Ketik minimal 3 karakter untuk pencarian</string>
-    <string name="empty_recent_history">Belum ada riwayat pencarian.\nMulai cari loket dengan nomor telepon.</string>
+    <string name="empty_search_hint">Ketik minimal 5 karakter untuk pencarian PPID</string>
+    <string name="empty_recent_history">Belum ada riwayat pencarian.\nMulai cari loket dengan PPID.</string>
 
     <!-- Loading Messages - Indonesian -->
     <string name="loading_lokets">Memuat daftar loket...</string>
     <string name="loading_transactions">Memuat log transaksi...</string>
     <string name="loading_profile">Memuat profil...</string>
     <string name="loading_search">Mencari loket...</string>
+    <string name="loading_data">Memuat data...</string>
 
     <!-- Login - Indonesian -->
     <string name="login_email_hint">Email</string>
@@ -109,24 +114,12 @@
     <string name="dialog_button_no">Tidak</string>
     <string name="dialog_button_ok">OK</string>
     <string name="dialog_button_cancel">Batal</string>
+    <string name="confirm_action">Konfirmasi Aksi</string>
 
-    <!-- Phone Format Instructions -->
-    <string name="phone_format_hint">Format yang didukung:\n• 08123456789\n• +628123456789\n• 628123456789</string>
+    <!-- PPID Format Instructions (Updated) -->
+    <string name="ppid_format_hint">Format yang didukung:\n• PIDLKTD0025\n• PIDLKTD0025blok</string>
 
-    <!-- MISSING STRINGS FROM EXISTING LAYOUTS - CRITICAL FIXES -->
-    <string name="error_load_mutations">Gagal memuat data mutasi</string>
-
-    <!-- Validation Messages - Indonesian -->
-    <string name="validation_ppid_required">PPID wajib diisi</string>
-    <string name="validation_ppid_min_length">PPID minimal 5 karakter</string>
-    <string name="validation_ppid_format">Format PPID tidak sesuai</string>
-
-    <!-- MISSING STRINGS FROM EXISTING LAYOUTS - CRITICAL FIXES -->
-    <string name="error_load_mutations">Gagal memuat data mutasi</string>
-
-    <!-- CRITICAL MISSING: Referenced in TransactionLogViewModel.kt -->
-    <string name="mutasi_title">Riwayat Mutasi</string>
-    <string name="transaction_logs_title">Log Transaksi</string>
+    <!-- CRITICAL MISSING: Referenced in ViewModels dan Activities -->
     <string name="profile_info_title">Info Profil</string>
     <string name="receipt_details_title">Detail Receipt</string>
 
@@ -137,16 +130,12 @@
     <string name="transaction_date">Tanggal</string>
     <string name="transaction_amount">Nominal</string>
 
-    <!-- CRITICAL MISSING: Referenced in DetailLoketActivity -->
-    <string name="block_success">Loket berhasil diblokir</string>
-    <string name="unblock_success">Loket berhasil dibuka blokirnya</string>
-    <string name="action_processing">Memproses...</string>
-    <string name="confirm_action">Konfirmasi Aksi</string>
-
     <!-- CRITICAL MISSING: Referenced in HomeFragment/ViewModel -->
-    <string name="search_placeholder">Cari berdasarkan nomor telepon</string>
+    <string name="search_placeholder">Cari berdasarkan PPID</string>
     <string name="recent_access_title">Akses Terakhir</string>
     <string name="no_recent_data">Belum ada data akses terakhir</string>
+    <string name="no_data_available">Tidak ada data tersedia</string>
+    <string name="pull_to_refresh">Tarik untuk refresh</string>
 
     <!-- CRITICAL MISSING: Referenced in error handling -->
     <string name="network_error_title">Masalah Jaringan</string>
@@ -157,9 +146,9 @@
     <string name="invalid_navigation_args">Parameter navigasi tidak valid</string>
     <string name="navigation_error">Gagal melakukan navigasi</string>
 
-    <!-- CRITICAL MISSING: Loading and empty states -->
-    <string name="loading_data">Memuat data...</string>
-    <string name="no_data_available">Tidak ada data tersedia</string>
-    <string name="pull_to_refresh">Tarik untuk refresh</string>
+    <!-- Validation Messages - Indonesian -->
+    <string name="validation_ppid_required">PPID wajib diisi</string>
+    <string name="validation_ppid_min_length">PPID minimal 5 karakter</string>
+    <string name="validation_ppid_format">Format PPID tidak sesuai</string>
 
 </resources>

@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - MVP CORE
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - SEARCH BY PPID
 package com.proyek.maganggsp.presentation.home
 
 import android.util.Log
@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * MVP CORE: HomeViewModel dengan search functionality untuk loket management
+ * UPDATED: HomeViewModel dengan search by PPID functionality
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -52,13 +52,13 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Search loket by phone number with debounce
+     * UPDATED: Search loket by PPID dengan debounce
      */
-    fun searchLoket(phoneNumber: String) {
+    fun searchLoket(ppid: String) {
         // Cancel previous search job
         searchJob?.cancel()
 
-        if (phoneNumber.isBlank()) {
+        if (ppid.isBlank()) {
             clearSearch()
             return
         }
@@ -67,13 +67,13 @@ class HomeViewModel @Inject constructor(
             try {
                 _isSearching.value = true
 
-                // Debounce search to avoid too many API calls
+                // Debounce search to avoid too many operations
                 delay(SEARCH_DEBOUNCE_DELAY)
 
-                Log.d(TAG, "Starting search for phone: $phoneNumber")
+                Log.d(TAG, "Starting search for PPID: $ppid")
 
                 // Quick validation
-                val validationResult = searchLoketUseCase.validateQuick(phoneNumber)
+                val validationResult = searchLoketUseCase.validateQuick(ppid)
                 if (validationResult.isError) {
                     _searchResults.value = Resource.Error(
                         com.proyek.maganggsp.util.exceptions.AppException.ValidationException(
@@ -83,24 +83,24 @@ class HomeViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Perform search
-                searchLoketUseCase(phoneNumber).collect { resource ->
+                // Perform search (local cache + potential direct API if valid PPID)
+                searchLoketUseCase(ppid).collect { resource ->
                     _searchResults.value = resource
 
                     when (resource) {
                         is Resource.Success -> {
-                            Log.d(TAG, "Search successful: ${resource.data.size} results")
-                            AppUtils.logInfo(TAG, "Found ${resource.data.size} lokets for $phoneNumber")
+                            Log.d(TAG, "Search successful: ${resource.data.size} results for PPID pattern")
+                            AppUtils.logInfo(TAG, "Found ${resource.data.size} lokets for PPID: $ppid")
                         }
                         is Resource.Error -> {
                             Log.e(TAG, "Search error: ${resource.exception.message}")
-                            AppUtils.logError(TAG, "Search failed", resource.exception)
+                            AppUtils.logError(TAG, "PPID search failed", resource.exception)
                         }
                         is Resource.Empty -> {
-                            Log.d(TAG, "No results found for $phoneNumber")
+                            Log.d(TAG, "No results found for PPID: $ppid")
                         }
                         is Resource.Loading -> {
-                            Log.d(TAG, "Search loading...")
+                            Log.d(TAG, "PPID search loading...")
                         }
                     }
                 }
@@ -221,10 +221,21 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Get phone format examples for UI hints
+     * UPDATED: Get PPID format examples untuk UI hints
      */
-    fun getPhoneFormatExamples(): List<String> {
-        return searchLoketUseCase.getPhoneFormatExamples()
+    fun getPpidFormatExamples(): List<String> {
+        return searchLoketUseCase.getPpidFormatExamples()
+    }
+
+    /**
+     * Direct PPID access - jika user input exact PPID, langsung coba load
+     */
+    fun directPpidAccess(ppid: String) {
+        if (searchLoketUseCase.validateQuick(ppid).isValid) {
+            // If valid PPID, user probably wants direct access
+            // This will trigger search which may include direct API call
+            searchLoket(ppid)
+        }
     }
 
     /**
@@ -240,6 +251,7 @@ class HomeViewModel @Inject constructor(
         - Search Results: ${(_searchResults.value as? Resource.Success)?.data?.size ?: "N/A"}
         - Recent Lokets: ${(_recentLokets.value as? Resource.Success)?.data?.size ?: "N/A"}
         - Search Job Active: ${searchJob?.isActive ?: false}
+        - Search Mode: PPID-based
         """.trimIndent()
     }
 

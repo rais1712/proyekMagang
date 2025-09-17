@@ -1,16 +1,12 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/api/ProfileApi.kt - ALIGNED WITH REAL ENDPOINTS
+// File: app/src/main/java/com/proyek/maganggsp/data/api/ProfileApi.kt - REAL ENDPOINT ALIGNED
 package com.proyek.maganggsp.data.api
 
-import com.proyek.maganggsp.data.dto.ProfileResponse
-import com.proyek.maganggsp.data.dto.TransactionResponse
-import com.proyek.maganggsp.data.dto.UpdateProfileRequest
 import retrofit2.Response
 import retrofit2.http.*
 
 /**
- * REAL API ALIGNMENT: ProfileApi berdasarkan endpoint yang benar-benar ada di backend
- * Base URL: http://192.168.168.6:8180/api/ (untuk development)
- * Production: https://api.gespay.com/api/
+ * UNIFIED: Single ProfileApi yang align dengan real backend endpoints
+ * Eliminates confusion antara LoketApi, ProfileApi, dan endpoint yang tidak ada
  */
 interface ProfileApi {
 
@@ -48,7 +44,7 @@ interface ProfileApi {
 }
 
 /**
- * REAL DTO STRUCTURES: Based on actual API responses
+ * UNIFIED DTO STRUCTURES: Based on actual API responses
  */
 
 /**
@@ -99,7 +95,7 @@ data class UpdateProfileRequest(
 )
 
 /**
- * DOMAIN MAPPING EXTENSIONS - ProfileResponse to Domain Models
+ * DOMAIN MAPPING EXTENSIONS - Clean dan Unified
  */
 
 // Profile to Loket mapping (for DetailLoket)
