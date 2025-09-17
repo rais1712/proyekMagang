@@ -1,42 +1,35 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/repository/ProfileRepository.kt
+
+// File: app/src/main/java/com/proyek/maganggsp/domain/repository/ProfileRepository.kt - UNIFIED
 package com.proyek.maganggsp.domain.repository
 
+import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.util.Resource
 import kotlinx.coroutines.flow.Flow
 
 /**
- * NEW REPOSITORY: ProfileRepository - replaces LoketRepository
- * Handles new API endpoints for receipt and transaction data
- *
- * TARGET ENDPOINTS:
- * - GET /profiles/ppid/{ppid} -> Receipt data
- * - GET /trx/ppid/{ppid} -> Transaction logs
- * - PUT /profiles/ppid/{ppid} -> Update profile
+ * UNIFIED REPOSITORY: Single source for all profile operations
+ * Replaces LoketRepository with Receipt/TransactionLog focus
  */
 interface ProfileRepository {
 
     /**
-     * Get profile/receipt data for a specific ppid
-     * Maps to Receipt domain model for home screen display
+     * PRIMARY: Get profile data (maps to Receipt for home screen)
      */
     fun getProfile(ppid: String): Flow<Resource<Receipt>>
 
     /**
-     * Get transaction logs for a specific ppid
-     * Maps to TransactionLog domain model for detail screen
+     * PRIMARY: Get transaction logs (for detail screen)
      */
     fun getTransactionLogs(ppid: String): Flow<Resource<List<TransactionLog>>>
 
     /**
-     * Update profile information
-     * Used for profile management operations
+     * PRIMARY: Update profile (block/unblock operations)
      */
-    fun updateProfile(ppid: String, newPpid: String): Flow<Resource<Unit>>
+    fun updateProfile(currentPpid: String, newPpid: String): Flow<Resource<Unit>>
 
     /**
-     * Search profiles/receipts by query
-     * Replaces loket search functionality
+     * SEARCH: Find profiles by PPID pattern
      */
-    fun searchProfiles(query: String): Flow<Resource<List<Receipt>>>
+    fun searchProfiles(ppidQuery: String): Flow<Resource<List<Receipt>>>
 }

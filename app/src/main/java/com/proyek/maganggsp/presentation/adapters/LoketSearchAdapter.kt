@@ -1,160 +1,81 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/LoketSearchAdapter.kt - MVP CORE
+// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/SearchAdapter.kt - UNIFIED SEARCH
 package com.proyek.maganggsp.presentation.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemLoketHistoryBinding
-import com.proyek.maganggsp.domain.model.Loket
-import com.proyek.maganggsp.domain.model.LoketStatus
-import java.text.SimpleDateFormat
-import java.util.*
+import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.util.AppUtils
 
 /**
- * MVP CORE: Adapter untuk search results dan recent lokets
- * Reuses existing item_loket_history.xml layout
+ * UNIFIED: Search adapter for PPID-based search results
+ * Same as ReceiptAdapter but with search-specific optimizations
  */
 class LoketSearchAdapter(
-    private val onItemClick: (Loket) -> Unit
-) : ListAdapter<Loket, LoketSearchAdapter.LoketViewHolder>(LoketDiffCallback()) {
+    private val onResultClick: (Receipt) -> Unit
+) : ListAdapter<Receipt, LoketSearchAdapter.SearchResultViewHolder>(ReceiptDiffCallback()) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LoketViewHolder {
+    private var searchQuery: String = ""
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SearchResultViewHolder {
         val binding = ItemLoketHistoryBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
         )
-        return LoketViewHolder(binding, onItemClick)
+        return SearchResultViewHolder(binding, onResultClick)
     }
 
-    override fun onBindViewHolder(holder: LoketViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun onBindViewHolder(holder: SearchResultViewHolder, position: Int) {
+        holder.bind(getItem(position), searchQuery)
     }
 
-    class LoketViewHolder(
+    class SearchResultViewHolder(
         private val binding: ItemLoketHistoryBinding,
-        private val onItemClick: (Loket) -> Unit
+        private val onResultClick: (Receipt) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(loket: Loket) {
+        fun bind(receipt: Receipt, query: String) {
             with(binding) {
-                // Basic loket info
-                tvLoketName.text = loket.namaLoket
-                tvLoketPhone.text = formatPhoneNumber(loket.nomorHP)
-                tvNomorLoket.text = formatPpid(loket.ppid)
+                // Highlight search matches
+                tvLoketName.text = highlightSearchMatch(receipt.getDisplayTitle(), query)
+                tvLoketPhone.text = highlightSearchMatch(receipt.getDisplayPhone(), query)
+                tvNomorLoket.text = highlightSearchMatch("#${receipt.ppid}", query)
 
-                // Show access info if available
-                if (loket.tanggalAkses.isNotBlank()) {
-                    tvLastAccessed.text = "Terakhir diakses: ${formatAccessDate(loket.tanggalAkses)}"
-                    tvLastAccessed.visibility = android.view.View.VISIBLE
-                } else {
-                    tvLastAccessed.visibility = android.view.View.GONE
-                }
+                // Show search context
+                tvLastAccessed.text = "PPID: ${receipt.ppid}"
+                tvLastAccessed.visibility = android.view.View.VISIBLE
 
-                // Status-based styling
-                applyStatusStyling(loket.status)
-
-                // Click listener
                 root.setOnClickListener {
-                    onItemClick(loket)
+                    onResultClick(receipt)
                 }
             }
         }
 
-        private fun formatPhoneNumber(phone: String): String {
-            return when {
-                phone.startsWith("+62") -> phone
-                phone.startsWith("08") -> "+62${phone.substring(1)}"
-                phone.startsWith("62") -> "+$phone"
-                else -> phone
-            }
-        }
-
-        private fun formatPpid(ppid: String): String {
-            return when {
-                ppid.length > 15 -> "#${ppid.take(10)}...${ppid.takeLast(4)}"
-                ppid.isBlank() -> "#UNKNOWN"
-                else -> "#$ppid"
-            }
-        }
-
-        private fun formatAccessDate(dateString: String): String {
-            return try {
-                val timestamp = dateString.toLongOrNull() ?: return dateString
-                val date = java.util.Date(timestamp)
-                java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("in", "ID"))
-                    .format(date)
-            } catch (e: Exception) {
-                dateString
-            }
-        }
-
-        private fun applyStatusStyling(status: LoketStatus) {
-            val context = binding.root.context
-
-            when (status) {
-                LoketStatus.BLOCKED -> {
-                    // Red tint for blocked lokets
-                    binding.layoutLoketItem.setBackgroundColor(
-                        ContextCompat.getColor(context, R.color.status_danger_background)
-                    )
-                    binding.tvLoketName.setTextColor(
-                        ContextCompat.getColor(context, R.color.red_danger)
-                    )
-                }
-                LoketStatus.FLAGGED -> {
-                    // Yellow tint for flagged lokets
-                    binding.layoutLoketItem.setBackgroundColor(
-                        ContextCompat.getColor(context, R.color.status_warning_background)
-                    )
-                    binding.tvLoketName.setTextColor(
-                        ContextCompat.getColor(context, R.color.yellow_secondary_accent)
-                    )
-                }
-                LoketStatus.NORMAL -> {
-                    // Normal white background
-                    binding.layoutLoketItem.setBackgroundColor(
-                        ContextCompat.getColor(context, R.color.white)
-                    )
-                    binding.tvLoketName.setTextColor(
-                        ContextCompat.getColor(context, R.color.text_primary_black)
-                    )
-                }
+        private fun highlightSearchMatch(text: String, query: String): String {
+            // Simple highlighting - could be enhanced with SpannableString
+            return if (query.isNotBlank() && text.contains(query, ignoreCase = true)) {
+                text.replace(query, "[$query]", ignoreCase = true)
+            } else {
+                text
             }
         }
     }
 
     /**
-     * DiffUtil for efficient list updates
+     * Update search results with query context
      */
-    class LoketDiffCallback : DiffUtil.ItemCallback<Loket>() {
-        override fun areItemsTheSame(oldItem: Loket, newItem: Loket): Boolean {
-            return oldItem.ppid == newItem.ppid
-        }
-
-        override fun areContentsTheSame(oldItem: Loket, newItem: Loket): Boolean {
-            return oldItem == newItem
-        }
-    }
-
-    /**
-     * Helper methods for adapter functionality
-     */
-    fun updateSearchResults(results: List<Loket>) {
+    fun updateSearchResults(results: List<Receipt>, query: String) {
+        searchQuery = query
         submitList(results)
+        AppUtils.logDebug("SearchAdapter", "Search results updated: ${results.size} results for '$query'")
     }
 
-    fun clearResults() {
+    fun clearSearchResults() {
+        searchQuery = ""
         submitList(emptyList())
-    }
-
-    fun getItemAtPosition(position: Int): Loket? {
-        return if (position in 0 until itemCount) {
-            getItem(position)
-        } else null
     }
 }

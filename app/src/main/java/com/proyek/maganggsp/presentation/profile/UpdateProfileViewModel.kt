@@ -4,7 +4,7 @@ package com.proyek.maganggsp.presentation.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.proyek.maganggsp.domain.usecase.loket.UpdateProfileUseCase
+import com.proyek.maganggsp.domain.usecase.loketprofile.UpdateProfileUseCase
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*

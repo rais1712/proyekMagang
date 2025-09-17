@@ -1,14 +1,14 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/model/Loket.kt
+// File: app/src/main/java/com/proyek/maganggsp/domain/model/LoketProfile.kt - BRIDGE MODEL
 package com.proyek.maganggsp.domain.model
 
 import java.text.NumberFormat
-import java.util.*
+import java.util.Locale
 
 /**
- * ENHANCED: Loket domain model dengan comprehensive profile management
- * Maps dari ProfileResponse (/profiles/ppid/{ppid}) dengan additional UI enhancements
+ * BRIDGE MODEL: For DetailLoket screen compatibility
+ * Maps between new Receipt/TransactionLog structure and existing UI
  */
-data class Loket(
+data class LoketProfile(
     val ppid: String,
     val namaLoket: String,
     val nomorHP: String,
@@ -16,9 +16,9 @@ data class Loket(
     val email: String,
     val status: LoketStatus,
     val saldoTerakhir: Long = 0L,
-    val tanggalAkses: String = "",
-    val receipts: List<Receipt> = emptyList()
+    val tanggalAkses: String = ""
 ) {
+
     fun getFormattedSaldo(): String {
         val localeID = Locale("in", "ID")
         val numberFormat = NumberFormat.getCurrencyInstance(localeID)
@@ -27,7 +27,6 @@ data class Loket(
     }
 
     fun getDisplayTitle(): String = "$namaLoket ($ppid)"
-
     fun hasValidData(): Boolean = ppid.isNotBlank() && namaLoket.isNotBlank()
 
     fun getStatusDisplayText(): String = when (status) {
@@ -38,15 +37,28 @@ data class Loket(
 
     fun isBlocked(): Boolean = status == LoketStatus.BLOCKED
     fun isFlagged(): Boolean = status == LoketStatus.FLAGGED
+    fun isNormal(): Boolean = status == LoketStatus.NORMAL
+
+    // Block/unblock API logic
+    fun getOriginalPpid(): String = ppid.removeSuffix("blok")
+    fun getBlockedPpid(): String = if (ppid.endsWith("blok")) ppid else "${ppid}blok"
 }
 
 /**
- * ENHANCED: Loket status dengan flagged option untuk monitoring
+ * Status enum dengan API logic
  */
 enum class LoketStatus {
     NORMAL,
     BLOCKED,
-    FLAGGED
+    FLAGGED;
+
+    companion object {
+        fun fromPpid(ppid: String?): LoketStatus {
+            return if (ppid?.endsWith("blok") == true) {
+                BLOCKED
+            } else {
+                NORMAL
+            }
+        }
+    }
 }
-
-

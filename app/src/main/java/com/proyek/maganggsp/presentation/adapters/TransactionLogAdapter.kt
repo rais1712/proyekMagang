@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/TransactionLogAdapter.kt - MVP CORE
+// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/TransactionAdapter.kt - STREAMLINED
 package com.proyek.maganggsp.presentation.adapters
 
 import android.view.LayoutInflater
@@ -10,10 +10,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemMutasiBinding
 import com.proyek.maganggsp.domain.model.TransactionLog
+import com.proyek.maganggsp.util.AppUtils
 
 /**
- * MVP CORE: Adapter untuk transaction logs dalam format card
- * Reuses existing item_mutasi.xml layout
+ * STREAMLINED: Transaction adapter for detail screen
+ * Reuses existing item_mutasi.xml layout, focused on transaction display
  */
 class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.TransactionViewHolder>(TransactionDiffCallback()) {
 
@@ -36,45 +37,37 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
 
         fun bind(transaction: TransactionLog) {
             with(binding) {
-                // Transaction type icon and amount styling
+                val context = root.context
                 val isIncoming = transaction.isIncomingTransaction()
 
+                // Transaction type icon and amount styling
                 if (isIncoming) {
                     ivTransactionType.setImageResource(R.drawable.arrow_circle_down_24)
                     ivTransactionType.setColorFilter(
-                        ContextCompat.getColor(root.context, R.color.green_success)
+                        ContextCompat.getColor(context, R.color.green_success)
                     )
                     tvAmount.setTextColor(
-                        ContextCompat.getColor(root.context, R.color.green_success)
+                        ContextCompat.getColor(context, R.color.green_success)
                     )
                 } else {
                     ivTransactionType.setImageResource(R.drawable.arrow_circle_up_24)
                     ivTransactionType.setColorFilter(
-                        ContextCompat.getColor(root.context, R.color.red_danger)
+                        ContextCompat.getColor(context, R.color.red_danger)
                     )
                     tvAmount.setTextColor(
-                        ContextCompat.getColor(root.context, R.color.red_danger)
+                        ContextCompat.getColor(context, R.color.red_danger)
                     )
                 }
 
-                // Date and time
+                // Transaction details
                 tvTimestamp.text = transaction.getFormattedDate()
-
-                // Transaction description
                 tvDescription.text = transaction.getDisplayDescription()
-
-                // Balance info
                 tvSaldoInfo.text = transaction.getBalanceDisplayText()
-
-                // Amount with proper formatting
                 tvAmount.text = transaction.getFormattedAmount()
             }
         }
     }
 
-    /**
-     * DiffUtil for efficient list updates
-     */
     class TransactionDiffCallback : DiffUtil.ItemCallback<TransactionLog>() {
         override fun areItemsTheSame(oldItem: TransactionLog, newItem: TransactionLog): Boolean {
             return oldItem.tldRefnum == newItem.tldRefnum
@@ -86,10 +79,11 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
     }
 
     /**
-     * Helper methods for adapter functionality
+     * STREAMLINED: Helper methods
      */
     fun updateTransactions(transactions: List<TransactionLog>) {
         submitList(transactions)
+        AppUtils.logDebug("TransactionAdapter", "Updated with ${transactions.size} transactions")
     }
 
     fun clearTransactions() {
@@ -97,21 +91,19 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
     }
 
     fun getTransactionAtPosition(position: Int): TransactionLog? {
-        return if (position in 0 until itemCount) {
-            getItem(position)
-        } else null
+        return if (position in 0 until itemCount) getItem(position) else null
     }
 
     /**
-     * Get transaction statistics
+     * Get transaction summary for display
      */
-    fun getTransactionStats(): TransactionStats {
+    fun getTransactionSummary(): TransactionSummary {
         val transactions = currentList
         val incoming = transactions.filter { it.isIncomingTransaction() }
         val outgoing = transactions.filter { it.isOutgoingTransaction() }
 
-        return TransactionStats(
-            totalTransactions = transactions.size,
+        return TransactionSummary(
+            totalCount = transactions.size,
             incomingCount = incoming.size,
             outgoingCount = outgoing.size,
             totalIncoming = incoming.sumOf { it.tldAmount },
@@ -121,13 +113,23 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
         )
     }
 
-    data class TransactionStats(
-        val totalTransactions: Int,
+    data class TransactionSummary(
+        val totalCount: Int,
         val incomingCount: Int,
         val outgoingCount: Int,
         val totalIncoming: Long,
         val totalOutgoing: Long,
         val netAmount: Long,
         val latestBalance: Long
-    )
+    ) {
+        fun getFormattedSummary(): String {
+            return """
+            📊 Ringkasan Transaksi:
+            • Total: $totalCount transaksi
+            • Masuk: $incomingCount (${AppUtils.formatCurrency(totalIncoming)})
+            • Keluar: $outgoingCount (${AppUtils.formatCurrency(totalOutgoing)})
+            • Saldo Terakhir: ${AppUtils.formatCurrency(latestBalance)}
+            """.trimIndent()
+        }
+    }
 }

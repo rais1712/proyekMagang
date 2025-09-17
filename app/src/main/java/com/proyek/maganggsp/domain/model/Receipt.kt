@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/model/Receipt.kt - UNIFIED SINGLE SOURCE
+// File: app/src/main/java/com/proyek/maganggsp/domain/model/Receipt.kt - UNIFIED FINAL
 package com.proyek.maganggsp.domain.model
 
 import java.text.NumberFormat
@@ -6,22 +6,25 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * UNIFIED: Single Receipt domain model - eliminates all confusion
- * Compatible dengan TransactionLogViewModel dan semua existing usage
+ * FINAL: Primary domain model for home screen data
+ * Replaces Loket-focused approach with Receipt-centric design
  */
 data class Receipt(
     val refNumber: String,
     val idPelanggan: String,
-    val tanggal: String,
-    val mutasi: Long,
-    val totalSaldo: Long,
-    val ppid: String,
-    val tipeTransaksi: String = "Receipt"
-) {
+    val amount: Long,
+    val logged: String,
+    val ppid: String = idPelanggan, // Map to customer ID for navigation
+    val tipeTransaksi: String = "Receipt",
 
-    // BACKWARD COMPATIBILITY: Legacy properties untuk existing code
-    val amount: Long get() = mutasi
-    val logged: String get() = tanggal
+    // Extended fields for UI display
+    val namaLoket: String = "",
+    val nomorHP: String = "",
+    val email: String = "",
+    val alamat: String = "",
+    val saldoTerakhir: Long = amount,
+    val tanggalAkses: String = logged
+) {
 
     /**
      * Format amount dengan proper currency formatting
@@ -30,21 +33,11 @@ data class Receipt(
         val localeID = Locale("in", "ID")
         val numberFormat = NumberFormat.getCurrencyInstance(localeID)
         numberFormat.maximumFractionDigits = 0
-        return if (mutasi >= 0) {
-            "+${numberFormat.format(mutasi)}"
+        return if (amount >= 0) {
+            numberFormat.format(amount)
         } else {
-            numberFormat.format(mutasi)
+            numberFormat.format(amount)
         }
-    }
-
-    /**
-     * Format saldo dengan currency
-     */
-    fun getFormattedSaldo(): String {
-        val localeID = Locale("in", "ID")
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-        return numberFormat.format(totalSaldo)
     }
 
     /**
@@ -54,45 +47,49 @@ data class Receipt(
         return try {
             val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
             isoFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val date = isoFormat.parse(tanggal)
+            val date = isoFormat.parse(logged)
 
             val readableFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("in", "ID"))
             readableFormat.format(date!!)
         } catch (e: Exception) {
-            tanggal // Return original if parsing fails
+            logged // Return original if parsing fails
         }
     }
 
     /**
-     * Transaction type helpers
+     * Display helpers untuk HomeFragment
      */
-    fun isIncomingTransaction(): Boolean = mutasi >= 0
-    fun isOutgoingTransaction(): Boolean = mutasi < 0
+    fun getDisplayTitle(): String = namaLoket.takeIf { it.isNotBlank() } ?: "Receipt $refNumber"
+    fun getDisplaySubtitle(): String = "ID: $idPelanggan"
+    fun getDisplayPhone(): String = formatPhoneNumber(nomorHP)
+
+    private fun formatPhoneNumber(phone: String): String {
+        return when {
+            phone.startsWith("+62") -> phone
+            phone.startsWith("08") -> "+62${phone.substring(1)}"
+            phone.startsWith("62") -> "+$phone"
+            phone.isNotBlank() -> phone
+            else -> "No. HP tidak tersedia"
+        }
+    }
 
     /**
-     * Display helpers
+     * Navigation helper - get PPID for detail navigation
      */
-    fun getDisplayDescription(): String = "Ref: $refNumber | ID: $idPelanggan"
-    fun getSaldoDisplayText(): String = "Saldo: ${getFormattedSaldo()}"
+    fun getNavigationPpid(): String = ppid.takeIf { it.isNotBlank() } ?: idPelanggan
 
     /**
      * Validation
      */
-    fun hasValidData(): Boolean = refNumber.isNotBlank() && idPelanggan.isNotBlank() && ppid.isNotBlank()
+    fun hasValidData(): Boolean = refNumber.isNotBlank() && idPelanggan.isNotBlank()
 
-    companion object {
-        /**
-         * Create placeholder untuk testing
-         */
-        fun createPlaceholder(ppid: String): Receipt {
-            return Receipt(
-                refNumber = "REF-PLACEHOLDER-${System.currentTimeMillis().toString().takeLast(4)}",
-                idPelanggan = ppid,
-                tanggal = "2024-01-15T10:30:00.000Z",
-                mutasi = (50000..500000L).random(),
-                totalSaldo = (500000..2000000L).random(),
-                ppid = ppid
-            )
-        }
+    /**
+     * Search matching for PPID-based search
+     */
+    fun matchesPpidSearch(query: String): Boolean {
+        val lowerQuery = query.lowercase()
+        return ppid.lowercase().contains(lowerQuery) ||
+                idPelanggan.lowercase().contains(lowerQuery) ||
+                namaLoket.lowercase().contains(lowerQuery)
     }
 }

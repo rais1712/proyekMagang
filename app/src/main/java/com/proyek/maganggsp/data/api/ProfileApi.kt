@@ -1,40 +1,34 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/api/ProfileApi.kt - REAL ENDPOINT ALIGNED
+// File: app/src/main/java/com/proyek/maganggsp/data/api/ProfileApi.kt - UNIFIED API
 package com.proyek.maganggsp.data.api
 
 import retrofit2.Response
 import retrofit2.http.*
 
 /**
- * UNIFIED: Single ProfileApi yang align dengan real backend endpoints
- * Eliminates confusion antara LoketApi, ProfileApi, dan endpoint yang tidak ada
+ * UNIFIED API: Single source of truth for all profile operations
+ * Eliminates LoketApi confusion - uses real backend endpoints
  */
 interface ProfileApi {
 
     /**
-     * REAL ENDPOINT: Get profile data dengan receipts included
+     * PRIMARY: Get profile data (maps to Receipt for home screen)
      * URL: GET /api/profiles/ppid/{ppid}
-     * Headers: Authorization: Bearer {token}, Content-Type: application/json
-     * Response: Profile data + embedded receipts list
      */
     @GET("profiles/ppid/{ppid}")
     suspend fun getProfile(@Path("ppid") ppid: String): ProfileResponse
 
     /**
-     * REAL ENDPOINT: Get transaction logs for specific PPID
+     * PRIMARY: Get transaction logs (for detail screen)
      * URL: GET /api/trx/ppid/{ppid}
-     * Headers: Authorization: Bearer {token}, Content-Type: application/json
-     * Response: List<TransactionResponse>
      */
     @GET("trx/ppid/{ppid}")
     suspend fun getTransactions(@Path("ppid") ppid: String): List<TransactionResponse>
 
     /**
-     * REAL ENDPOINT: Update profile (used for block/unblock)
+     * PRIMARY: Update profile (block/unblock operations)
      * URL: PUT /api/profiles/ppid/{ppid}
-     * Headers: Authorization: Bearer {token}, Content-Type: application/json
-     * Body Examples:
-     * - Block: {"mpPpid": "PIDLKTD0025blok"}
-     * - Unblock: {"mpPpid": "PIDLKTD0025"}
+     * Body: {"mpPpid": "PIDLKTD0025blok"} for block
+     * Body: {"mpPpid": "PIDLKTD0025"} for unblock
      */
     @PUT("profiles/ppid/{ppid}")
     suspend fun updateProfile(
@@ -43,130 +37,100 @@ interface ProfileApi {
     ): Response<Unit>
 }
 
-/**
- * UNIFIED DTO STRUCTURES: Based on actual API responses
- */
+// File: app/src/main/java/com/proyek/maganggsp/data/dto/ProfileDto.kt - UNIFIED DTOs
+package com.proyek.maganggsp.data.dto
+
+import com.google.gson.annotations.SerializedName
 
 /**
- * Profile Response Structure - REAL API FORMAT
+ * UNIFIED DTO: Profile response structure
  */
 data class ProfileResponse(
-    val ppid: String?,
-    val namaLoket: String?,
-    val nomorHP: String?,
-    val alamat: String?,
-    val email: String?,
-    val saldoTerakhir: Long?,
-    val tanggalAkses: String?,
-    val receipts: List<ReceiptResponse>? = emptyList() // Embedded receipts
+    @SerializedName("ppid") val ppid: String?,
+    @SerializedName("namaLoket") val namaLoket: String?,
+    @SerializedName("nomorHP") val nomorHP: String?,
+    @SerializedName("alamat") val alamat: String?,
+    @SerializedName("email") val email: String?,
+    @SerializedName("saldoTerakhir") val saldoTerakhir: Long?,
+    @SerializedName("tanggalAkses") val tanggalAkses: String?
 )
 
 /**
- * Receipt Response Structure - REAL API FORMAT
- */
-data class ReceiptResponse(
-    val refNumber: String?,
-    val idPelanggan: String?,
-    val tanggal: String?,
-    val mutasi: Long?,
-    val totalSaldo: Long?,
-    val ppid: String?
-)
-
-/**
- * Transaction Response Structure - REAL API FORMAT
+ * UNIFIED DTO: Transaction response structure
  */
 data class TransactionResponse(
-    val tldRefnum: String?,
-    val tldPan: String?,
-    val tldIdpel: String?,
-    val tldAmount: Long?,
-    val tldBalance: Long?,
-    val tldDate: String?,
-    val tldPpid: String?
+    @SerializedName("tldRefnum") val tldRefnum: String?,
+    @SerializedName("tldPan") val tldPan: String?,
+    @SerializedName("tldIdpel") val tldIdpel: String?,
+    @SerializedName("tldAmount") val tldAmount: Long?,
+    @SerializedName("tldBalance") val tldBalance: Long?,
+    @SerializedName("tldDate") val tldDate: String?,
+    @SerializedName("tldPpid") val tldPpid: String?
 )
 
 /**
- * Update Profile Request - REAL API FORMAT
- * Used for block/unblock operations
+ * UPDATE REQUEST: For block/unblock operations
  */
 data class UpdateProfileRequest(
-    val mpPpid: String // The new PPID value (with or without "blok" suffix)
+    @SerializedName("mpPpid") val mpPpid: String
 )
 
-/**
- * DOMAIN MAPPING EXTENSIONS - Clean dan Unified
- */
+// DOMAIN MAPPING EXTENSIONS
+import com.proyek.maganggsp.domain.model.*
 
-// Profile to Loket mapping (for DetailLoket)
-fun ProfileResponse.toLoketDomain(): com.proyek.maganggsp.domain.model.Loket {
-    return com.proyek.maganggsp.domain.model.Loket(
+/**
+ * Profile to Receipt mapping (for home screen)
+ */
+fun ProfileResponse.toReceipt(): Receipt {
+    return Receipt(
+        refNumber = "PROFILE-${this.ppid ?: "UNKNOWN"}",
+        idPelanggan = this.ppid ?: "",
+        amount = this.saldoTerakhir ?: 0L,
+        logged = this.tanggalAkses ?: "",
+        ppid = this.ppid ?: "",
+        namaLoket = this.namaLoket ?: "",
+        nomorHP = this.nomorHP ?: "",
+        email = this.email ?: "",
+        alamat = this.alamat ?: "",
+        saldoTerakhir = this.saldoTerakhir ?: 0L,
+        tanggalAkses = this.tanggalAkses ?: ""
+    )
+}
+
+/**
+ * Profile to LoketProfile mapping (for detail screen)
+ */
+fun ProfileResponse.toLoketProfile(): LoketProfile {
+    return LoketProfile(
         ppid = this.ppid ?: "",
         namaLoket = this.namaLoket ?: "Unknown Loket",
         nomorHP = this.nomorHP ?: "",
         alamat = this.alamat ?: "",
         email = this.email ?: "",
-        status = determineLoketStatus(this.ppid),
+        status = LoketStatus.fromPpid(this.ppid),
         saldoTerakhir = this.saldoTerakhir ?: 0L,
-        tanggalAkses = this.tanggalAkses ?: "",
-        receipts = this.receipts?.mapNotNull { it.toDomain() } ?: emptyList()
-    )
-}
-
-// Profile to Receipt mapping (for TransactionLogViewModel compatibility)
-fun ProfileResponse.toReceiptDomain(): com.proyek.maganggsp.domain.model.Receipt {
-    return com.proyek.maganggsp.domain.model.Receipt(
-        refNumber = "PROFILE-${this.ppid ?: "UNKNOWN"}",
-        idPelanggan = this.ppid ?: "",
-        tanggal = this.tanggalAkses ?: "",
-        mutasi = this.saldoTerakhir ?: 0L,
-        totalSaldo = this.saldoTerakhir ?: 0L,
-        ppid = this.ppid ?: "",
-        tipeTransaksi = "Profile Info"
-    )
-}
-
-// Receipt response to domain
-fun ReceiptResponse.toDomain(): com.proyek.maganggsp.domain.model.Receipt? {
-    if (refNumber.isNullOrBlank() || ppid.isNullOrBlank()) return null
-
-    return com.proyek.maganggsp.domain.model.Receipt(
-        refNumber = refNumber,
-        idPelanggan = idPelanggan ?: "",
-        tanggal = tanggal ?: "",
-        mutasi = mutasi ?: 0L,
-        totalSaldo = totalSaldo ?: 0L,
-        ppid = ppid
-    )
-}
-
-// Transaction response to domain
-fun TransactionResponse.toDomain(): com.proyek.maganggsp.domain.model.TransactionLog {
-    return com.proyek.maganggsp.domain.model.TransactionLog(
-        tldRefnum = tldRefnum ?: "",
-        tldPan = tldPan ?: "",
-        tldIdpel = tldIdpel ?: "",
-        tldAmount = tldAmount ?: 0L,
-        tldBalance = tldBalance ?: 0L,
-        tldDate = tldDate ?: "",
-        tldPpid = tldPpid ?: ""
+        tanggalAkses = this.tanggalAkses ?: ""
     )
 }
 
 /**
- * BLOCK/UNBLOCK HELPERS
+ * Transaction response to domain mapping
  */
-
-// Determine loket status dari PPID
-private fun determineLoketStatus(ppid: String?): com.proyek.maganggsp.domain.model.LoketStatus {
-    return if (ppid?.endsWith("blok") == true) {
-        com.proyek.maganggsp.domain.model.LoketStatus.BLOCKED
-    } else {
-        com.proyek.maganggsp.domain.model.LoketStatus.NORMAL
-    }
+fun TransactionResponse.toTransactionLog(): TransactionLog {
+    return TransactionLog(
+        tldRefnum = this.tldRefnum ?: "",
+        tldPan = this.tldPan ?: "",
+        tldIdpel = this.tldIdpel ?: "",
+        tldAmount = this.tldAmount ?: 0L,
+        tldBalance = this.tldBalance ?: 0L,
+        tldDate = this.tldDate ?: "",
+        tldPpid = this.tldPpid ?: ""
+    )
 }
 
-// Create block request
+/**
+ * Block/Unblock request helpers
+ */
 fun createBlockRequest(originalPpid: String): UpdateProfileRequest {
     val blockedPpid = if (originalPpid.endsWith("blok")) {
         originalPpid // Already blocked
@@ -176,7 +140,6 @@ fun createBlockRequest(originalPpid: String): UpdateProfileRequest {
     return UpdateProfileRequest(mpPpid = blockedPpid)
 }
 
-// Create unblock request
 fun createUnblockRequest(blockedPpid: String): UpdateProfileRequest {
     val originalPpid = if (blockedPpid.endsWith("blok")) {
         blockedPpid.removeSuffix("blok")
@@ -184,4 +147,33 @@ fun createUnblockRequest(blockedPpid: String): UpdateProfileRequest {
         blockedPpid // Not blocked
     }
     return UpdateProfileRequest(mpPpid = originalPpid)
+}
+
+// File: app/src/main/java/com/proyek/maganggsp/data/dto/AuthDto.kt - KEEP EXISTING
+package com.proyek.maganggsp.data.dto
+
+import com.google.gson.annotations.SerializedName
+import com.proyek.maganggsp.domain.model.Admin
+
+/**
+ * UNCHANGED: Keep existing login functionality
+ */
+data class LoginRequest(
+    @SerializedName("email") val email: String,
+    @SerializedName("password") val password: String
+)
+
+data class LoginResponse(
+    @SerializedName("token") val token: String?,
+    @SerializedName("email") val email: String?,
+    @SerializedName("role") val role: String?
+)
+
+fun LoginResponse.toDomain(): Admin {
+    return Admin(
+        name = this.email?.substringBefore("@") ?: "Admin",
+        email = this.email ?: "",
+        token = this.token ?: "",
+        role = this.role ?: "admin"
+    )
 }

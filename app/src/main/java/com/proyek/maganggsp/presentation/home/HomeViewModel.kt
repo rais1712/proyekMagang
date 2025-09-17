@@ -1,15 +1,15 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - SEARCH BY PPID
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - RECEIPT FOCUSED
 package com.proyek.maganggsp.presentation.home
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.Admin
-import com.proyek.maganggsp.domain.model.Loket
+import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.usecase.auth.GetAdminProfileUseCase
 import com.proyek.maganggsp.domain.usecase.auth.LogoutUseCase
-import com.proyek.maganggsp.domain.usecase.loket.GetRecentLoketsUseCase
-import com.proyek.maganggsp.domain.usecase.loket.SearchLoketUseCase
+import com.proyek.maganggsp.domain.usecase.profile.GetRecentProfilesUseCase
+import com.proyek.maganggsp.domain.usecase.profile.SearchProfilesUseCase
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,27 +20,28 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * UPDATED: HomeViewModel dengan search by PPID functionality
+ * STREAMLINED: HomeViewModel focused on Receipt display and PPID search
+ * Eliminates complex loket management, focuses on receipt data
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val searchLoketUseCase: SearchLoketUseCase,
-    private val getRecentLoketsUseCase: GetRecentLoketsUseCase,
+    private val searchProfilesUseCase: SearchProfilesUseCase,
+    private val getRecentProfilesUseCase: GetRecentProfilesUseCase,
     private val getAdminProfileUseCase: GetAdminProfileUseCase,
     private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "HomeViewModel"
-        private const val SEARCH_DEBOUNCE_DELAY = 600L
+        private const val SEARCH_DEBOUNCE_DELAY = 500L
     }
 
-    // Search state management
-    private val _searchResults = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
-    val searchResults: StateFlow<Resource<List<Loket>>> = _searchResults.asStateFlow()
+    // STREAMLINED STATE MANAGEMENT
+    private val _searchResults = MutableStateFlow<Resource<List<Receipt>>>(Resource.Empty)
+    val searchResults: StateFlow<Resource<List<Receipt>>> = _searchResults.asStateFlow()
 
-    private val _recentLokets = MutableStateFlow<Resource<List<Loket>>>(Resource.Empty)
-    val recentLokets: StateFlow<Resource<List<Loket>>> = _recentLokets.asStateFlow()
+    private val _recentReceipts = MutableStateFlow<Resource<List<Receipt>>>(Resource.Empty)
+    val recentReceipts: StateFlow<Resource<List<Receipt>>> = _recentReceipts.asStateFlow()
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
@@ -48,14 +49,14 @@ class HomeViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        loadRecentLokets()
+        AppUtils.logInfo(TAG, "HomeViewModel initialized with Receipt focus")
+        loadRecentReceipts()
     }
 
     /**
-     * UPDATED: Search loket by PPID dengan debounce
+     * STREAMLINED: Search receipts by PPID dengan debounce
      */
-    fun searchLoket(ppid: String) {
-        // Cancel previous search job
+    fun searchReceipts(ppid: String) {
         searchJob?.cancel()
 
         if (ppid.isBlank()) {
@@ -66,15 +67,13 @@ class HomeViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             try {
                 _isSearching.value = true
-
-                // Debounce search to avoid too many operations
                 delay(SEARCH_DEBOUNCE_DELAY)
 
-                Log.d(TAG, "Starting search for PPID: $ppid")
+                AppUtils.logDebug(TAG, "Starting PPID search: $ppid")
 
                 // Quick validation
-                val validationResult = searchLoketUseCase.validateQuick(ppid)
-                if (validationResult.isError) {
+                val validationResult = AppUtils.validatePpidFormat(ppid)
+                if (!validationResult.isValid && ppid.length >= 5) {
                     _searchResults.value = Resource.Error(
                         com.proyek.maganggsp.util.exceptions.AppException.ValidationException(
                             validationResult.message
@@ -83,30 +82,28 @@ class HomeViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Perform search (local cache + potential direct API if valid PPID)
-                searchLoketUseCase(ppid).collect { resource ->
+                // Perform search
+                searchProfilesUseCase(ppid).collect { resource ->
                     _searchResults.value = resource
 
                     when (resource) {
                         is Resource.Success -> {
-                            Log.d(TAG, "Search successful: ${resource.data.size} results for PPID pattern")
-                            AppUtils.logInfo(TAG, "Found ${resource.data.size} lokets for PPID: $ppid")
+                            AppUtils.logInfo(TAG, "Search successful: ${resource.data.size} receipts found")
                         }
                         is Resource.Error -> {
-                            Log.e(TAG, "Search error: ${resource.exception.message}")
-                            AppUtils.logError(TAG, "PPID search failed", resource.exception)
+                            AppUtils.logError(TAG, "Search error", resource.exception)
                         }
                         is Resource.Empty -> {
-                            Log.d(TAG, "No results found for PPID: $ppid")
+                            AppUtils.logDebug(TAG, "No results found for PPID: $ppid")
                         }
                         is Resource.Loading -> {
-                            Log.d(TAG, "PPID search loading...")
+                            AppUtils.logDebug(TAG, "Searching receipts...")
                         }
                     }
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Search error", e)
+                AppUtils.logError(TAG, "Search exception", e)
                 _searchResults.value = Resource.Error(
                     com.proyek.maganggsp.util.exceptions.AppException.UnknownException(
                         "Pencarian gagal: ${e.message}"
@@ -117,47 +114,48 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Clear search and show recent lokets
+     * STREAMLINED: Clear search and show recent receipts
      */
     fun clearSearch() {
         searchJob?.cancel()
         _isSearching.value = false
         _searchResults.value = Resource.Empty
-        loadRecentLokets()
+        loadRecentReceipts()
+        AppUtils.logDebug(TAG, "Search cleared, showing recent receipts")
     }
 
     /**
-     * Load recent accessed lokets
+     * STREAMLINED: Load recent receipts from history
      */
-    fun loadRecentLokets() {
+    fun loadRecentReceipts() {
         if (_isSearching.value) return
 
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Loading recent lokets")
+                AppUtils.logDebug(TAG, "Loading recent receipts")
 
-                getRecentLoketsUseCase().collect { resource ->
-                    _recentLokets.value = resource
+                getRecentProfilesUseCase().collect { resource ->
+                    _recentReceipts.value = resource
 
                     when (resource) {
                         is Resource.Success -> {
-                            Log.d(TAG, "Recent lokets loaded: ${resource.data.size}")
+                            AppUtils.logInfo(TAG, "Recent receipts loaded: ${resource.data.size}")
                         }
                         is Resource.Error -> {
-                            Log.e(TAG, "Recent lokets error: ${resource.exception.message}")
+                            AppUtils.logError(TAG, "Recent receipts error", resource.exception)
                         }
                         is Resource.Empty -> {
-                            Log.d(TAG, "No recent lokets available")
+                            AppUtils.logDebug(TAG, "No recent receipts available")
                         }
                         is Resource.Loading -> {
-                            Log.d(TAG, "Loading recent lokets...")
+                            AppUtils.logDebug(TAG, "Loading recent receipts...")
                         }
                     }
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Recent lokets error", e)
-                _recentLokets.value = Resource.Error(
+                AppUtils.logError(TAG, "Recent receipts exception", e)
+                _recentReceipts.value = Resource.Error(
                     com.proyek.maganggsp.util.exceptions.AppException.UnknownException(
                         "Gagal memuat riwayat: ${e.message}"
                     )
@@ -167,42 +165,42 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Get current admin profile
+     * Get admin profile for display
      */
     fun getAdminProfile(): Admin? {
         return try {
-            getAdminProfileUseCase()
+            val admin = getAdminProfileUseCase()
+            AppUtils.logDebug(TAG, "Admin profile: ${admin?.name ?: "Not found"}")
+            admin
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to get admin profile", e)
+            AppUtils.logError(TAG, "Failed to get admin profile", e)
             null
         }
     }
 
     /**
-     * Logout user
+     * STREAMLINED: Logout process
      */
     fun logout() {
         viewModelScope.launch {
             try {
-                Log.d(TAG, "Starting logout process")
+                AppUtils.logInfo(TAG, "Starting logout process")
+
                 logoutUseCase().collect { resource ->
                     when (resource) {
                         is Resource.Success -> {
-                            Log.d(TAG, "Logout successful")
-                            AppUtils.logInfo(TAG, "User logged out successfully")
+                            AppUtils.logInfo(TAG, "Logout successful")
                         }
                         is Resource.Error -> {
-                            Log.e(TAG, "Logout error: ${resource.exception.message}")
-                            AppUtils.logError(TAG, "Logout failed", resource.exception)
+                            AppUtils.logError(TAG, "Logout error", resource.exception)
                         }
                         is Resource.Loading -> {
-                            Log.d(TAG, "Logout in progress...")
+                            AppUtils.logDebug(TAG, "Logout in progress...")
                         }
-                        is Resource.Empty -> { /* Not applicable for logout */ }
+                        is Resource.Empty -> { /* Not applicable */ }
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Logout error", e)
                 AppUtils.logError(TAG, "Logout exception", e)
             }
         }
@@ -213,51 +211,73 @@ class HomeViewModel @Inject constructor(
      */
     fun refresh() {
         if (_isSearching.value) {
-            // If currently searching, don't refresh recent - maintain search state
-            Log.d(TAG, "Refresh called during search - ignoring")
+            AppUtils.logDebug(TAG, "Refresh ignored during active search")
         } else {
-            loadRecentLokets()
+            AppUtils.logInfo(TAG, "Refreshing recent receipts")
+            loadRecentReceipts()
         }
     }
 
     /**
-     * UPDATED: Get PPID format examples untuk UI hints
+     * Direct PPID access untuk exact match
+     */
+    fun accessByPpid(ppid: String) {
+        val validation = AppUtils.validatePpidFormat(ppid)
+        if (validation.isValid) {
+            AppUtils.logInfo(TAG, "Direct PPID access: $ppid")
+            searchReceipts(ppid)
+        } else {
+            AppUtils.logDebug(TAG, "Invalid PPID format for direct access: $ppid")
+        }
+    }
+
+    /**
+     * Get PPID format examples for UI hints
      */
     fun getPpidFormatExamples(): List<String> {
-        return searchLoketUseCase.getPpidFormatExamples()
+        return listOf(
+            "PIDLKTD0025",
+            "PIDLKTD0025blok",
+            "PIDLKTD0030"
+        )
     }
 
     /**
-     * Direct PPID access - jika user input exact PPID, langsung coba load
+     * STREAMLINED: Get current state summary
      */
-    fun directPpidAccess(ppid: String) {
-        if (searchLoketUseCase.validateQuick(ppid).isValid) {
-            // If valid PPID, user probably wants direct access
-            // This will trigger search which may include direct API call
-            searchLoket(ppid)
-        }
+    fun getCurrentStateSummary(): String {
+        val adminProfile = getAdminProfile()
+        val searchResultsCount = (_searchResults.value as? Resource.Success)?.data?.size ?: 0
+        val recentReceiptsCount = (_recentReceipts.value as? Resource.Success)?.data?.size ?: 0
+
+        return """
+        Home State Summary:
+        - Admin: ${adminProfile?.name ?: "Not loaded"}
+        - Is Searching: ${_isSearching.value}
+        - Search Results: $searchResultsCount
+        - Recent Receipts: $recentReceiptsCount
+        - Search Job Active: ${searchJob?.isActive ?: false}
+        """.trimIndent()
     }
 
     /**
-     * Debug info
+     * STREAMLINED: Debug info
      */
     fun getDebugInfo(): String {
-        val adminProfile = getAdminProfile()
         return """
-        HomeViewModel Debug Info:
-        - Admin: ${adminProfile?.name ?: "Not found"}
-        - Email: ${adminProfile?.email ?: "Not found"}
-        - Is Searching: ${_isSearching.value}
-        - Search Results: ${(_searchResults.value as? Resource.Success)?.data?.size ?: "N/A"}
-        - Recent Lokets: ${(_recentLokets.value as? Resource.Success)?.data?.size ?: "N/A"}
-        - Search Job Active: ${searchJob?.isActive ?: false}
+        ${getCurrentStateSummary()}
+        
+        Technical Details:
+        - ViewModel: Receipt-focused HomeViewModel
         - Search Mode: PPID-based
+        - Data Source: ProfileRepository
+        - State Management: Streamlined StateFlow
         """.trimIndent()
     }
 
     override fun onCleared() {
         super.onCleared()
         searchJob?.cancel()
-        Log.d(TAG, "ViewModel cleared")
+        AppUtils.logInfo(TAG, "HomeViewModel cleared")
     }
 }

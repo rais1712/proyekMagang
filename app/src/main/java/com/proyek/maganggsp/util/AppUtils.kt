@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/util/AppUtils.kt - CONSOLIDATED & INDONESIAN
+// File: app/src/main/java/com/proyek/maganggsp/util/AppUtils.kt - CONSOLIDATED UTILITY
 package com.proyek.maganggsp.util
 
 import android.content.Context
@@ -8,24 +8,26 @@ import android.widget.Toast
 import androidx.core.view.isVisible
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.proyek.maganggsp.R
+import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.util.exceptions.AppException
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * CONSOLIDATED UTILITY CLASS - Indonesian Messages
- * Menggabungkan: Formatters, ErrorDisplayHandler, EmptyStateHandler, LoadingStateHandler
- * Single comprehensive utility untuk semua operasi umum
+ * CONSOLIDATED UTILITY CLASS: Single comprehensive utility
+ * Merges: Formatters, ErrorDisplayHandler, EmptyStateHandler, LoadingStateHandler
+ * Eliminates scattered utility classes
  */
 object AppUtils {
 
     // ========================================
-    // FORMATTING UTILITIES - Indonesian Format
+    // FORMATTING UTILITIES
     // ========================================
 
     /**
-     * Format mata uang ke format Rupiah
+     * Format mata uang ke format Rupiah Indonesia
      */
     fun formatCurrency(amount: Long): String {
         val localeID = Locale("in", "ID")
@@ -35,7 +37,7 @@ object AppUtils {
     }
 
     /**
-     * Format string tanggal ke format yang mudah dibaca
+     * Format tanggal ke format Indonesia yang mudah dibaca
      */
     fun formatDate(dateString: String): String {
         return try {
@@ -46,20 +48,12 @@ object AppUtils {
             val readableFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("in", "ID"))
             readableFormat.format(date!!)
         } catch (e: Exception) {
-            // Fallback: coba format lain atau return original
-            try {
-                val fallbackFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val date = fallbackFormat.parse(dateString)
-                val readableFormat = SimpleDateFormat("dd MMM yyyy", Locale("in", "ID"))
-                readableFormat.format(date!!)
-            } catch (e2: Exception) {
-                dateString // Return original jika parsing gagal
-            }
+            dateString // Return original if parsing fails
         }
     }
 
     /**
-     * Format PPID untuk display
+     * Format PPID untuk display dengan truncation jika perlu
      */
     fun formatPpid(ppid: String): String {
         return when {
@@ -69,12 +63,25 @@ object AppUtils {
         }
     }
 
+    /**
+     * Format nomor telepon ke format Indonesia
+     */
+    fun formatPhoneNumber(phone: String): String {
+        return when {
+            phone.startsWith("+62") -> phone
+            phone.startsWith("08") -> "+62${phone.substring(1)}"
+            phone.startsWith("62") -> "+$phone"
+            phone.isNotBlank() -> phone
+            else -> "No. HP tidak tersedia"
+        }
+    }
+
     // ========================================
-    // ERROR HANDLING UTILITIES - Indonesian
+    // ERROR HANDLING UTILITIES
     // ========================================
 
     /**
-     * Tampilkan error message dengan handling yang tepat
+     * Show error dengan mapping ke bahasa Indonesia
      */
     fun showError(context: Context, error: AppException) {
         val message = mapExceptionToIndonesianMessage(error)
@@ -82,14 +89,14 @@ object AppUtils {
     }
 
     /**
-     * Tampilkan simple error message
+     * Show simple error message
      */
     fun showError(context: Context, message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "❌ $message", Toast.LENGTH_SHORT).show()
     }
 
     /**
-     * Tampilkan success message
+     * Show success message
      */
     fun showSuccess(context: Context, message: String) {
         Toast.makeText(context, "✅ $message", Toast.LENGTH_SHORT).show()
@@ -111,17 +118,17 @@ object AppUtils {
     }
 
     // ========================================
-    // LOADING STATE UTILITIES
+    // UNIFIED LOADING STATE MANAGEMENT
     // ========================================
 
     /**
-     * Handle loading state untuk pattern standar shimmer + content + empty
+     * UNIFIED: Handle loading state untuk standard shimmer + content pattern
      */
-    fun handleLoadingState(
+    fun <T> handleLoadingState(
+        resource: Resource<T>,
         shimmerView: ShimmerFrameLayout,
         contentView: View,
-        emptyView: View? = null,
-        resource: Resource<*>
+        emptyView: View? = null
     ) {
         when (resource) {
             is Resource.Loading -> {
@@ -153,6 +160,62 @@ object AppUtils {
         }
     }
 
+    /**
+     * UNIFIED: Handle dual loading (card + mutations shimmer pattern)
+     */
+    fun <T> handleDualLoadingState(
+        resource: Resource<T>,
+        primaryShimmer: ShimmerFrameLayout,
+        primaryContent: View,
+        secondaryShimmer: ShimmerFrameLayout? = null,
+        secondaryContent: View? = null,
+        emptyView: View? = null
+    ) {
+        when (resource) {
+            is Resource.Loading -> {
+                primaryShimmer.startShimmer()
+                primaryShimmer.isVisible = true
+                primaryContent.isVisible = false
+
+                secondaryShimmer?.startShimmer()
+                secondaryShimmer?.isVisible = true
+                secondaryContent?.isVisible = false
+
+                emptyView?.isVisible = false
+            }
+            is Resource.Success -> {
+                primaryShimmer.stopShimmer()
+                primaryShimmer.isVisible = false
+                secondaryShimmer?.stopShimmer()
+                secondaryShimmer?.isVisible = false
+
+                primaryContent.isVisible = true
+                secondaryContent?.isVisible = true
+                emptyView?.isVisible = false
+            }
+            is Resource.Error -> {
+                primaryShimmer.stopShimmer()
+                primaryShimmer.isVisible = false
+                secondaryShimmer?.stopShimmer()
+                secondaryShimmer?.isVisible = false
+
+                primaryContent.isVisible = false
+                secondaryContent?.isVisible = false
+                emptyView?.isVisible = true
+            }
+            is Resource.Empty -> {
+                primaryShimmer.stopShimmer()
+                primaryShimmer.isVisible = false
+                secondaryShimmer?.stopShimmer()
+                secondaryShimmer?.isVisible = false
+
+                primaryContent.isVisible = false
+                secondaryContent?.isVisible = false
+                emptyView?.isVisible = true
+            }
+        }
+    }
+
     private fun evaluateDataAvailability(data: Any?): Boolean {
         return when (data) {
             is List<*> -> data.isNotEmpty()
@@ -163,11 +226,11 @@ object AppUtils {
     }
 
     // ========================================
-    // EMPTY STATE UTILITIES - Indonesian
+    // EMPTY STATE MANAGEMENT
     // ========================================
 
     /**
-     * Apply contextual empty state messages dalam bahasa Indonesia
+     * UNIFIED: Apply contextual empty state messages dalam bahasa Indonesia
      */
     fun applyEmptyState(
         textView: TextView,
@@ -178,15 +241,17 @@ object AppUtils {
     ) {
         val message = when {
             context == "home" && isSearchMode -> {
-                if (searchQuery.length < 3) "Ketik minimal 3 karakter untuk pencarian"
-                else "Tidak ada hasil untuk \"$searchQuery\""
+                if (searchQuery.length < 5) "Ketik minimal 5 karakter PPID untuk pencarian"
+                else "Tidak ada hasil untuk PPID \"$searchQuery\""
             }
             context == "home" && !isSearchMode && itemCount == 0 ->
                 "Belum ada receipt tersedia.\nTarik ke bawah untuk refresh."
             context == "transactions" && itemCount == 0 ->
                 "Belum ada log transaksi.\nData akan muncul jika ada aktivitas."
-            context == "profile" && itemCount == 0 ->
-                "Informasi profil tidak tersedia."
+            context == "detail" && itemCount == 0 ->
+                "Informasi tidak tersedia untuk PPID ini."
+            context == "search" && itemCount == 0 ->
+                "Tidak ditemukan data untuk pencarian \"$searchQuery\""
             else -> "Tidak ada data tersedia"
         }
 
@@ -200,62 +265,61 @@ object AppUtils {
     // ========================================
 
     /**
-     * Validasi format email
-     */
-    fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-
-    /**
-     * Validasi format PPID
+     * Validate PPID format
      */
     fun isValidPpid(ppid: String): Boolean {
         return ppid.isNotBlank() && ppid.length >= 5
     }
 
     /**
-     * Validasi nomor referensi
+     * Validate email format
      */
-    fun isValidRefNumber(refNumber: String): Boolean {
-        return refNumber.isNotBlank() && refNumber.length >= 3
+    fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
-
-    // ========================================
-    // NAVIGATION UTILITIES
-    // ========================================
 
     /**
-     * Safe navigation helper yang handle exceptions
+     * Enhanced PPID validation with format checking
      */
-    fun safeNavigate(action: () -> Unit, onError: (String) -> Unit = {}) {
-        try {
-            action()
-        } catch (e: Exception) {
-            onError("Navigasi gagal: ${e.message}")
+    fun validatePpidFormat(ppid: String): ValidationResult {
+        return when {
+            ppid.isBlank() -> ValidationResult(false, "PPID tidak boleh kosong")
+            ppid.length < 5 -> ValidationResult(false, "PPID minimal 5 karakter")
+            ppid.length < 8 -> ValidationResult(false, "PPID terlalu pendek")
+            !ppid.matches("^[A-Z]{3,}[0-9]+.*$".toRegex()) -> {
+                ValidationResult(false, "Format PPID tidak valid. Gunakan format PIDLKTD0025")
+            }
+            else -> ValidationResult(true, "Valid")
         }
     }
+
+    data class ValidationResult(val isValid: Boolean, val message: String)
 
     // ========================================
     // PLACEHOLDER DATA UTILITIES
     // ========================================
 
     /**
-     * Generate placeholder receipt untuk testing
+     * Create placeholder receipt untuk testing
      */
-    fun createPlaceholderReceipt(ppid: String): com.proyek.maganggsp.domain.model.Receipt {
-        return com.proyek.maganggsp.domain.model.Receipt(
+    fun createPlaceholderReceipt(ppid: String): Receipt {
+        return Receipt(
             refNumber = "REF-${System.currentTimeMillis().toString().takeLast(6)}",
             idPelanggan = ppid,
             amount = (50000..500000L).random(),
-            logged = formatDate("2024-01-15T10:30:00.000Z")
+            logged = "2024-01-15T10:30:00.000Z",
+            ppid = ppid,
+            namaLoket = "Loket Testing $ppid",
+            nomorHP = "+6281234567${(10..99).random()}",
+            email = "test@loket$ppid.com"
         )
     }
 
     /**
-     * Generate placeholder transaction logs untuk testing
+     * Create placeholder transaction logs untuk testing
      */
-    fun createPlaceholderTransactionLogs(ppid: String, count: Int = 5): List<com.proyek.maganggsp.domain.model.TransactionLog> {
-        val transactions = mutableListOf<com.proyek.maganggsp.domain.model.TransactionLog>()
+    fun createPlaceholderTransactionLogs(ppid: String, count: Int = 5): List<TransactionLog> {
+        val transactions = mutableListOf<TransactionLog>()
         var balance = 1000000L
 
         repeat(count) { index ->
@@ -263,8 +327,8 @@ object AppUtils {
             balance += amount
 
             transactions.add(
-                com.proyek.maganggsp.domain.model.TransactionLog(
-                    tldRefnum = "TXN${String.format("%03d", index + 1)}-PLACEHOLDER",
+                TransactionLog(
+                    tldRefnum = "TXN${String.format("%03d", index + 1)}-TEST",
                     tldPan = "1234****5678",
                     tldIdpel = ppid,
                     tldAmount = amount,
@@ -279,26 +343,26 @@ object AppUtils {
     }
 
     // ========================================
+    // NAVIGATION UTILITIES
+    // ========================================
+
+    /**
+     * Safe navigation helper
+     */
+    fun safeNavigate(action: () -> Unit, onError: (String) -> Unit = {}) {
+        try {
+            action()
+        } catch (e: Exception) {
+            onError("Navigasi gagal: ${e.message}")
+        }
+    }
+
+    // ========================================
     // DEBUG UTILITIES
     // ========================================
 
     /**
-     * Get debug info untuk troubleshooting
-     */
-    fun getDebugInfo(context: Context): String {
-        return """
-        📱 DEBUG INFO GESPAY ADMIN:
-        - Context: ${context.javaClass.simpleName}
-        - Waktu: ${formatDate(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(Date()))}
-        - Memory: ${Runtime.getRuntime().freeMemory() / 1024 / 1024} MB
-        - Version: ${com.proyek.maganggsp.BuildConfig.VERSION_NAME}
-        - Build Type: ${com.proyek.maganggsp.BuildConfig.BUILD_TYPE}
-        - Base URL: ${com.proyek.maganggsp.BuildConfig.BASE_URL}
-        """.trimIndent()
-    }
-
-    /**
-     * Log dengan format konsisten
+     * Consistent logging dengan emoji
      */
     fun logInfo(tag: String, message: String) {
         android.util.Log.i(tag, "📋 $message")
@@ -312,5 +376,22 @@ object AppUtils {
         if (com.proyek.maganggsp.BuildConfig.DEBUG) {
             android.util.Log.d(tag, "🔍 $message")
         }
+    }
+
+    /**
+     * Get comprehensive debug info
+     */
+    fun getDebugInfo(context: Context): String {
+        return """
+        📱 GESPAY ADMIN DEBUG INFO:
+        - Context: ${context.javaClass.simpleName}
+        - Time: ${formatDate(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(Date()))}
+        - Memory: ${Runtime.getRuntime().freeMemory() / 1024 / 1024} MB free
+        - Version: ${com.proyek.maganggsp.BuildConfig.VERSION_NAME}
+        - Build: ${com.proyek.maganggsp.BuildConfig.BUILD_TYPE}
+        - API URL: ${com.proyek.maganggsp.BuildConfig.BASE_URL}
+        - Data Focus: Receipt/TransactionLog
+        - Architecture: Unified Repository Pattern
+        """.trimIndent()
     }
 }
