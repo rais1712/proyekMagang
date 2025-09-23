@@ -4,9 +4,9 @@ package com.proyek.maganggsp.presentation.detail_loket
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.proyek.maganggsp.domain.usecase.loketprofile.GetProfileUseCase
-import com.proyek.maganggsp.domain.usecase.loketprofile.GetTransactionLogsUseCase
-import com.proyek.maganggsp.domain.usecase.loketprofile.UpdateProfileUseCase
+import com.proyek.maganggsp.domain.usecase.profile.GetProfileUseCase
+import com.proyek.maganggsp.domain.usecase.profile.GetTransactionLogsUseCase
+import com.proyek.maganggsp.domain.usecase.profile.UpdateProfileUseCase
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.AppException

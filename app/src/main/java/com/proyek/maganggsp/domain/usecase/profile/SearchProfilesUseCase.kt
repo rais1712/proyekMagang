@@ -1,3 +1,4 @@
+// =================================================================
 // File: app/src/main/java/com/proyek/maganggsp/domain/usecase/profile/SearchProfilesUseCase.kt
 package com.proyek.maganggsp.domain.usecase.profile
 
@@ -8,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 /**
- * UNIFIED: Search profiles by PPID
+ * MODULAR: Search profiles use case for PPID search
  */
 class SearchProfilesUseCase @Inject constructor(
     private val profileRepository: ProfileRepository
@@ -54,3 +55,8 @@ class SearchProfilesUseCase @Inject constructor(
         )
     }
 }
+
+
+
+
+

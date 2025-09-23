@@ -1,5 +1,5 @@
 // File: app/src/main/java/com/proyek/maganggsp/domain/usecase/profile/GetTransactionLogsUseCase.kt
-package com.proyek.maganggsp.domain.usecase.loketprofile
+package com.proyek.maganggsp.domain.usecase.profile
 
 import com.proyek.maganggsp.domain.repository.ProfileRepository
 import com.proyek.maganggsp.util.Resource

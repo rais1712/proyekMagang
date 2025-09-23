@@ -1,5 +1,5 @@
 // File: app/src/main/java/com/proyek/maganggsp/domain/usecase/loket/SearchLoketUseCase.kt - UPDATED PPID SEARCH
-package com.proyek.maganggsp.domain.usecase.loketprofile
+package com.proyek.maganggsp.domain.usecase.profile
 
 import com.proyek.maganggsp.domain.model.Loket
 import com.proyek.maganggsp.domain.repository.LoketRepository
