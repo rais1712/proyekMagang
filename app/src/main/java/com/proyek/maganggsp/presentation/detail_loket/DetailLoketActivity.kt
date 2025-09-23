@@ -1,8 +1,8 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/DetailLoketActivity.kt - PPID ARGS FIXED
+// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/DetailLoketActivity.kt - COMPLETE REFACTOR
 package com.proyek.maganggsp.presentation.detail_loket
 
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -10,9 +10,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityDetailLoketBinding
-import com.proyek.maganggsp.domain.model.Loket
+import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.model.LoketStatus
-import com.proyek.maganggsp.presentation.adapters.TransactionLogAdapter
+import com.proyek.maganggsp.presentation.adapters.ReceiptAdapter
+import com.proyek.maganggsp.presentation.transaction.TransactionLogActivity
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.AppUtils
@@ -21,14 +22,17 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * FIXED: DetailLoketActivity dengan proper PPID argument extraction dan real API integration
+ * COMPLETE REFACTOR: DetailLoketActivity shows Profile Info + Receipt list
+ * UI Flow: Profile card + Receipt list in RecyclerView
+ * Receipt click -> Navigate to TransactionLogActivity
+ * Contains: Block/Unblock buttons untuk profile management
  */
 @AndroidEntryPoint
 class DetailLoketActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailLoketBinding
     private val viewModel: DetailLoketViewModel by viewModels()
-    private lateinit var transactionAdapter: TransactionLogAdapter
+    private lateinit var receiptAdapter: ReceiptAdapter
 
     private var currentPpid: String = ""
 
@@ -41,6 +45,8 @@ class DetailLoketActivity : AppCompatActivity() {
         binding = ActivityDetailLoketBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        AppUtils.logInfo(TAG, "REFACTORED DetailLoketActivity with Profile + Receipt focus")
+
         extractArguments()
         setupUI()
         setupRecyclerView()
@@ -49,7 +55,6 @@ class DetailLoketActivity : AppCompatActivity() {
 
         if (currentPpid.isNotEmpty()) {
             AppUtils.logInfo(TAG, "Loading detail for PPID: $currentPpid")
-            viewModel.loadLoketProfile(currentPpid)
         } else {
             AppUtils.showError(this, "PPID tidak valid")
             AppUtils.logError(TAG, "Invalid PPID, finishing activity")
@@ -58,36 +63,24 @@ class DetailLoketActivity : AppCompatActivity() {
     }
 
     private fun extractArguments() {
-        // FIXED: Robust PPID extraction dari multiple sources
+        // Extract PPID dari multiple sources untuk flexibility
         currentPpid = when {
-            // Navigation arguments (primary)
             intent.getStringExtra(NavigationConstants.ARG_PPID) != null -> {
                 intent.getStringExtra(NavigationConstants.ARG_PPID)!!
             }
-
-            // Bundle arguments (Navigation Component)
             intent.getBundleExtra("android:support:navigation:fragment:args")?.getString(NavigationConstants.ARG_PPID) != null -> {
                 intent.getBundleExtra("android:support:navigation:fragment:args")!!.getString(NavigationConstants.ARG_PPID)!!
             }
-
-            // Extra bundle
-            intent.getBundleExtra("bundle")?.getString(NavigationConstants.ARG_PPID) != null -> {
-                intent.getBundleExtra("bundle")!!.getString(NavigationConstants.ARG_PPID)!!
+            intent.getStringExtra("ppid") != null -> {
+                intent.getStringExtra("ppid")!!
             }
-
-            // Legacy support
-            intent.getStringExtra("noLoket") != null -> {
-                intent.getStringExtra("noLoket")!!
-            }
-
             else -> ""
         }
 
-        // ENHANCED: Safe PPID extraction dengan fallback
+        // Safe PPID extraction with fallback
         currentPpid = currentPpid.extractPpidSafely()
 
-        Log.d(TAG, "✅ Final extracted PPID: $currentPpid")
-        AppUtils.logInfo(TAG, "Extracted PPID for detail view: $currentPpid")
+        AppUtils.logInfo(TAG, "Final extracted PPID: $currentPpid")
     }
 
     private fun setupUI() {
@@ -102,32 +95,40 @@ class DetailLoketActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        transactionAdapter = TransactionLogAdapter()
+        receiptAdapter = ReceiptAdapter { receipt ->
+            // Receipt click -> Navigate ke TransactionLogActivity
+            navigateToTransactionLog(receipt.ppid)
+        }
+
+        // Repurpose mutations RecyclerView untuk receipt display
         binding.rvMutations.apply {
             layoutManager = LinearLayoutManager(this@DetailLoketActivity)
-            adapter = transactionAdapter
+            adapter = receiptAdapter
         }
+
+        // Update section title
+        binding.tvMutasiTitle.text = "Receipts"
     }
 
     private fun setupObservers() {
-        // Loket profile observer
+        // Profile state observer
         lifecycleScope.launch {
-            viewModel.loketProfile.collect { resource ->
-                handleLoketProfileResource(resource)
+            viewModel.profileState.collect { resource ->
+                handleProfileResource(resource)
             }
         }
 
-        // Transaction logs observer
+        // Action result observer (block/unblock)
         lifecycleScope.launch {
-            viewModel.transactionLogs.collect { resource ->
-                handleTransactionLogsResource(resource)
+            viewModel.actionState.collect { resource ->
+                handleActionResult(resource)
             }
         }
 
-        // Block/Unblock action observer
+        // ViewModel events observer
         lifecycleScope.launch {
-            viewModel.blockUnblockResult.collect { resource ->
-                handleBlockUnblockResult(resource)
+            viewModel.eventFlow.collect { event ->
+                handleViewModelEvents(event)
             }
         }
     }
@@ -142,142 +143,60 @@ class DetailLoketActivity : AppCompatActivity() {
         }
 
         binding.btnDiblokir.setOnClickListener {
-            AppUtils.showSuccess(this, "Loket ini sudah diblokir")
+            AppUtils.showSuccess(this, "Profil ini sudah diblokir")
         }
 
         binding.btnClearFlags.setOnClickListener {
             AppUtils.showSuccess(this, "Fitur hapus penanda akan segera hadir")
         }
-
-        // Swipe refresh untuk reload data
-        binding.nestedScrollView.setOnRefreshListener {
-            viewModel.refresh(currentPpid)
-        }
     }
 
-    private fun handleLoketProfileResource(resource: Resource<Loket>) {
-        // Apply to dual loading (card + transactions shimmer)
-        resource.applyToDualLoadingViews(
+    private fun handleProfileResource(resource: Resource<Receipt>) {
+        // Apply dual loading untuk card + receipt list
+        AppUtils.handleDualLoadingState(
+            resource = resource,
             primaryShimmer = binding.shimmerCardInfo,
             primaryContent = binding.cardLoketInfo,
             secondaryShimmer = binding.mutationsShimmerLayout,
-            secondaryContent = binding.frameLayoutMutations,
-            emptyView = null
+            secondaryContent = binding.frameLayoutMutations
         )
 
         when (resource) {
             is Resource.Success -> {
-                displayLoketProfile(resource.data)
-                // Auto-load transaction logs after profile loads
-                viewModel.loadTransactionLogs(currentPpid)
-                AppUtils.logInfo(TAG, "Loket profile loaded: ${resource.data.namaLoket}")
+                displayProfileInfo(resource.data)
+                // Show receipt as list (single item for now)
+                receiptAdapter.updateReceipts(listOf(resource.data))
+                AppUtils.logInfo(TAG, "Profile loaded: ${resource.data.namaLoket}")
             }
             is Resource.Error -> {
                 AppUtils.showError(this, resource.exception)
-                AppUtils.logError(TAG, "Loket profile load error", resource.exception)
-
-                // Show retry option
-                binding.cardLoketInfo.visibility = View.GONE
+                AppUtils.logError(TAG, "Profile load error", resource.exception)
                 showRetryOptions()
             }
             is Resource.Loading -> {
-                AppUtils.logDebug(TAG, "Loading loket profile...")
+                AppUtils.logDebug(TAG, "Loading profile...")
             }
             is Resource.Empty -> {
-                AppUtils.showError(this, "Data loket tidak ditemukan")
+                AppUtils.showError(this, "Data profil tidak ditemukan")
                 showRetryOptions()
             }
         }
     }
 
-    private fun handleTransactionLogsResource(resource: Resource<List<TransactionLog>>) {
-        when (resource) {
-            is Resource.Success -> {
-                transactionAdapter.submitList(resource.data)
-                binding.mutationsShimmerLayout.visibility = View.GONE
-                binding.rvMutations.visibility = View.VISIBLE
-                binding.tvMutationsError.visibility = View.GONE
-                AppUtils.logInfo(TAG, "Transaction logs loaded: ${resource.data.size} transactions")
-
-                // Update empty state jika tidak ada transaksi
-                if (resource.data.isEmpty()) {
-                    binding.tvMutationsError.visibility = View.VISIBLE
-                    binding.tvMutationsError.text = "Belum ada log transaksi untuk loket ini"
-                }
-            }
-            is Resource.Error -> {
-                binding.mutationsShimmerLayout.visibility = View.GONE
-                binding.rvMutations.visibility = View.GONE
-                binding.tvMutationsError.visibility = View.VISIBLE
-                binding.tvMutationsError.text = "Gagal memuat log transaksi"
-                AppUtils.logError(TAG, "Transaction logs error", resource.exception)
-            }
-            is Resource.Loading -> {
-                binding.mutationsShimmerLayout.visibility = View.VISIBLE
-                binding.rvMutations.visibility = View.GONE
-                binding.tvMutationsError.visibility = View.GONE
-            }
-            is Resource.Empty -> {
-                binding.mutationsShimmerLayout.visibility = View.GONE
-                binding.rvMutations.visibility = View.GONE
-                binding.tvMutationsError.visibility = View.VISIBLE
-                binding.tvMutationsError.text = getString(R.string.empty_no_transactions)
-            }
-        }
-    }
-
-    private fun handleBlockUnblockResult(resource: Resource<Unit>) {
-        when (resource) {
-            is Resource.Success -> {
-                AppUtils.showSuccess(this, "Status loket berhasil diupdate")
-                // Reload profile to get updated status
-                viewModel.loadLoketProfile(currentPpid)
-
-                // Reset button states
-                resetButtonStates()
-            }
-            is Resource.Error -> {
-                AppUtils.showError(this, resource.exception)
-                AppUtils.logError(TAG, "Block/Unblock error", resource.exception)
-
-                // Reset button states
-                resetButtonStates()
-            }
-            is Resource.Loading -> {
-                // Show loading state on buttons
-                setButtonsLoadingState(true)
-            }
-            is Resource.Empty -> {
-                resetButtonStates()
-            }
-        }
-    }
-
-    private fun displayLoketProfile(loket: Loket) {
+    private fun displayProfileInfo(receipt: Receipt) {
         with(binding) {
-            // Basic info
-            tvLoketId.text = loket.ppid
-            tvLoketName.text = loket.namaLoket
-            tvPhoneValue.text = formatPhoneDisplay(loket.nomorHP)
-            tvEmailValue.text = loket.email.takeIf { it.isNotBlank() } ?: "Email tidak tersedia"
+            // Basic profile info dari Receipt
+            tvLoketId.text = receipt.ppid
+            tvLoketName.text = receipt.namaLoket.takeIf { it.isNotBlank() } ?: "Receipt ${receipt.refNumber}"
+            tvPhoneValue.text = AppUtils.formatPhoneNumber(receipt.nomorHP)
+            tvEmailValue.text = receipt.email.takeIf { it.isNotBlank() } ?: "Email tidak tersedia"
 
-            // Status chip dan styling
-            updateStatusDisplay(loket.status)
+            // Status display dan button states
+            val status = LoketStatus.fromPpid(receipt.ppid)
+            updateStatusDisplay(status)
+            updateButtonStates(status)
 
-            // Button states berdasarkan status
-            updateButtonStates(loket.status)
-
-            AppUtils.logInfo(TAG, "Displayed profile for: ${loket.namaLoket} (${loket.status})")
-        }
-    }
-
-    private fun formatPhoneDisplay(phone: String): String {
-        return when {
-            phone.startsWith("+62") -> phone
-            phone.startsWith("08") -> "+62${phone.substring(1)}"
-            phone.startsWith("62") -> "+$phone"
-            phone.isNotBlank() -> phone
-            else -> "No. HP tidak tersedia"
+            AppUtils.logInfo(TAG, "Displayed profile for: ${receipt.namaLoket} (${status})")
         }
     }
 
@@ -285,17 +204,17 @@ class DetailLoketActivity : AppCompatActivity() {
         with(binding) {
             when (status) {
                 LoketStatus.NORMAL -> {
-                    chipStatus.text = getString(R.string.status_normal)
+                    chipStatus.text = "Normal"
                     chipStatus.setChipBackgroundColorResource(R.color.chip_normal_background)
                     layoutLoketInfo.setBackgroundResource(R.drawable.bg_card_info_normal)
                 }
                 LoketStatus.BLOCKED -> {
-                    chipStatus.text = getString(R.string.status_blocked)
+                    chipStatus.text = "Diblokir"
                     chipStatus.setChipBackgroundColorResource(R.color.chip_blocked_background)
                     layoutLoketInfo.setBackgroundResource(R.drawable.bg_card_info_diblokir)
                 }
                 LoketStatus.FLAGGED -> {
-                    chipStatus.text = getString(R.string.status_flagged)
+                    chipStatus.text = "Ditandai"
                     chipStatus.setChipBackgroundColorResource(R.color.chip_flagged_background)
                     layoutLoketInfo.setBackgroundResource(R.drawable.bg_card_info_ditandai)
                 }
@@ -326,6 +245,54 @@ class DetailLoketActivity : AppCompatActivity() {
         }
     }
 
+    private fun handleActionResult(resource: Resource<Unit>) {
+        when (resource) {
+            is Resource.Success -> {
+                AppUtils.showSuccess(this, "Operasi berhasil")
+                viewModel.refreshData() // Refresh untuk update status
+                resetButtonStates()
+            }
+            is Resource.Error -> {
+                AppUtils.showError(this, resource.exception)
+                AppUtils.logError(TAG, "Action error", resource.exception)
+                resetButtonStates()
+            }
+            is Resource.Loading -> {
+                setButtonsLoadingState(true)
+            }
+            is Resource.Empty -> {
+                resetButtonStates()
+            }
+        }
+    }
+
+    private fun handleViewModelEvents(event: DetailLoketViewModel.UiEvent) {
+        when (event) {
+            is DetailLoketViewModel.UiEvent.ShowToast -> {
+                AppUtils.showSuccess(this, event.message)
+            }
+            is DetailLoketViewModel.UiEvent.NavigateToTransactionLog -> {
+                navigateToTransactionLog(event.ppid)
+            }
+            is DetailLoketViewModel.UiEvent.NavigateBack -> {
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
+    }
+
+    private fun navigateToTransactionLog(ppid: String) {
+        try {
+            val intent = Intent(this, TransactionLogActivity::class.java).apply {
+                putExtra(NavigationConstants.ARG_PPID, ppid)
+            }
+            startActivity(intent)
+            AppUtils.logInfo(TAG, "Navigating to TransactionLog with PPID: $ppid")
+        } catch (e: Exception) {
+            AppUtils.logError(TAG, "Navigation error", e)
+            AppUtils.showError(this, "Gagal membuka log transaksi")
+        }
+    }
+
     private fun setButtonsLoadingState(isLoading: Boolean) {
         with(binding) {
             btnBlock.isEnabled = !isLoading
@@ -334,11 +301,10 @@ class DetailLoketActivity : AppCompatActivity() {
             btnClearFlags.isEnabled = !isLoading
 
             if (isLoading) {
-                btnBlock.text = getString(R.string.action_processing)
-                btnUnblock.text = getString(R.string.action_processing)
+                btnBlock.text = "Memproses..."
+                btnUnblock.text = "Memproses..."
             } else {
-                btnBlock.text = getString(R.string.block_loket)
-                btnUnblock.text = getString(R.string.unblock_loket)
+                resetButtonStates()
             }
         }
     }
@@ -350,43 +316,43 @@ class DetailLoketActivity : AppCompatActivity() {
             btnDiblokir.isEnabled = true
             btnClearFlags.isEnabled = true
 
-            btnBlock.text = getString(R.string.block_loket)
-            btnUnblock.text = getString(R.string.unblock_loket)
+            btnBlock.text = "Blokir Loket"
+            btnUnblock.text = "Buka Blokir"
         }
     }
 
     private fun showBlockConfirmation() {
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_confirm_block_title))
-            .setMessage(getString(R.string.dialog_confirm_block_message))
-            .setPositiveButton(getString(R.string.dialog_button_yes)) { _, _ ->
-                viewModel.blockLoket(currentPpid)
-                AppUtils.logInfo(TAG, "User confirmed block loket: $currentPpid")
+            .setTitle("Konfirmasi Blokir")
+            .setMessage("Yakin ingin memblokir profil ini?")
+            .setPositiveButton("Ya") { _, _ ->
+                viewModel.blockProfile()
+                AppUtils.logInfo(TAG, "User confirmed block profile: $currentPpid")
             }
-            .setNegativeButton(getString(R.string.dialog_button_no), null)
+            .setNegativeButton("Tidak", null)
             .show()
     }
 
     private fun showUnblockConfirmation() {
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_confirm_unblock_title))
-            .setMessage(getString(R.string.dialog_confirm_unblock_message))
-            .setPositiveButton(getString(R.string.dialog_button_yes)) { _, _ ->
-                viewModel.unblockLoket(currentPpid)
-                AppUtils.logInfo(TAG, "User confirmed unblock loket: $currentPpid")
+            .setTitle("Konfirmasi Buka Blokir")
+            .setMessage("Yakin ingin membuka blokir profil ini?")
+            .setPositiveButton("Ya") { _, _ ->
+                viewModel.unblockProfile()
+                AppUtils.logInfo(TAG, "User confirmed unblock profile: $currentPpid")
             }
-            .setNegativeButton(getString(R.string.dialog_button_no), null)
+            .setNegativeButton("Tidak", null)
             .show()
     }
 
     private fun showRetryOptions() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Gagal Memuat Data")
-            .setMessage("Tidak dapat memuat data loket. Coba lagi?")
-            .setPositiveButton(getString(R.string.retry)) { _, _ ->
-                viewModel.refresh(currentPpid)
+            .setMessage("Tidak dapat memuat data profil. Coba lagi?")
+            .setPositiveButton("Coba Lagi") { _, _ ->
+                viewModel.refreshData()
             }
-            .setNegativeButton(getString(R.string.close)) { _, _ ->
+            .setNegativeButton("Tutup") { _, _ ->
                 finish()
             }
             .setCancelable(false)
@@ -403,3 +369,4 @@ class DetailLoketActivity : AppCompatActivity() {
         AppUtils.logDebug(TAG, "DetailLoketActivity destroyed")
     }
 }
+

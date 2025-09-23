@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/TransactionAdapter.kt - STREAMLINED
+// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/TransactionLogAdapter.kt
 package com.proyek.maganggsp.presentation.adapters
 
 import android.view.LayoutInflater
@@ -9,11 +9,13 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemMutasiBinding
+import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.util.AppUtils
 
 /**
- * STREAMLINED: Transaction adapter for detail screen
+ * COMPLETE REFACTOR: Transaction adapter for TransactionLog detail screen
  * Reuses existing item_mutasi.xml layout, focused on transaction display
+ * Usage: TransactionLogActivity (transaction list display)
  */
 class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.TransactionViewHolder>(TransactionDiffCallback()) {
 
@@ -63,6 +65,9 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
                 tvDescription.text = transaction.getDisplayDescription()
                 tvSaldoInfo.text = transaction.getBalanceDisplayText()
                 tvAmount.text = transaction.getFormattedAmount()
+
+                // Log transaction display
+                AppUtils.logDebug("TransactionAdapter", "Displaying transaction: ${transaction.tldRefnum}")
             }
         }
     }
@@ -77,9 +82,7 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
         }
     }
 
-    /**
-     * STREAMLINED: Helper methods
-     */
+    // Helper methods
     fun updateTransactions(transactions: List<TransactionLog>) {
         submitList(transactions)
         AppUtils.logDebug("TransactionAdapter", "Updated with ${transactions.size} transactions")
@@ -93,9 +96,7 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
         return if (position in 0 until itemCount) getItem(position) else null
     }
 
-    /**
-     * Get transaction summary for display
-     */
+    // Get transaction summary for display
     fun getTransactionSummary(): TransactionSummary {
         val transactions = currentList
         val incoming = transactions.filter { it.isIncomingTransaction() }
@@ -123,7 +124,7 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
     ) {
         fun getFormattedSummary(): String {
             return """
-            📊 Ringkasan Transaksi:
+            Ringkasan Transaksi:
             • Total: $totalCount transaksi
             • Masuk: $incomingCount (${AppUtils.formatCurrency(totalIncoming)})
             • Keluar: $outgoingCount (${AppUtils.formatCurrency(totalOutgoing)})

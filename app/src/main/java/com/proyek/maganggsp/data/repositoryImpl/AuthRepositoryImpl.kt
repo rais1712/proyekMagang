@@ -1,11 +1,11 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt - COMPLETED
+// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt - UPDATED FOR UNIFIED API
 package com.proyek.maganggsp.data.repositoryImpl
 
 import android.util.Log
 import com.proyek.maganggsp.BuildConfig
-import com.proyek.maganggsp.data.api.AuthApi
-import com.proyek.maganggsp.data.dto.LoginRequest
-import com.proyek.maganggsp.data.dto.toDomain
+import com.proyek.maganggsp.data.api.GesPayApi
+import com.proyek.maganggsp.data.api.LoginRequest
+import com.proyek.maganggsp.data.api.toAdmin
 import com.proyek.maganggsp.data.source.local.SessionManager
 import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.repository.AuthRepository
@@ -17,8 +17,12 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.inject.Inject
 
+/**
+ * UPDATED: AuthRepositoryImpl menggunakan GesPayApi unified interface
+ * Tetap maintain existing functionality, tapi menggunakan unified API
+ */
 class AuthRepositoryImpl @Inject constructor(
-    private val api: AuthApi,
+    private val api: GesPayApi,
     private val sessionManager: SessionManager,
     private val exceptionMapper: ExceptionMapper
 ) : BaseRepository(exceptionMapper), AuthRepository {
@@ -29,9 +33,8 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): Admin {
         if (BuildConfig.DEBUG) {
-            Log.d(TAG, "🚀 Starting API login process")
+            Log.d(TAG, "🚀 Login via unified GesPayApi")
             Log.d(TAG, "📧 Email: $email")
-            Log.d(TAG, "🔐 Password length: ${password.length}")
             Log.d(TAG, "🌐 Target URL: ${BuildConfig.BASE_URL}auth/login")
         }
 
@@ -41,51 +44,29 @@ class AuthRepositoryImpl @Inject constructor(
 
             // Create request
             val request = LoginRequest(email, password)
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "📤 Sending API request...")
-            }
+            Log.d(TAG, "📤 Sending unified API request...")
 
-            // Make API call
+            // Make API call via unified interface
             val response = api.login(request)
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "📨 API response received")
-                Log.d(TAG, "✅ HTTP Status: ${response.code()}")
-                Log.d(TAG, "📄 Response successful: ${response.isSuccessful}")
-            }
+            Log.d(TAG, "📨 Unified API response received - HTTP ${response.code()}")
 
             // Handle response
             if (!response.isSuccessful) {
-                if (BuildConfig.DEBUG) {
-                    Log.e(TAG, "❌ API call failed - HTTP ${response.code()}")
-                }
                 throw HttpException(response)
             }
 
             val loginResponse = response.body()
-            if (loginResponse == null) {
-                if (BuildConfig.DEBUG) {
-                    Log.e(TAG, "❌ Response body is null")
-                }
-                throw AppException.ParseException("Empty response from server")
-            }
+                ?: throw AppException.ParseException("Empty response from server")
 
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "📋 Response data:")
-                Log.d(TAG, "  🔑 Token received: ${loginResponse.token != null}")
-                Log.d(TAG, "  📧 Email: ${loginResponse.email}")
-                Log.d(TAG, "  👤 Role: ${loginResponse.role}")
-            }
+            Log.d(TAG, "📋 Login response via unified API:")
+            Log.d(TAG, "  🔑 Token received: ${loginResponse.token != null}")
+            Log.d(TAG, "  📧 Email: ${loginResponse.email}")
 
             // Validate response data
             validateLoginResponse(loginResponse)
 
-            // Convert to domain model
-            val admin = loginResponse.toDomain()
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "🔄 Converted to domain model:")
-                Log.d(TAG, "  👤 Name: ${admin.name}")
-                Log.d(TAG, "  📧 Email: ${admin.email}")
-            }
+            // Convert to domain model using unified mapping
+            val admin = loginResponse.toAdmin()
 
             // Save session
             val sessionSaved = saveUserSession(admin)
@@ -93,61 +74,43 @@ class AuthRepositoryImpl @Inject constructor(
                 throw AppException.UnknownException("Failed to save login session")
             }
 
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "✅ Login process completed successfully")
-            }
-
+            Log.d(TAG, "✅ Login completed via unified API")
             admin
 
         } catch (e: AppException) {
-            if (BuildConfig.DEBUG) {
-                Log.e(TAG, "❌ Login failed with AppException: ${e.message}", e)
-            }
+            Log.e(TAG, "❌ Login failed with AppException: ${e.message}")
             throw e
         } catch (e: HttpException) {
             val mappedException = mapHttpException(e)
-            if (BuildConfig.DEBUG) {
-                Log.e(TAG, "❌ HTTP error: ${e.code()} -> ${mappedException.message}")
-            }
+            Log.e(TAG, "❌ HTTP error: ${e.code()} -> ${mappedException.message}")
             throw mappedException
         } catch (e: UnknownHostException) {
             val exception = AppException.NetworkException(
                 "Server unreachable. Ensure development server is running at 192.168.168.6:8180"
             )
-            if (BuildConfig.DEBUG) {
-                Log.e(TAG, "❌ UnknownHostException: ${exception.message}")
-            }
+            Log.e(TAG, "❌ UnknownHostException: ${exception.message}")
             throw exception
         } catch (e: ConnectException) {
             val exception = AppException.NetworkException(
                 "Cannot connect to server. Ensure server is running and network is active."
             )
-            if (BuildConfig.DEBUG) {
-                Log.e(TAG, "❌ ConnectException: ${exception.message}")
-            }
+            Log.e(TAG, "❌ ConnectException: ${exception.message}")
             throw exception
         } catch (e: SocketTimeoutException) {
             val exception = AppException.NetworkException(
                 "Connection timeout. Server may be slow."
             )
-            if (BuildConfig.DEBUG) {
-                Log.e(TAG, "❌ SocketTimeoutException: ${exception.message}")
-            }
+            Log.e(TAG, "❌ SocketTimeoutException: ${exception.message}")
             throw exception
         } catch (e: Exception) {
-            if (BuildConfig.DEBUG) {
-                Log.e(TAG, "❌ Unexpected error during login", e)
-            }
+            Log.e(TAG, "❌ Unexpected error during login", e)
             throw AppException.UnknownException("An unexpected error occurred: ${e.message}")
         }
     }
 
-    // ✅ PHASE 1 FIX: Implement missing logout method
     override suspend fun logout() {
         try {
             Log.d(TAG, "🚪 Starting logout process")
-
-            // Clear local session data
             val sessionCleared = sessionManager.clearSession()
 
             if (sessionCleared) {
@@ -155,19 +118,13 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 Log.w(TAG, "⚠️ Session clear returned false, but continuing")
             }
-
-            // NOTE: No API call needed for logout in current implementation
-            // Server doesn't maintain session state, token invalidation is client-side only
-
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error during logout", e)
-            // Still try to clear session even if other operations fail
             sessionManager.clearSession()
             throw AppException.UnknownException("Logout failed: ${e.message}")
         }
     }
 
-    // ✅ PHASE 1 FIX: Implement missing isLoggedIn method
     override fun isLoggedIn(): Boolean {
         return sessionManager.isSessionValid()
     }
@@ -188,15 +145,12 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun validateLoginResponse(response: com.proyek.maganggsp.data.dto.LoginResponse) {
+    private fun validateLoginResponse(response: com.proyek.maganggsp.data.api.LoginResponse) {
         if (response.token.isNullOrBlank()) {
             throw AppException.ParseException("Invalid token received from server")
         }
         if (response.email.isNullOrBlank()) {
             throw AppException.ParseException("Invalid email received from server")
-        }
-        if (response.role.isNullOrBlank()) {
-            throw AppException.ParseException("Invalid role received from server")
         }
     }
 
@@ -204,18 +158,9 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val tokenSaved = sessionManager.saveAuthToken(admin.token)
             val profileSaved = sessionManager.saveAdminProfile(admin)
-
-            val success = tokenSaved && profileSaved
-
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "💾 Session save results - Token: $tokenSaved, Profile: $profileSaved")
-            }
-
-            success
+            tokenSaved && profileSaved
         } catch (e: Exception) {
-            if (BuildConfig.DEBUG) {
-                Log.e(TAG, "Failed to save session", e)
-            }
+            Log.e(TAG, "Failed to save session", e)
             false
         }
     }

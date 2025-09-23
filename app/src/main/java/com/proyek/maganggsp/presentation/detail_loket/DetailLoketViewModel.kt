@@ -1,314 +1,168 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/DetailLoketViewModel.kt - STREAMLINED
+// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/DetailLoketViewModel.kt
 package com.proyek.maganggsp.presentation.detail_loket
 
-import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.proyek.maganggsp.domain.model.LoketProfile
-import com.proyek.maganggsp.domain.usecase.profile.GetProfileUseCase
-import com.proyek.maganggsp.domain.usecase.profile.GetTransactionLogsUseCase
-import com.proyek.maganggsp.domain.usecase.profile.BlockUnblockUseCase
+import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.domain.usecase.*
+import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * STREAMLINED: DetailLoketViewModel focused on profile info + transaction logs
- * Eliminates complex loket management, focuses on essential data display
+ * REFACTORED: DetailLoketViewModel focused on profile info + receipt display
+ * Shows: Profile card + Receipt list (Receipt click navigates to TransactionLog)
+ * Block/Unblock: Uses unified use cases
  */
 @HiltViewModel
 class DetailLoketViewModel @Inject constructor(
     private val getProfileUseCase: GetProfileUseCase,
-    private val getTransactionLogsUseCase: GetTransactionLogsUseCase,
-    private val blockUnblockUseCase: BlockUnblockUseCase
+    private val blockUnblockUseCase: BlockUnblockUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "DetailLoketViewModel"
     }
 
-    // STREAMLINED STATE MANAGEMENT
-    private val _profileState = MutableStateFlow<Resource<LoketProfile>>(Resource.Empty)
-    val profileState: StateFlow<Resource<LoketProfile>> = _profileState.asStateFlow()
+    private val _profileState = MutableStateFlow<Resource<Receipt>>(Resource.Loading())
+    val profileState: StateFlow<Resource<Receipt>> = _profileState.asStateFlow()
 
-    private val _transactionLogs = MutableStateFlow<Resource<List<TransactionLog>>>(Resource.Empty)
-    val transactionLogs: StateFlow<Resource<List<TransactionLog>>> = _transactionLogs.asStateFlow()
+    private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty)
+    val actionState: StateFlow<Resource<Unit>> = _actionState.asStateFlow()
 
-    private val _blockUnblockResult = MutableStateFlow<Resource<Unit>>(Resource.Empty)
-    val blockUnblockResult: StateFlow<Resource<Unit>> = _blockUnblockResult.asStateFlow()
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
-    /**
-     * STREAMLINED: Load profile info dari Receipt API
-     */
-    fun loadProfile(ppid: String) {
-        viewModelScope.launch {
-            try {
-                AppUtils.logInfo(TAG, "Loading profile for PPID: $ppid")
+    private val currentPpid: String
 
-                getProfileUseCase(ppid).collect { resource ->
-                    // Convert Receipt to LoketProfile for UI compatibility
-                    _profileState.value = when (resource) {
-                        is Resource.Success -> {
-                            val receipt = resource.data
-                            val loketProfile = LoketProfile(
-                                ppid = receipt.ppid,
-                                namaLoket = receipt.namaLoket.takeIf { it.isNotBlank() } ?: "Receipt ${receipt.refNumber}",
-                                nomorHP = receipt.nomorHP,
-                                alamat = receipt.alamat,
-                                email = receipt.email,
-                                status = com.proyek.maganggsp.domain.model.LoketStatus.fromPpid(receipt.ppid),
-                                saldoTerakhir = receipt.saldoTerakhir,
-                                tanggalAkses = receipt.tanggalAkses
-                            )
-                            Resource.Success(loketProfile)
-                        }
-                        is Resource.Error -> Resource.Error(resource.exception)
-                        is Resource.Loading -> Resource.Loading()
-                        is Resource.Empty -> Resource.Empty
-                    }
+    init {
+        // Extract PPID dari navigation arguments
+        currentPpid = savedStateHandle.get<String>(NavigationConstants.ARG_PPID)
+            ?: savedStateHandle.get<String>("ppid")
+                    ?: ""
 
-                    when (resource) {
-                        is Resource.Success -> {
-                            AppUtils.logInfo(TAG, "Profile loaded successfully")
-                            // Auto-load transaction logs after profile loads
-                            loadTransactionLogs(ppid)
-                        }
-                        is Resource.Error -> {
-                            AppUtils.logError(TAG, "Profile load error", resource.exception)
-                        }
-                        is Resource.Loading -> {
-                            AppUtils.logDebug(TAG, "Loading profile...")
-                        }
-                        is Resource.Empty -> {
-                            AppUtils.logDebug(TAG, "No profile data")
-                        }
-                    }
+        AppUtils.logInfo(TAG, "DetailLoketViewModel initialized with PPID: $currentPpid")
+
+        if (currentPpid.isNotEmpty()) {
+            refreshData()
+        } else {
+            _profileState.value = Resource.Error(
+                com.proyek.maganggsp.util.exceptions.AppException.ValidationException("PPID tidak valid")
+            )
+        }
+    }
+
+    fun refreshData() {
+        if (currentPpid.isEmpty()) return
+
+        AppUtils.logInfo(TAG, "Loading profile for PPID: $currentPpid")
+
+        getProfileUseCase(currentPpid).onEach { result ->
+            _profileState.value = result
+
+            when (result) {
+                is Resource.Success -> {
+                    AppUtils.logInfo(TAG, "Profile loaded successfully: ${result.data.refNumber}")
                 }
-
-            } catch (e: Exception) {
-                AppUtils.logError(TAG, "Profile load exception", e)
-                _profileState.value = Resource.Error(
-                    com.proyek.maganggsp.util.exceptions.AppException.UnknownException(
-                        "Gagal memuat profil: ${e.message}"
-                    )
-                )
-            }
-        }
-    }
-
-    /**
-     * STREAMLINED: Load transaction logs
-     */
-    fun loadTransactionLogs(ppid: String) {
-        viewModelScope.launch {
-            try {
-                AppUtils.logInfo(TAG, "Loading transaction logs for PPID: $ppid")
-
-                getTransactionLogsUseCase(ppid).collect { resource ->
-                    _transactionLogs.value = resource
-
-                    when (resource) {
-                        is Resource.Success -> {
-                            AppUtils.logInfo(TAG, "Transaction logs loaded: ${resource.data.size} transactions")
-                        }
-                        is Resource.Error -> {
-                            AppUtils.logError(TAG, "Transaction logs error", resource.exception)
-                            // Create placeholder data for testing
-                            createPlaceholderTransactionLogs(ppid)
-                        }
-                        is Resource.Loading -> {
-                            AppUtils.logDebug(TAG, "Loading transaction logs...")
-                        }
-                        is Resource.Empty -> {
-                            AppUtils.logDebug(TAG, "No transaction logs available")
-                        }
-                    }
+                is Resource.Error -> {
+                    AppUtils.logError(TAG, "Profile load error", result.exception)
+                    // Create placeholder untuk testing
+                    createPlaceholderProfile()
                 }
-
-            } catch (e: Exception) {
-                AppUtils.logError(TAG, "Transaction logs exception", e)
-                createPlaceholderTransactionLogs(ppid)
-            }
-        }
-    }
-
-    /**
-     * STREAMLINED: Block loket operation
-     */
-    fun blockLoket(ppid: String) {
-        viewModelScope.launch {
-            try {
-                AppUtils.logInfo(TAG, "Blocking loket: $ppid")
-                _blockUnblockResult.value = Resource.Loading()
-
-                blockUnblockUseCase.blockLoket(ppid).collect { resource ->
-                    _blockUnblockResult.value = resource
-
-                    when (resource) {
-                        is Resource.Success -> {
-                            AppUtils.logInfo(TAG, "Loket blocked successfully")
-                            // Reload profile to get updated status
-                            loadProfile(ppid)
-                        }
-                        is Resource.Error -> {
-                            AppUtils.logError(TAG, "Block operation failed", resource.exception)
-                        }
-                        is Resource.Loading -> {
-                            AppUtils.logDebug(TAG, "Block operation in progress...")
-                        }
-                        is Resource.Empty -> { /* Not applicable */ }
-                    }
+                is Resource.Loading -> {
+                    AppUtils.logDebug(TAG, "Loading profile...")
                 }
-
-            } catch (e: Exception) {
-                AppUtils.logError(TAG, "Block operation exception", e)
-                _blockUnblockResult.value = Resource.Error(
-                    com.proyek.maganggsp.util.exceptions.AppException.UnknownException(
-                        "Gagal memblokir loket: ${e.message}"
-                    )
-                )
+                else -> Unit
             }
-        }
+        }.launchIn(viewModelScope)
     }
 
-    /**
-     * STREAMLINED: Unblock loket operation
-     */
-    fun unblockLoket(ppid: String) {
-        viewModelScope.launch {
-            try {
-                AppUtils.logInfo(TAG, "Unblocking loket: $ppid")
-                _blockUnblockResult.value = Resource.Loading()
+    private fun createPlaceholderProfile() {
+        val placeholderReceipt = AppUtils.createPlaceholderReceipt(currentPpid)
+        _profileState.value = Resource.Success(placeholderReceipt)
+        AppUtils.logInfo(TAG, "Created placeholder profile for PPID: $currentPpid")
+    }
 
-                blockUnblockUseCase.unblockLoket(ppid).collect { resource ->
-                    _blockUnblockResult.value = resource
+    fun blockProfile() {
+        AppUtils.logInfo(TAG, "Blocking profile: $currentPpid")
 
-                    when (resource) {
-                        is Resource.Success -> {
-                            AppUtils.logInfo(TAG, "Loket unblocked successfully")
-                            // Reload profile to get updated status
-                            loadProfile(ppid)
-                        }
-                        is Resource.Error -> {
-                            AppUtils.logError(TAG, "Unblock operation failed", resource.exception)
-                        }
-                        is Resource.Loading -> {
-                            AppUtils.logDebug(TAG, "Unblock operation in progress...")
-                        }
-                        is Resource.Empty -> { /* Not applicable */ }
-                    }
+        blockUnblockUseCase.blockProfile(currentPpid).onEach { result ->
+            _actionState.value = result
+
+            when (result) {
+                is Resource.Success -> {
+                    emitUiEvent(UiEvent.ShowToast("Profil berhasil diblokir"))
+                    refreshData() // Refresh untuk update status
                 }
-
-            } catch (e: Exception) {
-                AppUtils.logError(TAG, "Unblock operation exception", e)
-                _blockUnblockResult.value = Resource.Error(
-                    com.proyek.maganggsp.util.exceptions.AppException.UnknownException(
-                        "Gagal membuka blokir loket: ${e.message}"
-                    )
-                )
+                is Resource.Error -> {
+                    emitUiEvent(UiEvent.ShowToast("Gagal memblokir profil: ${result.exception.message}"))
+                }
+                is Resource.Loading -> {
+                    AppUtils.logDebug(TAG, "Block operation in progress...")
+                }
+                else -> Unit
             }
+        }.launchIn(viewModelScope)
+    }
+
+    fun unblockProfile() {
+        AppUtils.logInfo(TAG, "Unblocking profile: $currentPpid")
+
+        blockUnblockUseCase.unblockProfile(currentPpid).onEach { result ->
+            _actionState.value = result
+
+            when (result) {
+                is Resource.Success -> {
+                    emitUiEvent(UiEvent.ShowToast("Profil berhasil dibuka blokirnya"))
+                    refreshData() // Refresh untuk update status
+                }
+                is Resource.Error -> {
+                    emitUiEvent(UiEvent.ShowToast("Gagal membuka blokir profil: ${result.exception.message}"))
+                }
+                is Resource.Loading -> {
+                    AppUtils.logDebug(TAG, "Unblock operation in progress...")
+                }
+                else -> Unit
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    fun onActionConsumed() {
+        _actionState.value = Resource.Empty
+    }
+
+    fun isProfileBlocked(): Boolean {
+        val profile = (_profileState.value as? Resource.Success)?.data
+        return blockUnblockUseCase.isBlocked(profile?.ppid ?: "")
+    }
+
+    fun navigateToTransactionLog(receipt: Receipt) {
+        emitUiEvent(UiEvent.NavigateToTransactionLog(receipt.ppid))
+        AppUtils.logInfo(TAG, "Navigate to transaction log with PPID: ${receipt.ppid}")
+    }
+
+    fun getCurrentPpid(): String = currentPpid
+
+    private fun emitUiEvent(event: UiEvent) {
+        viewModelScope.launch {
+            _eventFlow.emit(event)
         }
     }
-
-    /**
-     * STREAMLINED: Refresh all data
-     */
-    fun refresh(ppid: String) {
-        AppUtils.logInfo(TAG, "Refreshing all data for PPID: $ppid")
-        loadProfile(ppid)
-        // Transaction logs will be auto-loaded when profile loads successfully
-    }
-
-    /**
-     * Clear action result state
-     */
-    fun clearActionResult() {
-        _blockUnblockResult.value = Resource.Empty
-    }
-
-    /**
-     * Get current profile data
-     */
-    fun getCurrentProfile(): LoketProfile? {
-        return (_profileState.value as? Resource.Success)?.data
-    }
-
-    /**
-     * Check if loket is blocked
-     */
-    fun isLoketBlocked(): Boolean {
-        return getCurrentProfile()?.isBlocked() ?: false
-    }
-
-    /**
-     * Get transaction statistics
-     */
-    fun getTransactionStats(): TransactionStats? {
-        val transactions = (_transactionLogs.value as? Resource.Success)?.data ?: return null
-
-        val incoming = transactions.filter { it.isIncomingTransaction() }
-        val outgoing = transactions.filter { it.isOutgoingTransaction() }
-
-        return TransactionStats(
-            totalTransactions = transactions.size,
-            incomingCount = incoming.size,
-            outgoingCount = outgoing.size,
-            totalIncoming = incoming.sumOf { it.tldAmount },
-            totalOutgoing = outgoing.sumOf { kotlin.math.abs(it.tldAmount) },
-            latestBalance = transactions.firstOrNull()?.tldBalance ?: 0L
-        )
-    }
-
-    /**
-     * HELPER: Create placeholder transaction logs for testing
-     */
-    private fun createPlaceholderTransactionLogs(ppid: String) {
-        try {
-            val placeholderTransactions = AppUtils.createPlaceholderTransactionLogs(ppid, 7)
-            _transactionLogs.value = Resource.Success(placeholderTransactions)
-            AppUtils.logInfo(TAG, "Created placeholder transaction logs: ${placeholderTransactions.size} items")
-        } catch (e: Exception) {
-            AppUtils.logError(TAG, "Failed to create placeholder data", e)
-        }
-    }
-
-    /**
-     * STREAMLINED: Get debug info
-     */
-    fun getDebugInfo(): String {
-        val currentProfile = getCurrentProfile()
-        val stats = getTransactionStats()
-
-        return """
-        DetailLoketViewModel Debug Info:
-        - Current PPID: ${currentProfile?.ppid ?: "None"}
-        - Loket Name: ${currentProfile?.namaLoket ?: "None"}
-        - Status: ${currentProfile?.status ?: "None"}
-        - Is Blocked: ${isLoketBlocked()}
-        - Profile State: ${_profileState.value.javaClass.simpleName}
-        - Transaction State: ${_transactionLogs.value.javaClass.simpleName}
-        - Action State: ${_blockUnblockResult.value.javaClass.simpleName}
-        - Total Transactions: ${stats?.totalTransactions ?: 0}
-        - Latest Balance: ${stats?.latestBalance?.let { AppUtils.formatCurrency(it) } ?: "N/A"}
-        """.trimIndent()
-    }
-
-    data class TransactionStats(
-        val totalTransactions: Int,
-        val incomingCount: Int,
-        val outgoingCount: Int,
-        val totalIncoming: Long,
-        val totalOutgoing: Long,
-        val latestBalance: Long
-    )
 
     override fun onCleared() {
         super.onCleared()
         AppUtils.logInfo(TAG, "DetailLoketViewModel cleared")
+    }
+
+    sealed class UiEvent {
+        data class ShowToast(val message: String) : UiEvent()
+        data class NavigateToTransactionLog(val ppid: String) : UiEvent()
+        object NavigateBack : UiEvent()
     }
 }

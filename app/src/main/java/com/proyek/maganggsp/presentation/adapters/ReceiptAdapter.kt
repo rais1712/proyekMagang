@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/ReceiptAdapter.kt - NEW
+// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/ReceiptAdapter.kt - COMPLETE REFACTOR
 package com.proyek.maganggsp.presentation.adapters
 
 import android.view.LayoutInflater
@@ -11,8 +11,9 @@ import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.util.AppUtils
 
 /**
- * STREAMLINED: Receipt adapter for home screen
+ * COMPLETE REFACTOR: Receipt adapter for home screen and detail screen
  * Reuses existing item_loket_history.xml layout, focused on receipt data
+ * Usage: HomeFragment (receipt list), DetailLoketActivity (receipt list in card)
  */
 class ReceiptAdapter(
     private val onReceiptClick: (Receipt) -> Unit
@@ -53,6 +54,7 @@ class ReceiptAdapter(
 
                 // Click listener - navigate with PPID
                 root.setOnClickListener {
+                    AppUtils.logDebug("ReceiptAdapter", "Receipt clicked: ${receipt.ppid}")
                     onReceiptClick(receipt)
                 }
             }
@@ -69,9 +71,7 @@ class ReceiptAdapter(
         }
     }
 
-    /**
-     * STREAMLINED: Helper methods
-     */
+    // Helper methods
     fun updateReceipts(receipts: List<Receipt>) {
         submitList(receipts)
         AppUtils.logDebug("ReceiptAdapter", "Updated with ${receipts.size} receipts")
@@ -85,6 +85,4 @@ class ReceiptAdapter(
         return if (position in 0 until itemCount) getItem(position) else null
     }
 }
-
-
 

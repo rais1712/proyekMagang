@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/model/UnifiedModels.kt - SINGLE SOURCE OF TRUTH
+// File: app/src/main/java/com/proyek/maganggsp/domain/model/UnifiedModels.kt - COMPLETE REFACTOR
 package com.proyek.maganggsp.domain.model
 
 import java.text.NumberFormat
@@ -6,85 +6,174 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * UNIFIED: Single Loket model untuk semua use cases
- * Menggabungkan semua requirements dari profile, search, dan management
+ * COMPLETE REFACTOR: Unified domain models sesuai prompt requirements
+ * Eliminates scattered model classes, focuses on Receipt + TransactionLog
  */
-data class Loket(
-    val ppid: String,
-    val namaLoket: String,
-    val nomorHP: String,
-    val alamat: String,
-    val email: String,
-    val status: LoketStatus,
-    val saldoTerakhir: Long = 0L,
-    val tanggalAkses: String = "",
-    val receipts: List<Receipt> = emptyList()
+
+// ============================================================================
+// PRIMARY MODELS (sesuai prompt)
+// ============================================================================
+
+/**
+ * Receipt: Core model for home screen and profile display
+ * Maps dari /profiles/ppid/{ppid} API response
+ */
+data class Receipt(
+    val refNumber: String,           // Reference untuk receipt ini
+    val idPelanggan: String,         // Customer ID (PPID)
+    val amount: Long,                // Transaction amount
+    val logged: String,              // Timestamp ISO format
+    val ppid: String,                // Primary identifier untuk navigation
+
+    // Extended info untuk UI display
+    val namaLoket: String = "",      // Nama loket untuk display
+    val nomorHP: String = "",        // Phone number
+    val email: String = "",          // Email address
+    val alamat: String = "",         // Address
+    val status: LoketStatus = LoketStatus.NORMAL
 ) {
 
-    // UTILITY: Format saldo ke Rupiah
-    fun getFormattedSaldo(): String {
+    /**
+     * Format amount as Indonesian Rupiah
+     */
+    fun getFormattedAmount(): String {
         val localeID = Locale("in", "ID")
         val numberFormat = NumberFormat.getCurrencyInstance(localeID)
         numberFormat.maximumFractionDigits = 0
-        return numberFormat.format(saldoTerakhir)
+        return numberFormat.format(amount)
     }
 
-    // UTILITY: Display title untuk UI
-    fun getDisplayTitle(): String = "$namaLoket ($ppid)"
-
-    // UTILITY: Format nomor HP
-    fun getFormattedPhone(): String {
-        return when {
-            nomorHP.startsWith("+62") -> nomorHP
-            nomorHP.startsWith("08") -> "+62${nomorHP.substring(1)}"
-            nomorHP.startsWith("62") -> "+$nomorHP"
-            else -> nomorHP
-        }
+    /**
+     * Format logged timestamp to readable date
+     */
+    fun getFormattedDate(): String {
+        return formatISODate(logged)
     }
 
-    // VALIDATION: Check if data is valid
-    fun hasValidData(): Boolean = ppid.isNotBlank() && namaLoket.isNotBlank()
+    /**
+     * Display helpers for UI
+     */
+    fun getDisplayTitle(): String = namaLoket.takeIf { it.isNotBlank() } ?: "Receipt $refNumber"
+    fun getDisplaySubtitle(): String = "ID: $idPelanggan"
+    fun getDisplayPhone(): String = formatPhoneNumber(nomorHP)
 
-    // STATUS: Display text
-    fun getStatusDisplayText(): String = when (status) {
-        LoketStatus.NORMAL -> "Normal"
-        LoketStatus.BLOCKED -> "Diblokir"
-        LoketStatus.FLAGGED -> "Ditandai"
-    }
+    /**
+     * Navigation helper - PPID untuk navigate ke TransactionLog
+     */
+    fun getNavigationPpid(): String = ppid
 
-    // STATUS: Check methods
-    fun isBlocked(): Boolean = status == LoketStatus.BLOCKED
-    fun isFlagged(): Boolean = status == LoketStatus.FLAGGED
-    fun isNormal(): Boolean = status == LoketStatus.NORMAL
+    /**
+     * Validation
+     */
+    fun hasValidData(): Boolean = ppid.isNotBlank() && refNumber.isNotBlank()
 
-    // API LOGIC: Get original PPID (without "blok" suffix)
-    fun getOriginalPpid(): String = ppid.removeSuffix("blok")
-
-    // API LOGIC: Get blocked PPID (with "blok" suffix)
-    fun getBlockedPpid(): String = if (ppid.endsWith("blok")) ppid else "${ppid}blok"
-
-    // SEARCH: For search functionality
-    fun matchesSearchQuery(query: String): Boolean {
+    /**
+     * Search helper
+     */
+    fun matchesPpidSearch(query: String): Boolean {
         val lowerQuery = query.lowercase()
-        return namaLoket.lowercase().contains(lowerQuery) ||
-                nomorHP.contains(lowerQuery) ||
-                ppid.lowercase().contains(lowerQuery) ||
-                email.lowercase().contains(lowerQuery)
+        return ppid.lowercase().contains(lowerQuery) ||
+                namaLoket.lowercase().contains(lowerQuery) ||
+                refNumber.lowercase().contains(lowerQuery)
     }
 }
 
 /**
- * UNIFIED: LoketStatus enum dengan proper mapping
+ * TransactionLog: Core model for transaction detail screen
+ * Maps dari /trx/ppid/{ppid} API response
+ * NOTE: message field TIDAK ditampilkan sesuai prompt
+ */
+data class TransactionLog(
+    val tldRefnum: String,           // Transaction reference number
+    val tldPan: String,              // PAN (card number, masked)
+    val tldIdpel: String,            // Customer ID
+    val tldAmount: Long,             // Transaction amount (positive/negative)
+    val tldBalance: Long,            // Resulting balance
+    val tldDate: String,             // Transaction timestamp ISO format
+    val tldPpid: String              // PPID identifier
+) {
+
+    /**
+     * Transaction type detection
+     */
+    fun isIncomingTransaction(): Boolean = tldAmount >= 0
+    fun isOutgoingTransaction(): Boolean = tldAmount < 0
+
+    /**
+     * Format amount with proper sign and currency
+     */
+    fun getFormattedAmount(): String {
+        val localeID = Locale("in", "ID")
+        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
+        numberFormat.maximumFractionDigits = 0
+
+        return if (tldAmount >= 0) {
+            "+${numberFormat.format(tldAmount)}"
+        } else {
+            numberFormat.format(tldAmount)
+        }
+    }
+
+    /**
+     * Format balance
+     */
+    fun getFormattedBalance(): String {
+        val localeID = Locale("in", "ID")
+        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
+        numberFormat.maximumFractionDigits = 0
+        return numberFormat.format(tldBalance)
+    }
+
+    /**
+     * Format transaction date
+     */
+    fun getFormattedDate(): String = formatISODate(tldDate)
+
+    /**
+     * Display helpers
+     */
+    fun getDisplayDescription(): String = "Ref: $tldRefnum • ID: $tldIdpel"
+    fun getBalanceDisplayText(): String = "Saldo: ${getFormattedBalance()}"
+    fun getMaskedPan(): String {
+        return when {
+            tldPan.length > 8 -> "${tldPan.take(4)}****${tldPan.takeLast(4)}"
+            tldPan.isNotBlank() -> tldPan
+            else -> "****"
+        }
+    }
+
+    /**
+     * Transaction type for UI styling
+     */
+    fun getTransactionType(): TransactionType = if (isIncomingTransaction()) {
+        TransactionType.INCOMING
+    } else {
+        TransactionType.OUTGOING
+    }
+
+    /**
+     * Validation
+     */
+    fun hasValidData(): Boolean = tldRefnum.isNotBlank() && tldPpid.isNotBlank()
+
+    enum class TransactionType {
+        INCOMING, OUTGOING
+    }
+}
+
+/**
+ * LoketStatus: Status management dengan block/unblock logic
+ * Sesuai API PUT /profiles/ppid/{ppid} dengan {"mpPpid": "value"}
  */
 enum class LoketStatus {
     NORMAL,    // Default status
-    BLOCKED,   // Diblokir (ppid ends with "blok")
-    FLAGGED;   // Ditandai untuk monitoring (future use)
+    BLOCKED,   // Blocked (ppid ends with "blok")
+    FLAGGED;   // Flagged for monitoring
 
     companion object {
         /**
-         * REAL API LOGIC: Determine status from PPID
-         * Block/unblock logic berdasarkan suffix "blok" di PPID
+         * Determine status from PPID
+         * Block logic: PPID ends with "blok" = BLOCKED
          */
         fun fromPpid(ppid: String?): LoketStatus {
             return if (ppid?.endsWith("blok") == true) {
@@ -105,187 +194,68 @@ enum class LoketStatus {
 }
 
 /**
- * UNIFIED: Receipt model untuk transaction display
- * Single model untuk semua receipt use cases
+ * Admin: Keep existing for authentication
  */
-data class Receipt(
-    val refNumber: String,
-    val idPelanggan: String,
-    val tanggal: String,
-    val mutasi: Long,
-    val totalSaldo: Long,
-    val ppid: String,
-    val tipeTransaksi: String = "Receipt"
+data class Admin(
+    val name: String,
+    val email: String,
+    val token: String,
+    val role: String = "admin"
 ) {
-
-    // BACKWARD COMPATIBILITY: Legacy properties
-    val amount: Long get() = mutasi
-    val logged: String get() = tanggal
-
-    // FORMATTING: Amount with +/- sign
-    fun getFormattedAmount(): String {
-        val localeID = Locale("in", "ID")
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-        return if (mutasi >= 0) {
-            "+${numberFormat.format(mutasi)}"
-        } else {
-            numberFormat.format(mutasi)
-        }
-    }
-
-    // FORMATTING: Balance
-    fun getFormattedSaldo(): String {
-        val localeID = Locale("in", "ID")
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-        return numberFormat.format(totalSaldo)
-    }
-
-    // FORMATTING: Date
-    fun getFormattedDate(): String {
-        return try {
-            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            isoFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val date = isoFormat.parse(tanggal)
-
-            val readableFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("in", "ID"))
-            readableFormat.format(date!!)
-        } catch (e: Exception) {
-            tanggal // Return original if parsing fails
-        }
-    }
-
-    // TRANSACTION TYPE
-    fun isIncomingTransaction(): Boolean = mutasi >= 0
-    fun isOutgoingTransaction(): Boolean = mutasi < 0
-
-    // DISPLAY: Description
-    fun getDisplayDescription(): String = "Ref: $refNumber | ID: $idPelanggan"
-    fun getSaldoDisplayText(): String = "Saldo: ${getFormattedSaldo()}"
-
-    // VALIDATION
-    fun hasValidData(): Boolean = refNumber.isNotBlank() && idPelanggan.isNotBlank() && ppid.isNotBlank()
+    fun isValidToken(): Boolean = token.isNotBlank() && token.length > 10
+    fun getDisplayName(): String = if (name.isNotBlank()) name else email.substringBefore("@")
+    fun hasValidCredentials(): Boolean = name.isNotBlank() && email.isNotBlank() && isValidToken()
 }
 
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
 /**
- * UNIFIED: TransactionLog model for detailed transaction view
+ * CONSOLIDATED: Phone number formatting
  */
-data class TransactionLog(
-    val tldRefnum: String,
-    val tldPan: String,
-    val tldIdpel: String,
-    val tldAmount: Long,
-    val tldBalance: Long,
-    val tldDate: String,
-    val tldPpid: String
-) {
-
-    // FORMATTING: Amount with proper signs
-    fun getFormattedAmount(): String {
-        val localeID = Locale("in", "ID")
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-        return if (tldAmount >= 0) {
-            "+${numberFormat.format(tldAmount)}"
-        } else {
-            numberFormat.format(tldAmount)
-        }
-    }
-
-    // FORMATTING: Balance
-    fun getFormattedBalance(): String {
-        val localeID = Locale("in", "ID")
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-        return numberFormat.format(tldBalance)
-    }
-
-    // FORMATTING: Date
-    fun getFormattedDate(): String {
-        return try {
-            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            isoFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val date = isoFormat.parse(tldDate)
-
-            val readableFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("in", "ID"))
-            readableFormat.format(date!!)
-        } catch (e: Exception) {
-            tldDate // Return original if parsing fails
-        }
-    }
-
-    // TRANSACTION TYPE
-    fun isIncomingTransaction(): Boolean = tldAmount >= 0
-    fun isOutgoingTransaction(): Boolean = tldAmount < 0
-
-    fun getTransactionType(): TransactionType = if (isIncomingTransaction()) {
-        TransactionType.INCOMING
-    } else {
-        TransactionType.OUTGOING
-    }
-
-    // DISPLAY
-    fun getDisplayDescription(): String = "Ref: $tldRefnum | ID: $tldIdpel"
-    fun getBalanceDisplayText(): String = "Saldo: ${getFormattedBalance()}"
-
-    // VALIDATION
-    fun hasValidData(): Boolean = tldRefnum.isNotBlank() && tldIdpel.isNotBlank() && tldPpid.isNotBlank()
-
-    enum class TransactionType {
-        INCOMING, OUTGOING
+private fun formatPhoneNumber(phone: String): String {
+    return when {
+        phone.startsWith("+62") -> phone
+        phone.startsWith("08") -> "+62${phone.substring(1)}"
+        phone.startsWith("62") -> "+$phone"
+        phone.isNotBlank() -> phone
+        else -> "No. HP tidak tersedia"
     }
 }
 
 /**
- * UNIFIED: LoketSearchHistory for local search history management
+ * CONSOLIDATED: ISO date formatting
  */
-data class LoketSearchHistory(
-    val ppid: String,
-    val namaLoket: String,
-    val nomorHP: String,
-    val email: String? = null,
-    val alamat: String? = null,
-    val status: LoketStatus = LoketStatus.NORMAL,
-    val tanggalAkses: Long = System.currentTimeMillis(),
-    val jumlahAkses: Int = 1
-) {
-
-    // FORMATTING: Access date
-    fun getFormattedTanggalAkses(): String {
-        val date = Date(tanggalAkses)
-        val format = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("in", "ID"))
-        return format.format(date)
-    }
-
-    // DISPLAY: History text
-    fun getDisplayText(): String = "$namaLoket - Diakses ${jumlahAkses}x"
-
-    // CONVERSION: To Loket object
-    fun toLoket(): Loket {
-        return Loket(
-            ppid = ppid,
-            namaLoket = namaLoket,
-            nomorHP = nomorHP,
-            alamat = alamat ?: "",
-            email = email ?: "",
-            status = status,
-            tanggalAkses = getFormattedTanggalAkses()
-        )
+private fun formatISODate(dateString: String): String {
+    return try {
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+        isoFormat.timeZone = TimeZone.getTimeZone("UTC")
+        val date = isoFormat.parse(dateString)
+        val readableFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale("in", "ID"))
+        readableFormat.format(date!!)
+    } catch (e: Exception) {
+        dateString // Return original if parsing fails
     }
 }
 
-/**
- * EXTENSION FUNCTIONS: For collections
- */
+// ============================================================================
+// COLLECTION EXTENSIONS
+// ============================================================================
 
-// Receipt extensions
-fun List<Receipt>.getTotalAmount(): Long = sumOf { it.mutasi }
+/**
+ * Receipt collection extensions
+ */
+fun List<Receipt>.getTotalAmount(): Long = sumOf { it.amount }
 fun List<Receipt>.getValidReceipts(): List<Receipt> = filter { it.hasValidData() }
-fun List<Receipt>.sortByAmountDescending(): List<Receipt> = sortedByDescending { it.mutasi }
-fun List<Receipt>.sortByDate(): List<Receipt> = sortedBy { it.tanggal }
+fun List<Receipt>.sortByAmountDescending(): List<Receipt> = sortedByDescending { it.amount }
+fun List<Receipt>.sortByDate(): List<Receipt> = sortedBy { it.logged }
+fun List<Receipt>.searchByPpid(query: String): List<Receipt> =
+    filter { it.matchesPpidSearch(query) }
 
-// TransactionLog extensions
+/**
+ * TransactionLog collection extensions
+ */
 fun List<TransactionLog>.getTotalIncoming(): Long =
     filter { it.isIncomingTransaction() }.sumOf { it.tldAmount }
 
@@ -294,39 +264,90 @@ fun List<TransactionLog>.getTotalOutgoing(): Long =
 
 fun List<TransactionLog>.getNetAmount(): Long = sumOf { it.tldAmount }
 fun List<TransactionLog>.getLatestBalance(): Long = firstOrNull()?.tldBalance ?: 0L
-
 fun List<TransactionLog>.sortByDateDescending(): List<TransactionLog> =
     sortedByDescending { it.tldDate }
 
-// Loket extensions
-fun List<Loket>.getBlockedLokets(): List<Loket> = filter { it.isBlocked() }
-fun List<Loket>.getFlaggedLokets(): List<Loket> = filter { it.isFlagged() }
-fun List<Loket>.getNormalLokets(): List<Loket> = filter { it.isNormal() }
+fun List<TransactionLog>.getValidTransactions(): List<TransactionLog> =
+    filter { it.hasValidData() }
 
-fun List<Loket>.searchByQuery(query: String): List<Loket> =
-    filter { it.matchesSearchQuery(query) }
+// ============================================================================
+// BLOCK/UNBLOCK UTILITIES
+// ============================================================================
 
 /**
- * VALIDATION UTILITIES
+ * PPID Block/Unblock utilities sesuai API
  */
-object ModelValidation {
+object PpidUtils {
 
-    fun isValidPpid(ppid: String?): Boolean =
-        !ppid.isNullOrBlank() && ppid.length >= 5
+    fun isValidPpid(ppid: String?): Boolean {
+        return !ppid.isNullOrBlank() && ppid.length >= 5
+    }
 
-    fun isValidPhoneNumber(phone: String?): Boolean =
-        !phone.isNullOrBlank() && phone.length >= 10
+    fun extractCleanPpid(ppid: String): String {
+        return ppid.removeSuffix("blok")
+    }
 
-    fun isValidEmail(email: String?): Boolean =
-        !email.isNullOrBlank() && email.contains("@")
+    fun createBlockedPpid(ppid: String): String {
+        val cleanPpid = extractCleanPpid(ppid)
+        return "${cleanPpid}blok"
+    }
 
-    fun formatPhoneNumber(phone: String): String {
-        val cleaned = phone.replace(Regex("[^0-9+]"), "")
+    fun isBlockedPpid(ppid: String): Boolean {
+        return ppid.endsWith("blok")
+    }
+
+    /**
+     * Create block request body untuk API
+     * PUT /profiles/ppid/{ppid} dengan {"mpPpid": "ppidblok"}
+     */
+    fun createBlockRequest(originalPpid: String): Map<String, String> {
+        val blockedPpid = createBlockedPpid(originalPpid)
+        return mapOf("mpPpid" to blockedPpid)
+    }
+
+    /**
+     * Create unblock request body untuk API
+     * PUT /profiles/ppid/{ppid} dengan {"mpPpid": "originalPpid"}
+     */
+    fun createUnblockRequest(blockedPpid: String): Map<String, String> {
+        val originalPpid = extractCleanPpid(blockedPpid)
+        return mapOf("mpPpid" to originalPpid)
+    }
+
+    /**
+     * PPID validation dengan format checking
+     */
+    fun validatePpidFormat(ppid: String): ValidationResult {
         return when {
-            cleaned.startsWith("+62") -> cleaned
-            cleaned.startsWith("62") -> "+$cleaned"
-            cleaned.startsWith("08") -> "+62${cleaned.substring(1)}"
-            else -> cleaned
+            ppid.isBlank() -> ValidationResult(false, "PPID tidak boleh kosong")
+            ppid.length < 5 -> ValidationResult(false, "PPID minimal 5 karakter")
+            ppid.length < 8 -> ValidationResult(false, "PPID terlalu pendek")
+            !ppid.matches("^[A-Z]{3,}[0-9]+.*$".toRegex()) -> {
+                ValidationResult(false, "Format PPID tidak valid. Gunakan format PIDLKTD0025")
+            }
+            else -> ValidationResult(true, "Valid")
         }
+    }
+
+    data class ValidationResult(val isValid: Boolean, val message: String)
+}
+
+/**
+ * Navigation utilities
+ */
+object NavigationUtils {
+
+    fun createDetailBundle(ppid: String): android.os.Bundle {
+        return android.os.Bundle().apply {
+            putString("ppid", ppid)
+        }
+    }
+
+    fun extractPpidFromBundle(bundle: android.os.Bundle?): String? {
+        return bundle?.getString("ppid")
+    }
+
+    fun safeExtractPpid(bundle: android.os.Bundle?, fallback: String = ""): String {
+        return extractPpidFromBundle(bundle) ?: fallback
     }
 }

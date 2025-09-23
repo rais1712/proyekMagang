@@ -16,8 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- ADDED: Logout button in header -->
-
+    <!-- Logout button in header -->
     <ImageButton
         android:id="@+id/btnLogout"
         android:layout_width="40dp"
@@ -32,6 +31,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/yellow_secondary_accent" />
 
+    <!-- Admin Name Display -->
     <TextView
         android:id="@+id/tvAdminName"
         android:layout_width="0dp"
@@ -46,9 +46,10 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/btnLogout"
         app:layout_constraintStart_toStartOf="@+id/cardSearch"
-        tools:layout_editor_absoluteY="112dp"
-        tools:text="Nama Admin Panjang Sekali" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Admin GesPay" />
 
+    <!-- UPDATED: PPID Search Card -->
     <androidx.cardview.widget.CardView
         android:id="@+id/cardSearch"
         android:layout_width="0dp"
@@ -62,17 +63,43 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/headerBackground">
 
-        <EditText
-            android:id="@+id/etSearch"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:drawableStart="@drawable/search_24"
-            android:drawablePadding="12dp"
-            android:hint="Cari loket (No. Telepon)"
-            android:padding="16dp" />
+            android:orientation="vertical"
+            android:padding="4dp">
+
+            <!-- Main Search Input -->
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:drawableStart="@drawable/search_24"
+                android:drawablePadding="12dp"
+                android:hint="@string/search_placeholder"
+                android:inputType="text"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp"
+                android:textSize="16sp" />
+
+            <!-- PPID Format Hint -->
+            <TextView
+                android:id="@+id/tvPpidHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="16dp"
+                android:paddingBottom="8dp"
+                android:text="@string/ppid_format_hint"
+                android:textColor="@color/text_secondary_gray"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <!-- Swipe to Refresh Container -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
         android:layout_width="0dp"
@@ -92,7 +119,7 @@
                 android:layout_height="wrap_content"
                 android:paddingBottom="24dp">
 
-                <!-- SIMPLIFIED: Show recent history title only when not in search mode -->
+                <!-- UPDATED: Dynamic title berdasarkan search state -->
                 <TextView
                     android:id="@+id/tvRecentHistoryTitle"
                     android:layout_width="wrap_content"
@@ -118,6 +145,7 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="@id/tvRecentHistoryTitle" />
 
+                <!-- Loading Shimmer -->
                 <com.facebook.shimmer.ShimmerFrameLayout
                     android:id="@+id/standardShimmerLayout"
                     android:layout_width="0dp"
@@ -132,7 +160,8 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:paddingHorizontal="16dp">
 
                         <include layout="@layout/item_loket_placeholder" />
                         <include layout="@layout/item_loket_placeholder" />
@@ -140,28 +169,73 @@
                     </LinearLayout>
                 </com.facebook.shimmer.ShimmerFrameLayout>
 
+                <!-- Results RecyclerView -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvLoketList"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
+                    android:paddingHorizontal="8dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tvRecentHistoryTitle" />
+                    app:layout_constraintTop_toBottomOf="@id/tvRecentHistoryTitle"
+                    tools:listitem="@layout/item_loket_history" />
 
+                <!-- Empty State -->
                 <TextView
                     android:id="@+id/tvEmptyHistory"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="32dp"
+                    android:layout_marginHorizontal="32dp"
+                    android:layout_marginTop="48dp"
                     android:gravity="center"
-                    android:text="Belum ada riwayat pencarian"
+                    android:text="@string/empty_recent_history"
                     android:textColor="@color/text_secondary_gray"
+                    android:textSize="16sp"
                     android:visibility="gone"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tvRecentHistoryTitle" />
+                    app:layout_constraintTop_toBottomOf="@id/tvRecentHistoryTitle"
+                    tools:visibility="visible" />
+
+                <!-- PPID Quick Access Buttons (Optional Enhancement) -->
+                <LinearLayout
+                    android:id="@+id/layoutQuickAccess"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:layout_marginHorizontal="24dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/rvLoketList"
+                    tools:visibility="visible">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnQuickAccess1"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="PIDLKTD0025"
+                        android:textSize="12sp"
+                        app:cornerRadius="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnQuickAccess2"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Direct PPID"
+                        android:textSize="12sp"
+                        app:cornerRadius="8dp" />
+
+                </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.core.widget.NestedScrollView>

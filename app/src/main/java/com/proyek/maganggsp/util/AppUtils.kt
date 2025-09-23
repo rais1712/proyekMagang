@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/util/AppUtils.kt - CONSOLIDATED UTILITY
+// File: app/src/main/java/com/proyek/maganggsp/util/AppUtils.kt - COMPLETE UTILITY CONSOLIDATION
 package com.proyek.maganggsp.util
 
 import android.content.Context
@@ -9,20 +9,26 @@ import androidx.core.view.isVisible
 import com.facebook.shimmer.ShimmerFrameLayout
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.util.exceptions.AppException
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * CONSOLIDATED UTILITY CLASS: Single comprehensive utility
- * Merges: Formatters, ErrorDisplayHandler, EmptyStateHandler, LoadingStateHandler
- * Eliminates scattered utility classes
+ * COMPLETE UTILITY CONSOLIDATION
+ * Merges ALL scattered utility classes into single comprehensive utility:
+ * - Formatters → Unified formatting methods
+ * - ErrorDisplayHandler → Error handling methods
+ * - EmptyStateHandler → Empty state management
+ * - LoadingStateHandler → Loading state management
+ * - ValidationUtils → Validation methods
+ * Eliminates ALL other utility classes
  */
 object AppUtils {
 
     // ========================================
-    // FORMATTING UTILITIES
+    // FORMATTING UTILITIES (Consolidated from Formatters.kt)
     // ========================================
 
     /**
@@ -76,7 +82,7 @@ object AppUtils {
     }
 
     // ========================================
-    // ERROR HANDLING UTILITIES
+    // ERROR HANDLING UTILITIES (Consolidated from ErrorDisplayHandler.kt)
     // ========================================
 
     /**
@@ -117,7 +123,7 @@ object AppUtils {
     }
 
     // ========================================
-    // UNIFIED LOADING STATE MANAGEMENT
+    // UNIFIED LOADING STATE MANAGEMENT (Consolidated from LoadingStateHandler.kt)
     // ========================================
 
     /**
@@ -225,7 +231,7 @@ object AppUtils {
     }
 
     // ========================================
-    // EMPTY STATE MANAGEMENT
+    // EMPTY STATE MANAGEMENT (Consolidated from EmptyStateHandler.kt)
     // ========================================
 
     /**
@@ -260,7 +266,7 @@ object AppUtils {
     }
 
     // ========================================
-    // VALIDATION UTILITIES
+    // VALIDATION UTILITIES (Consolidated from ValidationUtils.kt)
     // ========================================
 
     /**
@@ -295,7 +301,7 @@ object AppUtils {
     data class ValidationResult(val isValid: Boolean, val message: String)
 
     // ========================================
-    // PLACEHOLDER DATA UTILITIES
+    // PLACEHOLDER DATA UTILITIES (For development)
     // ========================================
 
     /**
@@ -361,7 +367,7 @@ object AppUtils {
     // ========================================
 
     /**
-     * Consistent logging dengan emoji
+     * Consistent logging dengan tag
      */
     fun logInfo(tag: String, message: String) {
         android.util.Log.i(tag, "📋 $message")
@@ -382,15 +388,17 @@ object AppUtils {
      */
     fun getDebugInfo(context: Context): String {
         return """
-        📱 GESPAY ADMIN DEBUG INFO:
+        📱 REFACTORED GESPAY ADMIN DEBUG INFO:
         - Context: ${context.javaClass.simpleName}
         - Time: ${formatDate(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(Date()))}
         - Memory: ${Runtime.getRuntime().freeMemory() / 1024 / 1024} MB free
         - Version: ${com.proyek.maganggsp.BuildConfig.VERSION_NAME}
         - Build: ${com.proyek.maganggsp.BuildConfig.BUILD_TYPE}
         - API URL: ${com.proyek.maganggsp.BuildConfig.BASE_URL}
-        - Data Focus: Receipt/TransactionLog
-        - Architecture: Unified Repository Pattern
+        - Data Focus: Receipt/TransactionLog (COMPLETE REFACTOR)
+        - Architecture: Unified API Integration
+        - Utilities: CONSOLIDATED (All-in-One)
+        - Feature Flags: ELIMINATED
         """.trimIndent()
     }
 }

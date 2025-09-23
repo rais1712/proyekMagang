@@ -1,65 +1,60 @@
-<?xml version="1.0" encoding="utf-8"?>
+// File: app/src/main/res/navigation/nav_graph.xml - COMPLETE REFACTOR
+    <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
 
-    <!-- FIXED: Navigation dengan ppid argument yang benar -->
-
-    <!-- Home Fragment - Receipt List -->
+    <!-- Home Fragment - Receipt List (REFACTORED) -->
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.proyek.maganggsp.presentation.home.HomeFragment"
         android:label="Home - Receipt List"
         tools:layout="@layout/fragment_home">
 
-        <!-- FIXED: Action dengan ppid argument -->
+        <!-- Navigate to DetailLoket (Profile + Receipt display) -->
         <action
-            android:id="@+id/action_homeFragment_to_transactionLogActivity"
-            app:destination="@id/transactionLogActivity"
+            android:id="@+id/action_homeFragment_to_detailLoketActivity"
+            app:destination="@id/detailLoketActivity"
             app:enterAnim="@android:anim/slide_in_left"
             app:exitAnim="@android:anim/slide_out_right" />
     </fragment>
 
-    <!-- HIDDEN: History & Monitor fragments tidak ditampilkan di bottom nav untuk sementara -->
-    <fragment
-        android:id="@+id/historyFragment"
-        android:name="com.proyek.maganggsp.presentation.history.HistoryFragment"
-        android:label="Receipt History"
-        tools:layout="@layout/fragment_history">
-
-        <action
-            android:id="@+id/action_historyFragment_to_transactionLogActivity"
-            app:destination="@id/transactionLogActivity" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/monitorFragment"
-        android:name="com.proyek.maganggsp.presentation.monitor.MonitorFragment"
-        android:label="Receipt Monitor"
-        tools:layout="@layout/fragment_monitor">
-
-        <action
-            android:id="@+id/action_monitorFragment_to_transactionLogActivity"
-            app:destination="@id/transactionLogActivity" />
-    </fragment>
-
-    <!-- FIXED: Transaction Log Activity dengan ppid argument -->
+    <!-- DetailLoket Activity - Profile Info + Receipts (REFACTORED) -->
     <activity
-        android:id="@+id/transactionLogActivity"
+        android:id="@+id/detailLoketActivity"
         android:name="com.proyek.maganggsp.presentation.detail_loket.DetailLoketActivity"
-        android:label="Transaction Log Detail"
+        android:label="Detail Loket - Profile &amp; Receipts"
         tools:layout="@layout/activity_detail_loket">
 
-        <!-- FIXED: Argument ppid yang benar -->
+        <!-- PPID argument untuk profile loading -->
+        <argument
+            android:name="ppid"
+            android:defaultValue=""
+            app:argType="string" />
+
+        <!-- Navigate to TransactionLog detail (NEW SCREEN) -->
+        <action
+            android:id="@+id/action_detailLoket_to_transactionLogActivity"
+            app:destination="@id/transactionLogActivity" />
+    </activity>
+
+    <!-- NEW: TransactionLog Activity - Transaction Detail Screen -->
+    <activity
+        android:id="@+id/transactionLogActivity"
+        android:name="com.proyek.maganggsp.presentation.transaction.TransactionLogActivity"
+        android:label="Transaction Logs"
+        tools:layout="@layout/activity_transaction_log">
+
+        <!-- PPID argument untuk transaction loading -->
         <argument
             android:name="ppid"
             android:defaultValue=""
             app:argType="string" />
     </activity>
 
-    <!-- NEW: Update Profile Activity (separate screen) -->
+    <!-- Update Profile Activity (EXISTING) -->
     <activity
         android:id="@+id/updateProfileActivity"
         android:name="com.proyek.maganggsp.presentation.profile.UpdateProfileActivity"

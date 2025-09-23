@@ -1,9 +1,8 @@
-// File: app/src/main/java/com/proyek/maganggsp/di/NetworkModule.kt - UNIFIED API INTEGRATION
+// File: app/src/main/java/com/proyek/maganggsp/di/NetworkModule.kt - UPDATED FOR UNIFIED API
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.BuildConfig
-import com.proyek.maganggsp.data.api.AuthApi
-import com.proyek.maganggsp.data.api.ProfileApi
+import com.proyek.maganggsp.data.api.GesPayApi
 import com.proyek.maganggsp.data.source.local.SessionManager
 import dagger.Module
 import dagger.Provides
@@ -24,11 +23,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    object NetworkConfig {
-        const val CONNECT_TIMEOUT = 30L
-        const val READ_TIMEOUT = 30L
-        const val WRITE_TIMEOUT = 30L
-        const val CACHE_SIZE = 10 * 1024 * 1024L // 10 MB
+    /**
+     * UNIFIED API INTEGRATION: Single GesPayApi interface
+     * Replaces scattered API interfaces (AuthApi, ProfileApi, LoketApi)
+     */
+    @Singleton
+    @Provides
+    fun provideGesPayApi(retrofit: Retrofit): GesPayApi {
+        return retrofit.create(GesPayApi::class.java)
     }
 
     @Singleton
@@ -70,52 +72,16 @@ object NetworkModule {
 
     @Singleton
     @Provides
-    @Named("network_error")
-    fun provideNetworkErrorInterceptor(): Interceptor {
-        return Interceptor { chain ->
-            try {
-                val response = chain.proceed(chain.request())
-
-                // Enhanced logging untuk debug
-                if (BuildConfig.DEBUG) {
-                    val url = chain.request().url.toString()
-                    val code = response.code
-                    android.util.Log.d("NetworkModule", "🌐 API Response: $url -> HTTP $code")
-                }
-
-                response
-            } catch (e: Exception) {
-                if (BuildConfig.DEBUG) {
-                    android.util.Log.e("NetworkModule", "❌ Network error: ${e.message}", e)
-                }
-                throw e
-            }
-        }
-    }
-
-    @Singleton
-    @Provides
-    fun provideHttpCache(context: android.content.Context): Cache {
-        val cacheDir = File(context.cacheDir, "http_cache")
-        return Cache(cacheDir, NetworkConfig.CACHE_SIZE)
-    }
-
-    @Singleton
-    @Provides
     fun provideOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
-        @Named("auth") authInterceptor: Interceptor,
-        @Named("network_error") networkErrorInterceptor: Interceptor,
-        cache: Cache
+        @Named("auth") authInterceptor: Interceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
-            .addNetworkInterceptor(networkErrorInterceptor)
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(NetworkConfig.CONNECT_TIMEOUT, TimeUnit.SECONDS)
-            .readTimeout(NetworkConfig.READ_TIMEOUT, TimeUnit.SECONDS)
-            .writeTimeout(NetworkConfig.WRITE_TIMEOUT, TimeUnit.SECONDS)
-            .cache(cache)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
@@ -127,30 +93,5 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-    }
-
-    /**
-     * KEEP: AuthApi untuk login functionality (separate interface)
-     */
-    @Singleton
-    @Provides
-    fun provideAuthApi(retrofit: Retrofit): AuthApi {
-        return retrofit.create(AuthApi::class.java)
-    }
-
-    /**
-     * UNIFIED: ProfileApi untuk semua loket operations
-     * Replaces LoketApi - single source of truth untuk real endpoints
-     */
-    @Singleton
-    @Provides
-    fun provideProfileApi(retrofit: Retrofit): ProfileApi {
-        return retrofit.create(ProfileApi::class.java)
-    }
-
-    @Singleton
-    @Provides
-    fun provideApplicationContext(application: android.app.Application): android.content.Context {
-        return application.applicationContext
     }
 }

@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - RECEIPT FOCUSED
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeViewModel.kt - COMPLETE REFACTOR
 package com.proyek.maganggsp.presentation.home
 
 import android.util.Log
@@ -6,10 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.model.Receipt
-import com.proyek.maganggsp.domain.usecase.auth.GetAdminProfileUseCase
-import com.proyek.maganggsp.domain.usecase.auth.LogoutUseCase
-import com.proyek.maganggsp.domain.usecase.profile.GetRecentProfilesUseCase
-import com.proyek.maganggsp.domain.usecase.profile.SearchProfilesUseCase
+import com.proyek.maganggsp.domain.usecase.*
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,8 +17,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * STREAMLINED: HomeViewModel focused on Receipt display and PPID search
- * Eliminates complex loket management, focuses on receipt data
+ * COMPLETE REFACTOR: HomeViewModel focused on Receipt display and PPID search
+ * Eliminates complex loket management, uses unified use cases
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -49,12 +46,12 @@ class HomeViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        AppUtils.logInfo(TAG, "HomeViewModel initialized with Receipt focus")
+        AppUtils.logInfo(TAG, "REFACTORED HomeViewModel initialized with Receipt focus")
         loadRecentReceipts()
     }
 
     /**
-     * STREAMLINED: Search receipts by PPID dengan debounce
+     * Search receipts by PPID dengan debounce
      */
     fun searchReceipts(ppid: String) {
         searchJob?.cancel()
@@ -72,7 +69,7 @@ class HomeViewModel @Inject constructor(
                 AppUtils.logDebug(TAG, "Starting PPID search: $ppid")
 
                 // Quick validation
-                val validationResult = AppUtils.validatePpidFormat(ppid)
+                val validationResult = searchProfilesUseCase.validatePpid(ppid)
                 if (!validationResult.isValid && ppid.length >= 5) {
                     _searchResults.value = Resource.Error(
                         com.proyek.maganggsp.util.exceptions.AppException.ValidationException(
@@ -82,7 +79,7 @@ class HomeViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Perform search
+                // Perform search using unified use case
                 searchProfilesUseCase(ppid).collect { resource ->
                     _searchResults.value = resource
 
@@ -114,7 +111,7 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * STREAMLINED: Clear search and show recent receipts
+     * Clear search and show recent receipts
      */
     fun clearSearch() {
         searchJob?.cancel()
@@ -125,7 +122,7 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * STREAMLINED: Load recent receipts from history
+     * Load recent receipts from history using unified use case
      */
     fun loadRecentReceipts() {
         if (_isSearching.value) return
@@ -179,7 +176,7 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * STREAMLINED: Logout process
+     * Logout process using unified use case
      */
     fun logout() {
         viewModelScope.launch {
@@ -222,7 +219,7 @@ class HomeViewModel @Inject constructor(
      * Direct PPID access untuk exact match
      */
     fun accessByPpid(ppid: String) {
-        val validation = AppUtils.validatePpidFormat(ppid)
+        val validation = searchProfilesUseCase.validatePpid(ppid)
         if (validation.isValid) {
             AppUtils.logInfo(TAG, "Direct PPID access: $ppid")
             searchReceipts(ppid)
@@ -235,44 +232,7 @@ class HomeViewModel @Inject constructor(
      * Get PPID format examples for UI hints
      */
     fun getPpidFormatExamples(): List<String> {
-        return listOf(
-            "PIDLKTD0025",
-            "PIDLKTD0025blok",
-            "PIDLKTD0030"
-        )
-    }
-
-    /**
-     * STREAMLINED: Get current state summary
-     */
-    fun getCurrentStateSummary(): String {
-        val adminProfile = getAdminProfile()
-        val searchResultsCount = (_searchResults.value as? Resource.Success)?.data?.size ?: 0
-        val recentReceiptsCount = (_recentReceipts.value as? Resource.Success)?.data?.size ?: 0
-
-        return """
-        Home State Summary:
-        - Admin: ${adminProfile?.name ?: "Not loaded"}
-        - Is Searching: ${_isSearching.value}
-        - Search Results: $searchResultsCount
-        - Recent Receipts: $recentReceiptsCount
-        - Search Job Active: ${searchJob?.isActive ?: false}
-        """.trimIndent()
-    }
-
-    /**
-     * STREAMLINED: Debug info
-     */
-    fun getDebugInfo(): String {
-        return """
-        ${getCurrentStateSummary()}
-        
-        Technical Details:
-        - ViewModel: Receipt-focused HomeViewModel
-        - Search Mode: PPID-based
-        - Data Source: ProfileRepository
-        - State Management: Streamlined StateFlow
-        """.trimIndent()
+        return searchProfilesUseCase.getPpidFormatExamples()
     }
 
     override fun onCleared() {

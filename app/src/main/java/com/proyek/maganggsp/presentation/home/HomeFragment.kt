@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeFragment.kt - SEARCH BY PPID
+// File: app/src/main/java/com/proyek/maganggsp/presentation/home/HomeFragment.kt - COMPLETE REFACTOR
 package com.proyek.maganggsp.presentation.home
 
 import android.os.Bundle
@@ -13,8 +13,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.FragmentHomeBinding
-import com.proyek.maganggsp.domain.model.Loket
-import com.proyek.maganggsp.presentation.adapters.LoketSearchAdapter
+import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.presentation.adapters.SearchAdapter
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.AppUtils
@@ -22,7 +22,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * UPDATED: HomeFragment dengan search by PPID functionality
+ * COMPLETE REFACTOR: HomeFragment dengan Receipt display and PPID search
+ * Shows: Receipt list dari UnifiedRepository
+ * Navigation: Receipt click -> DetailLoketActivity
  */
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -31,7 +33,7 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: HomeViewModel by viewModels()
-    private lateinit var searchAdapter: LoketSearchAdapter
+    private lateinit var searchAdapter: SearchAdapter
 
     companion object {
         private const val TAG = "HomeFragment"
@@ -45,13 +47,15 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        AppUtils.logInfo(TAG, "REFACTORED HomeFragment with Receipt focus")
+
         setupUI()
         setupRecyclerView()
         setupObservers()
         setupSearch()
 
         // Load initial data
-        viewModel.loadRecentLokets()
+        viewModel.loadRecentReceipts()
     }
 
     private fun setupUI() {
@@ -60,8 +64,8 @@ class HomeFragment : Fragment() {
             binding.tvAdminName.text = admin.getDisplayName()
         }
 
-        // UPDATED: Search hint untuk PPID
-        binding.etSearch.hint = getString(R.string.search_placeholder)
+        // Search hint for PPID
+        binding.etSearch.hint = "Cari loket (PPID)"
 
         // Logout button
         binding.btnLogout.setOnClickListener {
@@ -70,16 +74,14 @@ class HomeFragment : Fragment() {
 
         // See all button
         binding.tvSeeAll.setOnClickListener {
-            AppUtils.showSuccess(requireContext(), "Fitur riwayat akan segera hadir")
+            AppUtils.showSuccess(requireContext(), "Fitur riwayat lengkap akan segera hadir")
         }
     }
 
     private fun setupRecyclerView() {
-        searchAdapter = LoketSearchAdapter(
-            onItemClick = { loket ->
-                navigateToLoketDetail(loket.ppid)
-            }
-        )
+        searchAdapter = SearchAdapter { receipt ->
+            navigateToDetail(receipt.ppid)
+        }
 
         binding.rvLoketList.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -95,10 +97,10 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // Recent lokets observer
+        // Recent receipts observer
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.recentLokets.collect { resource ->
-                handleRecentLokets(resource)
+            viewModel.recentReceipts.collect { resource ->
+                handleRecentReceipts(resource)
             }
         }
 
@@ -114,29 +116,40 @@ class HomeFragment : Fragment() {
         binding.etSearch.doOnTextChanged { text, _, _, _ ->
             val query = text.toString().trim()
 
-            if (query.isEmpty()) {
-                // Show recent lokets when search is empty
-                viewModel.clearSearch()
-                binding.tvRecentHistoryTitle.text = "Riwayat Terakhir"
-                binding.tvSeeAll.visibility = View.VISIBLE
-            } else if (query.length >= 5) {
-                // UPDATED: Start search when query is >= 5 characters (PPID minimum)
-                viewModel.searchLoket(query)
-                binding.tvRecentHistoryTitle.text = "Hasil Pencarian"
-                binding.tvSeeAll.visibility = View.GONE
-            } else {
-                // Show hint for short query
-                binding.tvRecentHistoryTitle.text = getString(R.string.empty_search_hint)
-                binding.tvSeeAll.visibility = View.GONE
-                searchAdapter.submitList(emptyList())
-                binding.tvEmptyHistory.visibility = View.VISIBLE
-                binding.tvEmptyHistory.text = getString(R.string.empty_search_hint)
+            when {
+                query.isEmpty() -> {
+                    // Show recent receipts when search is empty
+                    viewModel.clearSearch()
+                    updateTitleForState(false, "")
+                }
+                query.length >= 5 -> {
+                    // Start search when query is >= 5 characters (PPID minimum)
+                    viewModel.searchReceipts(query)
+                    updateTitleForState(true, query)
+                }
+                else -> {
+                    // Show hint for short query
+                    updateTitleForState(false, "")
+                    searchAdapter.clearSearchResults()
+                    showEmptyState("Ketik minimal 5 karakter PPID untuk pencarian")
+                }
             }
         }
     }
 
-    private fun handleSearchResults(resource: Resource<List<Loket>>) {
-        resource.applyToStandardLoadingViews(
+    private fun updateTitleForState(isSearching: Boolean, query: String) {
+        binding.tvRecentHistoryTitle.text = if (isSearching) {
+            "Hasil Pencarian: $query"
+        } else {
+            "Riwayat Terakhir"
+        }
+        binding.tvSeeAll.visibility = if (isSearching) View.GONE else View.VISIBLE
+    }
+
+    private fun handleSearchResults(resource: Resource<List<Receipt>>) {
+        // Apply unified loading state management
+        AppUtils.handleLoadingState(
+            resource = resource,
             shimmerView = binding.standardShimmerLayout,
             contentView = binding.rvLoketList,
             emptyView = binding.tvEmptyHistory
@@ -144,32 +157,34 @@ class HomeFragment : Fragment() {
 
         when (resource) {
             is Resource.Success -> {
-                searchAdapter.submitList(resource.data)
-                AppUtils.logInfo(TAG, "Search results: ${resource.data.size} lokets")
+                searchAdapter.updateSearchResults(resource.data, binding.etSearch.text.toString())
+                AppUtils.logInfo(TAG, "Search results: ${resource.data.size} receipts")
 
-                // Update empty message for search context
                 if (resource.data.isEmpty()) {
-                    binding.tvEmptyHistory.text = "Tidak ditemukan loket dengan PPID tersebut.\nCoba cari dengan format yang tepat."
+                    showEmptyState("Tidak ditemukan receipt dengan PPID tersebut.\nCoba cari dengan format yang tepat.")
                 }
             }
             is Resource.Error -> {
                 AppUtils.showError(requireContext(), resource.exception)
-                AppUtils.logError(TAG, "Search error: ${resource.exception.message}")
+                AppUtils.logError(TAG, "Search error", resource.exception)
+                showEmptyState("Gagal melakukan pencarian. Coba lagi.")
             }
             is Resource.Empty -> {
-                binding.tvEmptyHistory.text = getString(R.string.empty_search_results, "")
+                showEmptyState("Tidak ada hasil pencarian")
             }
             is Resource.Loading -> {
-                // Handled by applyToStandardLoadingViews
+                // Handled by AppUtils.handleLoadingState
             }
         }
     }
 
-    private fun handleRecentLokets(resource: Resource<List<Loket>>) {
-        // Only handle recent lokets when not searching
+    private fun handleRecentReceipts(resource: Resource<List<Receipt>>) {
+        // Only handle recent receipts when not searching
         if (viewModel.isSearching.value) return
 
-        resource.applyToStandardLoadingViews(
+        // Apply unified loading state management
+        AppUtils.handleLoadingState(
+            resource = resource,
             shimmerView = binding.standardShimmerLayout,
             contentView = binding.rvLoketList,
             emptyView = binding.tvEmptyHistory
@@ -177,18 +192,22 @@ class HomeFragment : Fragment() {
 
         when (resource) {
             is Resource.Success -> {
-                searchAdapter.submitList(resource.data)
-                AppUtils.logInfo(TAG, "Recent lokets loaded: ${resource.data.size}")
+                searchAdapter.updateSearchResults(resource.data, "")
+                AppUtils.logInfo(TAG, "Recent receipts loaded: ${resource.data.size}")
+
+                if (resource.data.isEmpty()) {
+                    showEmptyState("Belum ada riwayat pencarian.\nMulai cari loket dengan PPID.")
+                }
             }
             is Resource.Error -> {
-                AppUtils.logError(TAG, "Recent lokets error: ${resource.exception.message}")
-                binding.tvEmptyHistory.text = "Gagal memuat riwayat pencarian"
+                AppUtils.logError(TAG, "Recent receipts error", resource.exception)
+                showEmptyState("Gagal memuat riwayat pencarian")
             }
             is Resource.Empty -> {
-                binding.tvEmptyHistory.text = getString(R.string.empty_recent_history)
+                showEmptyState("Belum ada riwayat pencarian.\nMulai cari loket dengan PPID.")
             }
             is Resource.Loading -> {
-                // Handled by applyToStandardLoadingViews
+                // Handled by AppUtils.handleLoadingState
             }
         }
     }
@@ -196,18 +215,20 @@ class HomeFragment : Fragment() {
     private fun handleSearchState(isSearching: Boolean) {
         binding.swipeRefreshLayout.isRefreshing = false
 
-        if (isSearching) {
-            AppUtils.logDebug(TAG, "Search mode active")
-        } else {
-            AppUtils.logDebug(TAG, "Showing recent lokets")
-        }
+        AppUtils.logDebug(TAG, if (isSearching) "Search mode active" else "Showing recent receipts")
     }
 
-    private fun navigateToLoketDetail(ppid: String) {
+    private fun showEmptyState(message: String) {
+        binding.tvEmptyHistory.text = message
+        binding.tvEmptyHistory.visibility = View.VISIBLE
+        binding.rvLoketList.visibility = View.GONE
+    }
+
+    private fun navigateToDetail(ppid: String) {
         try {
             val bundle = NavigationConstants.createDetailLoketBundle(ppid)
             findNavController().navigate(
-                R.id.action_homeFragment_to_transactionLogActivity,
+                R.id.action_homeFragment_to_detailLoketActivity,
                 bundle
             )
             AppUtils.logInfo(TAG, "Navigating to detail with PPID: $ppid")
@@ -219,14 +240,22 @@ class HomeFragment : Fragment() {
 
     private fun showLogoutConfirmation() {
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle(getString(R.string.dialog_confirm_logout_title))
-            .setMessage(getString(R.string.dialog_confirm_logout_message))
-            .setPositiveButton(getString(R.string.dialog_button_yes)) { _, _ ->
+            .setTitle("Konfirmasi Logout")
+            .setMessage("Yakin ingin keluar dari aplikasi?")
+            .setPositiveButton("Ya") { _, _ ->
                 viewModel.logout()
                 requireActivity().finish()
             }
-            .setNegativeButton(getString(R.string.dialog_button_no), null)
+            .setNegativeButton("Tidak", null)
             .show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh data when returning to screen
+        if (!viewModel.isSearching.value) {
+            viewModel.refresh()
+        }
     }
 
     override fun onDestroyView() {
@@ -234,3 +263,4 @@ class HomeFragment : Fragment() {
         _binding = null
     }
 }
+
