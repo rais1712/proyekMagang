@@ -9,7 +9,6 @@ import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ActivityUpdateProfileBinding
-import com.proyek.maganggsp.util.AppUtils
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
 import dagger.hilt.android.AndroidEntryPoint

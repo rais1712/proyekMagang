@@ -1,14 +1,12 @@
-// ============================================================================
-// UNIFIED REPOSITORY MODULE
-// ============================================================================
-
-// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt - COMPLETE REFACTOR
+// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt - UPDATED FOR MODULAR
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.data.repositoryImpl.AuthRepositoryImpl
-import com.proyek.maganggsp.data.repositoryImpl.UnifiedRepositoryImpl
+import com.proyek.maganggsp.data.repositoryImpl.ProfileRepositoryImpl
+import com.proyek.maganggsp.data.repositoryImpl.TransactionRepositoryImpl
 import com.proyek.maganggsp.domain.repository.AuthRepository
-import com.proyek.maganggsp.domain.repository.UnifiedRepository
+import com.proyek.maganggsp.domain.repository.ProfileRepository
+import com.proyek.maganggsp.domain.repository.TransactionRepository
 import com.proyek.maganggsp.util.exceptions.ExceptionMapper
 import dagger.Binds
 import dagger.Module
@@ -22,19 +20,19 @@ import javax.inject.Singleton
 abstract class RepositoryModule {
 
     /**
-     * KEEP: AuthRepository untuk login functionality
+     * MODULAR: Separate repository bindings replacing unified approach
      */
     @Binds
     @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
-    /**
-     * NEW: UnifiedRepository replaces ProfileRepository, LoketRepository
-     * Single source untuk semua API operations
-     */
     @Binds
     @Singleton
-    abstract fun bindUnifiedRepository(impl: UnifiedRepositoryImpl): UnifiedRepository
+    abstract fun bindProfileRepository(impl: ProfileRepositoryImpl): ProfileRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
 
     companion object {
         @Provides

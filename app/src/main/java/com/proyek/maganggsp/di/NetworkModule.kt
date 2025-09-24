@@ -1,8 +1,10 @@
-// File: app/src/main/java/com/proyek/maganggsp/di/NetworkModule.kt - UPDATED FOR UNIFIED API
+// File: app/src/main/java/com/proyek/maganggsp/di/NetworkModule.kt - UPDATED FOR MODULAR APIs
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.BuildConfig
-import com.proyek.maganggsp.data.api.GesPayApi
+import com.proyek.maganggsp.data.api.AuthApi
+import com.proyek.maganggsp.data.api.ProfileApi
+import com.proyek.maganggsp.data.api.TransactionApi
 import com.proyek.maganggsp.data.source.local.SessionManager
 import dagger.Module
 import dagger.Provides
@@ -24,13 +26,24 @@ import javax.inject.Singleton
 object NetworkModule {
 
     /**
-     * UNIFIED API INTEGRATION: Single GesPayApi interface
-     * Replaces scattered API interfaces (AuthApi, ProfileApi, LoketApi)
+     * MODULAR API: Separate API interfaces replacing unified GesPayApi
      */
     @Singleton
     @Provides
-    fun provideGesPayApi(retrofit: Retrofit): GesPayApi {
-        return retrofit.create(GesPayApi::class.java)
+    fun provideAuthApi(retrofit: Retrofit): AuthApi {
+        return retrofit.create(AuthApi::class.java)
+    }
+
+    @Singleton
+    @Provides
+    fun provideProfileApi(retrofit: Retrofit): ProfileApi {
+        return retrofit.create(ProfileApi::class.java)
+    }
+
+    @Singleton
+    @Provides
+    fun provideTransactionApi(retrofit: Retrofit): TransactionApi {
+        return retrofit.create(TransactionApi::class.java)
     }
 
     @Singleton

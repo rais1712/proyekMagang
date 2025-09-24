@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemLoketHistoryBinding
 import com.proyek.maganggsp.domain.model.Receipt
-import com.proyek.maganggsp.util.AppUtils
 
 /**
  * STREAMLINED: Search adapter for PPID-based search results

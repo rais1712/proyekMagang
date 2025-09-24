@@ -16,7 +16,6 @@ import com.proyek.maganggsp.presentation.adapters.ReceiptAdapter
 import com.proyek.maganggsp.presentation.transaction.TransactionLogActivity
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.AppUtils
 import com.proyek.maganggsp.util.extractPpidSafely
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch

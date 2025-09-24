@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.databinding.ItemLoketHistoryBinding
 import com.proyek.maganggsp.domain.model.Receipt
-import com.proyek.maganggsp.util.AppUtils
 
 /**
  * COMPLETE REFACTOR: Receipt adapter for home screen and detail screen

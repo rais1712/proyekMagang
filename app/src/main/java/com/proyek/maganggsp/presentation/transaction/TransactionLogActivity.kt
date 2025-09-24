@@ -12,7 +12,6 @@ import com.proyek.maganggsp.presentation.adapters.TransactionLogAdapter
 import com.proyek.maganggsp.presentation.detail_loket.TransactionLogViewModel
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 

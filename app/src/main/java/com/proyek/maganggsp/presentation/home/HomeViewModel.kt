@@ -8,7 +8,6 @@ import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.usecase.*
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

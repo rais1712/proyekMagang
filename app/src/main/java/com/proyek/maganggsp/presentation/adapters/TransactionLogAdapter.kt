@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemMutasiBinding
 import com.proyek.maganggsp.domain.model.TransactionLog
-import com.proyek.maganggsp.util.AppUtils
 
 /**
  * COMPLETE REFACTOR: Transaction adapter for TransactionLog detail screen

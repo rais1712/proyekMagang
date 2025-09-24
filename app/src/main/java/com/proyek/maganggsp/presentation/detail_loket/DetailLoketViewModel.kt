@@ -8,7 +8,6 @@ import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.domain.usecase.*
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

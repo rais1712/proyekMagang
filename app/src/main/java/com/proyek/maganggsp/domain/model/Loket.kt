@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/model/LoketProfile.kt - BRIDGE MODEL
+// File: app/src/main/java/com/proyek/maganggsp/domain/model/Loket.kt - BRIDGE MODEL
 package com.proyek.maganggsp.domain.model
 
 import java.text.NumberFormat
@@ -8,7 +8,7 @@ import java.util.Locale
  * BRIDGE MODEL: For DetailLoket screen compatibility
  * Maps between new Receipt/TransactionLog structure and existing UI
  */
-data class LoketProfile(
+data class Loket(
     val ppid: String,
     val namaLoket: String,
     val nomorHP: String,
