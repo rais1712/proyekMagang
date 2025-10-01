@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/transaction/TransactionLogActivity.kt
+// File: app/src/main/java/com/proyek/maganggsp/presentation/transaction/TransactionLogActivity.kt - FIXED
 package com.proyek.maganggsp.presentation.transaction
 
 import android.os.Bundle
@@ -9,22 +9,23 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.proyek.maganggsp.databinding.ActivityTransactionLogBinding
 import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.presentation.adapters.TransactionLogAdapter
-import com.proyek.maganggsp.presentation.detail_loket.TransactionLogViewModel
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
+import com.proyek.maganggsp.util.AppUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * NEW SCREEN: TransactionLog detail activity
+ * FIXED: TransactionLog detail activity dengan proper ViewBinding
  * Shows transaction logs dari /trx/ppid/{ppid} API
  * Navigation: Receipt click -> TransactionLogActivity
  */
 @AndroidEntryPoint
 class TransactionLogActivity : AppCompatActivity() {
 
+    // FIXED: Proper ViewBinding declaration
     private lateinit var binding: ActivityTransactionLogBinding
-    private val viewModel: com.proyek.maganggsp.presentation.detail_loket.TransactionLogViewModel by viewModels()
+    private val viewModel: TransactionLogViewModel by viewModels()
     private lateinit var transactionAdapter: TransactionLogAdapter
 
     companion object {
@@ -34,47 +35,17 @@ class TransactionLogActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Create binding for new layout
-        binding = createTransactionLogBinding()
+        // FIXED: Proper ViewBinding initialization
+        binding = ActivityTransactionLogBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        AppUtils.logInfo(TAG, "NEW TransactionLog screen created")
+        AppUtils.logInfo(TAG, "TransactionLog screen created")
 
         setupUI()
         setupRecyclerView()
         setupObservers()
         setupClickListeners()
     }
-
-    private fun createTransactionLogBinding(): ActivityTransactionLogBinding {
-        // For now, we'll create a simple binding wrapper
-        // In real implementation, this would use the actual layout
-        return object : ActivityTransactionLogBinding {
-            val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(
-                android.R.id.content
-            ) ?: createDummyToolbar()
-            val rvTransactionLogs = findViewById<androidx.recyclerview.widget.RecyclerView>(
-                android.R.id.content
-            ) ?: createDummyRecyclerView()
-            val shimmerLayout = findViewById<com.facebook.shimmer.ShimmerFrameLayout>(
-                android.R.id.content
-            ) ?: createDummyShimmer()
-            val tvEmpty = findViewById<android.widget.TextView>(
-                android.R.id.content
-            ) ?: createDummyTextView()
-            val swipeRefreshLayout = findViewById<androidx.swiperefreshlayout.widget.SwipeRefreshLayout>(
-                android.R.id.content
-            ) ?: createDummySwipeRefresh()
-
-            override fun getRoot(): android.view.View = findViewById(android.R.id.content)
-        }
-    }
-
-    private fun createDummyToolbar() = com.google.android.material.appbar.MaterialToolbar(this)
-    private fun createDummyRecyclerView() = androidx.recyclerview.widget.RecyclerView(this)
-    private fun createDummyShimmer() = com.facebook.shimmer.ShimmerFrameLayout(this)
-    private fun createDummyTextView() = android.widget.TextView(this)
-    private fun createDummySwipeRefresh() = androidx.swiperefreshlayout.widget.SwipeRefreshLayout(this)
 
     private fun setupUI() {
         // Toolbar setup
@@ -119,7 +90,7 @@ class TransactionLogActivity : AppCompatActivity() {
     }
 
     private fun handleTransactionLogsResource(resource: Resource<List<TransactionLog>>) {
-        // Apply unified loading state management
+        // Apply unified loading state management via bridge
         AppUtils.handleLoadingState(
             resource = resource,
             shimmerView = binding.shimmerLayout,
@@ -174,9 +145,9 @@ class TransactionLogActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleViewModelEvents(event: com.proyek.maganggsp.presentation.detail_loket.TransactionLogViewModel.UiEvent) {
+    private fun handleViewModelEvents(event: TransactionLogViewModel.UiEvent) {
         when (event) {
-            is com.proyek.maganggsp.presentation.detail_loket.TransactionLogViewModel.UiEvent.ShowToast -> {
+            is TransactionLogViewModel.UiEvent.ShowToast -> {
                 AppUtils.showError(this, event.message)
             }
             is TransactionLogViewModel.UiEvent.NavigateBack -> {
@@ -189,14 +160,4 @@ class TransactionLogActivity : AppCompatActivity() {
         super.onDestroy()
         AppUtils.logInfo(TAG, "TransactionLog screen destroyed")
     }
-}
-
-// Dummy interface for binding (in real implementation, this would be generated)
-interface ActivityTransactionLogBinding {
-    val toolbar: com.google.android.material.appbar.MaterialToolbar
-    val rvTransactionLogs: androidx.recyclerview.widget.RecyclerView
-    val shimmerLayout: com.facebook.shimmer.ShimmerFrameLayout
-    val tvEmpty: android.widget.TextView
-    val swipeRefreshLayout: androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-    fun getRoot(): android.view.View
 }

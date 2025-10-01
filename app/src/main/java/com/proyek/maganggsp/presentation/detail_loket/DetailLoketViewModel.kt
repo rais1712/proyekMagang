@@ -1,22 +1,22 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/detail_loket/DetailLoketViewModel.kt
 package com.proyek.maganggsp.presentation.detail_loket
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.Receipt
-import com.proyek.maganggsp.domain.usecase.*
+import com.proyek.maganggsp.domain.usecase.profile.GetProfileUseCase
+import com.proyek.maganggsp.domain.usecase.profile.BlockUnblockUseCase
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
+import com.proyek.maganggsp.util.LoggingUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * REFACTORED: DetailLoketViewModel focused on profile info + receipt display
- * Shows: Profile card + Receipt list (Receipt click navigates to TransactionLog)
- * Block/Unblock: Uses unified use cases
+ * ViewModel untuk DetailLoketActivity
+ * Mengelola data profil dan aksi block/unblock
  */
 @HiltViewModel
 class DetailLoketViewModel @Inject constructor(
@@ -41,12 +41,14 @@ class DetailLoketViewModel @Inject constructor(
     private val currentPpid: String
 
     init {
-        // Extract PPID dari navigation arguments
         currentPpid = savedStateHandle.get<String>(NavigationConstants.ARG_PPID)
             ?: savedStateHandle.get<String>("ppid")
-                    ?: ""
+            ?: ""
+            
+        // Menerapkan extractPpidSafely untuk konsistensi
+        currentPpid = currentPpid.extractPpidSafely()
 
-        AppUtils.logInfo(TAG, "DetailLoketViewModel initialized with PPID: $currentPpid")
+        LoggingUtils.logInfo(TAG, "ViewModel initialized with PPID: $currentPpid")
 
         if (currentPpid.isNotEmpty()) {
             refreshData()
@@ -60,36 +62,29 @@ class DetailLoketViewModel @Inject constructor(
     fun refreshData() {
         if (currentPpid.isEmpty()) return
 
-        AppUtils.logInfo(TAG, "Loading profile for PPID: $currentPpid")
+        LoggingUtils.logInfo(TAG, "Loading profile for PPID: $currentPpid")
 
         getProfileUseCase(currentPpid).onEach { result ->
             _profileState.value = result
 
             when (result) {
                 is Resource.Success -> {
-                    AppUtils.logInfo(TAG, "Profile loaded successfully: ${result.data.refNumber}")
+                    LoggingUtils.logInfo(TAG, "Profile loaded successfully: ${result.data.refNumber}")
                 }
                 is Resource.Error -> {
-                    AppUtils.logError(TAG, "Profile load error", result.exception)
-                    // Create placeholder untuk testing
-                    createPlaceholderProfile()
+                    LoggingUtils.logError(TAG, "Profile load error", result.exception)
+                    emitUiEvent(UiEvent.ShowToast("Gagal memuat data: ${result.exception.message}"))
                 }
                 is Resource.Loading -> {
-                    AppUtils.logDebug(TAG, "Loading profile...")
+                    LoggingUtils.logDebug(TAG, "Loading profile...")
                 }
                 else -> Unit
             }
         }.launchIn(viewModelScope)
     }
 
-    private fun createPlaceholderProfile() {
-        val placeholderReceipt = AppUtils.createPlaceholderReceipt(currentPpid)
-        _profileState.value = Resource.Success(placeholderReceipt)
-        AppUtils.logInfo(TAG, "Created placeholder profile for PPID: $currentPpid")
-    }
-
     fun blockProfile() {
-        AppUtils.logInfo(TAG, "Blocking profile: $currentPpid")
+        LoggingUtils.logInfo(TAG, "Blocking profile: $currentPpid")
 
         blockUnblockUseCase.blockProfile(currentPpid).onEach { result ->
             _actionState.value = result
@@ -97,13 +92,13 @@ class DetailLoketViewModel @Inject constructor(
             when (result) {
                 is Resource.Success -> {
                     emitUiEvent(UiEvent.ShowToast("Profil berhasil diblokir"))
-                    refreshData() // Refresh untuk update status
+                    refreshData()
                 }
                 is Resource.Error -> {
                     emitUiEvent(UiEvent.ShowToast("Gagal memblokir profil: ${result.exception.message}"))
                 }
                 is Resource.Loading -> {
-                    AppUtils.logDebug(TAG, "Block operation in progress...")
+                    LoggingUtils.logDebug(TAG, "Block operation in progress...")
                 }
                 else -> Unit
             }
@@ -111,7 +106,7 @@ class DetailLoketViewModel @Inject constructor(
     }
 
     fun unblockProfile() {
-        AppUtils.logInfo(TAG, "Unblocking profile: $currentPpid")
+        LoggingUtils.logInfo(TAG, "Unblocking profile: $currentPpid")
 
         blockUnblockUseCase.unblockProfile(currentPpid).onEach { result ->
             _actionState.value = result
@@ -119,13 +114,13 @@ class DetailLoketViewModel @Inject constructor(
             when (result) {
                 is Resource.Success -> {
                     emitUiEvent(UiEvent.ShowToast("Profil berhasil dibuka blokirnya"))
-                    refreshData() // Refresh untuk update status
+                    refreshData()
                 }
                 is Resource.Error -> {
                     emitUiEvent(UiEvent.ShowToast("Gagal membuka blokir profil: ${result.exception.message}"))
                 }
                 is Resource.Loading -> {
-                    AppUtils.logDebug(TAG, "Unblock operation in progress...")
+                    LoggingUtils.logDebug(TAG, "Unblock operation in progress...")
                 }
                 else -> Unit
             }
@@ -143,7 +138,7 @@ class DetailLoketViewModel @Inject constructor(
 
     fun navigateToTransactionLog(receipt: Receipt) {
         emitUiEvent(UiEvent.NavigateToTransactionLog(receipt.ppid))
-        AppUtils.logInfo(TAG, "Navigate to transaction log with PPID: ${receipt.ppid}")
+        LoggingUtils.logInfo(TAG, "Navigate to transaction log with PPID: ${receipt.ppid}")
     }
 
     fun getCurrentPpid(): String = currentPpid
@@ -156,7 +151,7 @@ class DetailLoketViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        AppUtils.logInfo(TAG, "DetailLoketViewModel cleared")
+        LoggingUtils.logInfo(TAG, "DetailLoketViewModel cleared")
     }
 
     sealed class UiEvent {

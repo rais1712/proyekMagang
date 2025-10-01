@@ -15,7 +15,7 @@ import java.io.IOException
  * FIXED: Updated to use correct Resource structure and proper error handling
  */
 abstract class BaseRepository(
-    private val exceptionMapper: ExceptionMapper
+    protected val exceptionMapper: ExceptionMapper
 ) {
 
     /**

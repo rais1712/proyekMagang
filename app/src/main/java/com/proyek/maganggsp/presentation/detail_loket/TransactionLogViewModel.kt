@@ -92,25 +92,8 @@ class TransactionLogViewModel @Inject constructor(
     }
 
     private fun validateAndProcessPpid(identifier: String): String {
-        return when {
-            // Jika sudah format ppid yang benar
-            identifier.startsWith("PID") && identifier.length > 10 -> {
-                Log.d(TAG, "✅ Valid ppid format: $identifier")
-                identifier
-            }
-
-            // Jika identifier panjang (kemungkinan ppid atau refNumber)
-            identifier.length > 15 -> {
-                Log.d(TAG, "🔄 Long identifier, using as ppid: $identifier")
-                identifier
-            }
-
-            // Fallback ke placeholder
-            else -> {
-                Log.w(TAG, "⚠️ Invalid identifier format: $identifier, using placeholder")
-                PLACEHOLDER_PPID
-            }
-        }
+        // Menggunakan extractPpidSafely untuk konsistensi
+        return identifier.extractPpidSafely(PLACEHOLDER_PPID)
     }
 
     fun refreshData() {

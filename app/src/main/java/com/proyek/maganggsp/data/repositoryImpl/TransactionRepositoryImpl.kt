@@ -3,9 +3,10 @@ package com.proyek.maganggsp.data.repositoryImpl
 
 import android.util.Log
 import com.proyek.maganggsp.data.api.TransactionApi
-import com.proyek.maganggsp.data.dto.toTransactionLog
+import com.proyek.maganggsp.data.api.response.toTransactionLog
 import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.repository.TransactionRepository
+import com.proyek.maganggsp.domain.repository.TransactionSummary
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.ExceptionMapper
 import kotlinx.coroutines.flow.Flow
@@ -24,7 +25,7 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override fun getTransactionLogs(ppid: String): Flow<Resource<List<TransactionLog>>> {
-        Log.d(TAG, "🌐 API CALL: GET /trx/ppid/$ppid")
+        Log.d(TAG, "API CALL: GET /trx/ppid/$ppid")
 
         return safeApiFlowWithMapping(
             apiCall = {
@@ -60,12 +61,12 @@ class TransactionRepositoryImpl @Inject constructor(
                 )
 
                 emit(Resource.Success(summary))
-                Log.d(TAG, "✅ Transaction summary calculated: ${summary.totalCount} transactions")
+                Log.d(TAG, "Transaction summary calculated: ${summary.totalCount} transactions")
 
             } catch (e: Exception) {
                 val appException = exceptionMapper.mapToAppException(e)
                 emit(Resource.Error(appException))
-                Log.e(TAG, "❌ Transaction summary error", e)
+                Log.e(TAG, "Transaction summary error", e)
             }
         }
     }
@@ -77,5 +78,6 @@ class TransactionRepositoryImpl @Inject constructor(
         if (ppid.length < 5) {
             throw com.proyek.maganggsp.util.exceptions.AppException.ValidationException("PPID harus minimal 5 karakter")
         }
-        Log.d(TAG, "✅ PPID validation passed: $ppid")
+        Log.d(TAG, "PPID validation passed: $ppid")
     }
+}

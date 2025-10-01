@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/TransactionLogAdapter.kt
+// File: app/src/main/java/com/proyek/maganggsp/presentation/adapters/TransactionLogAdapter.kt - UPDATED MODULAR
 package com.proyek.maganggsp.presentation.adapters
 
 import android.view.LayoutInflater
@@ -10,13 +10,19 @@ import androidx.recyclerview.widget.RecyclerView
 import com.proyek.maganggsp.R
 import com.proyek.maganggsp.databinding.ItemMutasiBinding
 import com.proyek.maganggsp.domain.model.TransactionLog
+import com.proyek.maganggsp.util.LoggingUtils
+import com.proyek.maganggsp.util.Formatters
 
 /**
- * COMPLETE REFACTOR: Transaction adapter for TransactionLog detail screen
+ * MODULAR: Transaction adapter using modular utilities
  * Reuses existing item_mutasi.xml layout, focused on transaction display
  * Usage: TransactionLogActivity (transaction list display)
  */
 class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.TransactionViewHolder>(TransactionDiffCallback()) {
+
+    companion object {
+        private const val TAG = "TransactionLogAdapter"
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TransactionViewHolder {
         val binding = ItemMutasiBinding.inflate(
@@ -59,14 +65,17 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
                     )
                 }
 
-                // Transaction details
-                tvTimestamp.text = transaction.getFormattedDate()
+                // Transaction details using modular utilities
+                tvTimestamp.text = Formatters.formatDateShort(transaction.tldDate)
                 tvDescription.text = transaction.getDisplayDescription()
                 tvSaldoInfo.text = transaction.getBalanceDisplayText()
                 tvAmount.text = transaction.getFormattedAmount()
 
                 // Log transaction display
-                AppUtils.logDebug("TransactionAdapter", "Displaying transaction: ${transaction.tldRefnum}")
+                LoggingUtils.logDebug(
+                    "TransactionAdapter",
+                    "Displaying transaction: ${transaction.tldRefnum}"
+                )
             }
         }
     }
@@ -84,7 +93,7 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
     // Helper methods
     fun updateTransactions(transactions: List<TransactionLog>) {
         submitList(transactions)
-        AppUtils.logDebug("TransactionAdapter", "Updated with ${transactions.size} transactions")
+        LoggingUtils.logDebug(TAG, "Updated with ${transactions.size} transactions")
     }
 
     fun clearTransactions() {
@@ -125,9 +134,9 @@ class TransactionLogAdapter : ListAdapter<TransactionLog, TransactionLogAdapter.
             return """
             Ringkasan Transaksi:
             • Total: $totalCount transaksi
-            • Masuk: $incomingCount (${AppUtils.formatCurrency(totalIncoming)})
-            • Keluar: $outgoingCount (${AppUtils.formatCurrency(totalOutgoing)})
-            • Saldo Terakhir: ${AppUtils.formatCurrency(latestBalance)}
+            • Masuk: $incomingCount (${Formatters.formatCurrency(totalIncoming)})
+            • Keluar: $outgoingCount (${Formatters.formatCurrency(totalOutgoing)})
+            • Saldo Terakhir: ${Formatters.formatCurrency(latestBalance)}
             """.trimIndent()
         }
     }

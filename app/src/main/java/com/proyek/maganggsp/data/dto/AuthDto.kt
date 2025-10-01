@@ -12,29 +12,7 @@ data class LoginRequest(
     val password: String
 )
 
-// FIXED: Respons login sesuai dengan format server yang sebenarnya
-data class LoginResponse(
-    @SerializedName("token")
-    val token: String?,
-
-    @SerializedName("email")
-    val email: String?,
-
-    @SerializedName("role")
-    val role: String?
-)
-
-/**
- * CRITICAL FIX: Extension function untuk mapping LoginResponse -> Admin
- */
-fun LoginResponse.toDomain(): Admin {
-    return Admin(
-        name = this.email?.substringBefore("@") ?: "Admin",
-        email = this.email ?: "",
-        token = this.token ?: "",
-        role = this.role ?: "admin"
-    )
-}
+// Hapus deklarasi data class LoginResponse dan extension function mapping ke Admin di file ini
 
 /**
  * PROFILE REPOSITORY MAPPING FIX

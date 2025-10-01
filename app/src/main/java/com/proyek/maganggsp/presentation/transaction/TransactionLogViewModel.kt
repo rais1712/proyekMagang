@@ -1,21 +1,23 @@
-// File: app/src/main/java/com/proyek/maganggsp/presentation/transaction/TransactionLogViewModel.kt
+// File: app/src/main/java/com/proyek/maganggsp/presentation/transaction/TransactionLogViewModel.kt - MODULAR
 package com.proyek.maganggsp.presentation.transaction
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyek.maganggsp.domain.model.TransactionLog
-import com.proyek.maganggsp.domain.usecase.GetTransactionLogsUseCase
+import com.proyek.maganggsp.domain.usecase.transaction.GetTransactionLogsUseCase
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
+import com.proyek.maganggsp.util.LoggingUtils
+import com.proyek.maganggsp.util.PlaceholderDataGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * NEW: TransactionLog detail screen ViewModel
- * Separate screen untuk menampilkan transaction logs dari /trx/ppid/{ppid}
+ * MODULAR: TransactionLogViewModel using separate modular use cases
+ * Separate screen for displaying transaction logs from /trx/ppid/{ppid}
  * Navigation: Receipt click → TransactionLogActivity
  */
 @HiltViewModel
@@ -37,12 +39,12 @@ class TransactionLogViewModel @Inject constructor(
     private val currentPpid: String
 
     init {
-        // Extract PPID dari navigation arguments
+        // Extract PPID from navigation arguments
         currentPpid = savedStateHandle.get<String>(NavigationConstants.ARG_PPID)
             ?: savedStateHandle.get<String>("ppid")
                     ?: ""
 
-        AppUtils.logInfo(TAG, "TransactionLogViewModel initialized with PPID: $currentPpid")
+        LoggingUtils.logInfo(TAG, "MODULAR TransactionLogViewModel initialized with PPID: $currentPpid")
 
         if (currentPpid.isNotEmpty()) {
             refreshData()
@@ -56,27 +58,27 @@ class TransactionLogViewModel @Inject constructor(
     fun refreshData() {
         if (currentPpid.isEmpty()) return
 
-        AppUtils.logInfo(TAG, "Loading transaction logs for PPID: $currentPpid")
+        LoggingUtils.logInfo(TAG, "Loading transaction logs for PPID: $currentPpid")
 
         getTransactionLogsUseCase(currentPpid).onEach { result ->
             _transactionLogsState.value = result
 
             when (result) {
                 is Resource.Success -> {
-                    AppUtils.logInfo(TAG, "Transaction logs loaded: ${result.data.size} transactions")
+                    LoggingUtils.logInfo(TAG, "Transaction logs loaded: ${result.data.size} transactions")
 
-                    // Create placeholder data jika empty untuk testing
+                    // Create placeholder data if empty for testing
                     if (result.data.isEmpty()) {
                         createPlaceholderData()
                     }
                 }
                 is Resource.Error -> {
-                    AppUtils.logError(TAG, "Transaction logs error", result.exception)
-                    // Create placeholder data untuk testing
+                    LoggingUtils.logError(TAG, "Transaction logs error", result.exception)
+                    // Create placeholder data for testing
                     createPlaceholderData()
                 }
                 is Resource.Loading -> {
-                    AppUtils.logDebug(TAG, "Loading transaction logs...")
+                    LoggingUtils.logDebug(TAG, "Loading transaction logs...")
                 }
                 else -> Unit
             }
@@ -84,9 +86,9 @@ class TransactionLogViewModel @Inject constructor(
     }
 
     private fun createPlaceholderData() {
-        val placeholderTransactions = AppUtils.createPlaceholderTransactionLogs(currentPpid, 7)
+        val placeholderTransactions = PlaceholderDataGenerator.createPlaceholderTransactionLogs(currentPpid, 7)
         _transactionLogsState.value = Resource.Success(placeholderTransactions)
-        AppUtils.logInfo(TAG, "Created placeholder transaction logs: ${placeholderTransactions.size} items")
+        LoggingUtils.logInfo(TAG, "Created placeholder transaction logs: ${placeholderTransactions.size} items")
     }
 
     fun getCurrentPpid(): String = currentPpid
@@ -115,7 +117,7 @@ class TransactionLogViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        AppUtils.logInfo(TAG, "TransactionLogViewModel cleared")
+        LoggingUtils.logInfo(TAG, "TransactionLogViewModel cleared")
     }
 
     data class TransactionStats(
@@ -132,4 +134,3 @@ class TransactionLogViewModel @Inject constructor(
         object NavigateBack : UiEvent()
     }
 }
-

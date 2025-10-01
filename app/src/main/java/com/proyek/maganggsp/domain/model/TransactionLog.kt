@@ -99,3 +99,19 @@ data class TransactionLog(
         ZERO         // Neutral - no change
     }
 }
+
+/**
+ * Extension function to check incoming transaction
+ */
+fun TransactionLog.isIncomingTransaction(): Boolean {
+    // Asumsi: tldAmount > 0 adalah incoming
+    return this.tldAmount > 0
+}
+
+/**
+ * Extension function to check outgoing transaction
+ */
+fun TransactionLog.isOutgoingTransaction(): Boolean {
+    // Asumsi: tldAmount < 0 adalah outgoing
+    return this.tldAmount < 0
+}

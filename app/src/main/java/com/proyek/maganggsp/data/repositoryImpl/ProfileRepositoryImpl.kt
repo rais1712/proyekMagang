@@ -33,7 +33,7 @@ class ProfileRepositoryImpl @Inject constructor(
      * Maps API response to Receipt domain model for HomeFragment cards
      */
     override fun getProfile(ppid: String): Flow<Resource<Receipt>> {
-        Log.d(TAG, "🌐 API CALL: GET /profiles/ppid/$ppid")
+        Log.d(TAG, "API CALL: GET /profiles/ppid/$ppid")
 
         return safeApiFlowWithItemMapping(
             apiCall = {
@@ -60,14 +60,14 @@ class ProfileRepositoryImpl @Inject constructor(
      * Based on HTTP request: PUT /profiles/ppid/{ppid} with {"mpPpid": "newValue"}
      */
     override fun updateProfile(currentPpid: String, newPpid: String): Flow<Resource<Unit>> {
-        Log.d(TAG, "🔄 UPDATE PROFILE: $currentPpid -> $newPpid")
+        Log.d(TAG, "UPDATE PROFILE: $currentPpid -> $newPpid")
 
         return safeApiFlowUnit {
             validatePpid(currentPpid)
             validatePpid(newPpid)
 
             val updateRequest = UpdateProfileRequest(mpPpid = newPpid)
-            Log.d(TAG, "📤 Update request: $updateRequest")
+            Log.d(TAG, "Update request: $updateRequest")
 
             api.updateProfile(currentPpid, updateRequest)
         }
@@ -77,7 +77,7 @@ class ProfileRepositoryImpl @Inject constructor(
      * SEARCH: Find profiles by PPID pattern for search functionality
      */
     override fun searchProfiles(ppidQuery: String): Flow<Resource<List<Receipt>>> {
-        Log.d(TAG, "🔍 SEARCH by PPID pattern: $ppidQuery")
+        Log.d(TAG, "SEARCH by PPID pattern: $ppidQuery")
 
         return flow {
             emit(Resource.Loading())
@@ -87,14 +87,14 @@ class ProfileRepositoryImpl @Inject constructor(
                 val localResults = searchLocalCache(ppidQuery)
 
                 if (localResults.isNotEmpty()) {
-                    Log.d(TAG, "📋 Local cache results: ${localResults.size}")
+                    Log.d(TAG, "Local cache results: ${localResults.size}")
                     emit(Resource.Success(localResults))
                     return@flow
                 }
 
                 // If no local results and query looks like exact PPID, try direct API access
                 if (isExactPpidFormat(ppidQuery)) {
-                    Log.d(TAG, "🎯 Trying direct API access for exact PPID: $ppidQuery")
+                    Log.d(TAG, "Trying direct API access for exact PPID: $ppidQuery")
 
                     try {
                         val profileResponse = api.getProfile(ppidQuery)
@@ -109,14 +109,14 @@ class ProfileRepositoryImpl @Inject constructor(
                         emit(Resource.Empty)
                     }
                 } else {
-                    Log.d(TAG, "🔍 No results found for PPID pattern: $ppidQuery")
+                    Log.d(TAG, "No results found for PPID pattern: $ppidQuery")
                     emit(Resource.Empty)
                 }
 
             } catch (e: Exception) {
                 val appException = exceptionMapper.mapToAppException(e)
                 emit(Resource.Error(appException))
-                Log.e(TAG, "❌ Search error", e)
+                Log.e(TAG, "Search error", e)
             }
         }
     }
@@ -133,9 +133,11 @@ class ProfileRepositoryImpl @Inject constructor(
                 val receipts = histories.map { history ->
                     Receipt(
                         refNumber = "HISTORY-${history.ppid}",
-                        idPelanggan = history.ppid,
-                        amount = 0L, // No amount for profile cards
-                        logged = getCurrentTimestamp(),
+                        noPelanggan = history.ppid,
+                        tipe = "Profile",
+                        jumlah = 0L, // No amount for profile cards
+                        status = "Berhasil",
+                        waktu = getCurrentTimestamp(),
                         ppid = history.ppid,
                         namaLoket = history.namaLoket,
                         nomorHP = history.nomorHP,
@@ -144,13 +146,13 @@ class ProfileRepositoryImpl @Inject constructor(
                     )
                 }
 
-                Log.d(TAG, "📋 Recent profiles loaded: ${receipts.size}")
+                Log.d(TAG, "Recent profiles loaded: ${receipts.size}")
                 emit(Resource.Success(receipts))
 
             } catch (e: Exception) {
                 val appException = exceptionMapper.mapToAppException(e)
                 emit(Resource.Error(appException))
-                Log.e(TAG, "❌ Recent profiles error", e)
+                Log.e(TAG, "Recent profiles error", e)
             }
         }
     }
@@ -170,9 +172,11 @@ class ProfileRepositoryImpl @Inject constructor(
             histories.map { history ->
                 Receipt(
                     refNumber = "SEARCH-${history.ppid}",
-                    idPelanggan = history.ppid,
-                    amount = 0L,
-                    logged = history.getFormattedTanggalAkses(),
+                    noPelanggan = history.ppid,
+                    tipe = "Profile",
+                    jumlah = 0L,
+                    status = "Berhasil",
+                    waktu = history.getFormattedTanggalAkses(),
                     ppid = history.ppid,
                     namaLoket = history.namaLoket,
                     nomorHP = history.nomorHP,
@@ -203,7 +207,7 @@ class ProfileRepositoryImpl @Inject constructor(
                 alamat = receipt.alamat,
                 email = receipt.email,
                 status = com.proyek.maganggsp.domain.model.LoketStatus.fromPpid(receipt.ppid),
-                tanggalAkses = receipt.logged
+                tanggalAkses = receipt.waktu
             )
             historyManager.saveToHistory(loket)
         } catch (e: Exception) {
@@ -217,3 +221,4 @@ class ProfileRepositoryImpl @Inject constructor(
         return formatter.format(java.util.Date())
     }
 }
+

@@ -1,9 +1,9 @@
-// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt - UPDATED FOR UNIFIED API
+// File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/AuthRepositoryImpl.kt - FIXED FOR MODULAR
 package com.proyek.maganggsp.data.repositoryImpl
 
 import android.util.Log
 import com.proyek.maganggsp.BuildConfig
-import com.proyek.maganggsp.data.api.GesPayApi
+import com.proyek.maganggsp.data.api.AuthApi
 import com.proyek.maganggsp.data.api.LoginRequest
 import com.proyek.maganggsp.data.api.toAdmin
 import com.proyek.maganggsp.data.source.local.SessionManager
@@ -18,11 +18,11 @@ import java.net.UnknownHostException
 import javax.inject.Inject
 
 /**
- * UPDATED: AuthRepositoryImpl menggunakan GesPayApi unified interface
- * Tetap maintain existing functionality, tapi menggunakan unified API
+ * FIXED: AuthRepositoryImpl using modular AuthApi interface
+ * Maintains existing functionality with modular API structure
  */
 class AuthRepositoryImpl @Inject constructor(
-    private val api: GesPayApi,
+    private val api: AuthApi,
     private val sessionManager: SessionManager,
     private val exceptionMapper: ExceptionMapper
 ) : BaseRepository(exceptionMapper), AuthRepository {
@@ -33,9 +33,9 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): Admin {
         if (BuildConfig.DEBUG) {
-            Log.d(TAG, "🚀 Login via unified GesPayApi")
-            Log.d(TAG, "📧 Email: $email")
-            Log.d(TAG, "🌐 Target URL: ${BuildConfig.BASE_URL}auth/login")
+            Log.d(TAG, "Login via modular AuthApi")
+            Log.d(TAG, "Email: $email")
+            Log.d(TAG, "Target URL: ${BuildConfig.BASE_URL}auth/login")
         }
 
         return try {
@@ -44,11 +44,11 @@ class AuthRepositoryImpl @Inject constructor(
 
             // Create request
             val request = LoginRequest(email, password)
-            Log.d(TAG, "📤 Sending unified API request...")
+            Log.d(TAG, "Sending modular API request...")
 
-            // Make API call via unified interface
+            // Make API call via modular interface
             val response = api.login(request)
-            Log.d(TAG, "📨 Unified API response received - HTTP ${response.code()}")
+            Log.d(TAG, "Modular API response received - HTTP ${response.code()}")
 
             // Handle response
             if (!response.isSuccessful) {
@@ -58,14 +58,14 @@ class AuthRepositoryImpl @Inject constructor(
             val loginResponse = response.body()
                 ?: throw AppException.ParseException("Empty response from server")
 
-            Log.d(TAG, "📋 Login response via unified API:")
-            Log.d(TAG, "  🔑 Token received: ${loginResponse.token != null}")
-            Log.d(TAG, "  📧 Email: ${loginResponse.email}")
+            Log.d(TAG, "Login response via modular API:")
+            Log.d(TAG, "  Token received: ${loginResponse.token != null}")
+            Log.d(TAG, "  Email: ${loginResponse.email}")
 
             // Validate response data
             validateLoginResponse(loginResponse)
 
-            // Convert to domain model using unified mapping
+            // Convert to domain model using modular mapping
             val admin = loginResponse.toAdmin()
 
             // Save session
@@ -74,52 +74,52 @@ class AuthRepositoryImpl @Inject constructor(
                 throw AppException.UnknownException("Failed to save login session")
             }
 
-            Log.d(TAG, "✅ Login completed via unified API")
+            Log.d(TAG, "Login completed via modular API")
             admin
 
         } catch (e: AppException) {
-            Log.e(TAG, "❌ Login failed with AppException: ${e.message}")
+            Log.e(TAG, "Login failed with AppException: ${e.message}")
             throw e
         } catch (e: HttpException) {
             val mappedException = mapHttpException(e)
-            Log.e(TAG, "❌ HTTP error: ${e.code()} -> ${mappedException.message}")
+            Log.e(TAG, "HTTP error: ${e.code()} -> ${mappedException.message}")
             throw mappedException
         } catch (e: UnknownHostException) {
             val exception = AppException.NetworkException(
                 "Server unreachable. Ensure development server is running at 192.168.168.6:8180"
             )
-            Log.e(TAG, "❌ UnknownHostException: ${exception.message}")
+            Log.e(TAG, "UnknownHostException: ${exception.message}")
             throw exception
         } catch (e: ConnectException) {
             val exception = AppException.NetworkException(
                 "Cannot connect to server. Ensure server is running and network is active."
             )
-            Log.e(TAG, "❌ ConnectException: ${exception.message}")
+            Log.e(TAG, "ConnectException: ${exception.message}")
             throw exception
         } catch (e: SocketTimeoutException) {
             val exception = AppException.NetworkException(
                 "Connection timeout. Server may be slow."
             )
-            Log.e(TAG, "❌ SocketTimeoutException: ${exception.message}")
+            Log.e(TAG, "SocketTimeoutException: ${exception.message}")
             throw exception
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Unexpected error during login", e)
+            Log.e(TAG, "Unexpected error during login", e)
             throw AppException.UnknownException("An unexpected error occurred: ${e.message}")
         }
     }
 
     override suspend fun logout() {
         try {
-            Log.d(TAG, "🚪 Starting logout process")
+            Log.d(TAG, "Starting logout process")
             val sessionCleared = sessionManager.clearSession()
 
             if (sessionCleared) {
-                Log.d(TAG, "✅ Session cleared successfully")
+                Log.d(TAG, "Session cleared successfully")
             } else {
-                Log.w(TAG, "⚠️ Session clear returned false, but continuing")
+                Log.w(TAG, "Session clear returned false, but continuing")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error during logout", e)
+            Log.e(TAG, "Error during logout", e)
             sessionManager.clearSession()
             throw AppException.UnknownException("Logout failed: ${e.message}")
         }
@@ -129,7 +129,7 @@ class AuthRepositoryImpl @Inject constructor(
         return sessionManager.isSessionValid()
     }
 
-    // Helper methods (keep existing)
+    // Helper methods
     private fun validateLoginInputs(email: String, password: String) {
         if (email.isBlank()) {
             throw AppException.ValidationException("Email cannot be empty")
