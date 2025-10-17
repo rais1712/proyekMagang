@@ -1,4 +1,3 @@
-// =================================================================
 // File: app/src/main/java/com/proyek/maganggsp/domain/usecase/transaction/GetTransactionLogsUseCase.kt
 package com.proyek.maganggsp.domain.usecase.transaction
 
@@ -9,12 +8,27 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 /**
- * MODULAR: Get transaction logs use case for detail screens
+ * Use case untuk get transaction logs by PPID
  */
 class GetTransactionLogsUseCase @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val repository: TransactionRepository
 ) {
-    operator fun invoke(ppid: String): Flow<Resource<List<TransactionLog>>> {
-        return transactionRepository.getTransactionLogs(ppid)
+
+    /**
+     * Get transaction logs untuk specific PPID
+     */
+    suspend fun execute(ppid: String): Flow<Resource<List<TransactionLog>>> {
+        return repository.getTransactionLogs(ppid)
+    }
+
+    /**
+     * Get transaction logs dengan filter tanggal
+     */
+    suspend fun executeWithFilter(
+        ppid: String,
+        startDate: String? = null,
+        endDate: String? = null
+    ): Flow<Resource<List<TransactionLog>>> {
+        return repository.getTransactionLogsWithFilter(ppid, startDate, endDate)
     }
 }

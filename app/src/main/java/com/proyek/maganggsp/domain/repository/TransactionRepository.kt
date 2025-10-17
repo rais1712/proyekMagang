@@ -1,4 +1,3 @@
-// =================================================================
 // File: app/src/main/java/com/proyek/maganggsp/domain/repository/TransactionRepository.kt
 package com.proyek.maganggsp.domain.repository
 
@@ -7,32 +6,21 @@ import com.proyek.maganggsp.util.Resource
 import kotlinx.coroutines.flow.Flow
 
 /**
- * MODULAR: Transaction Repository Interface
- * Handles transaction log operations for detail screens
+ * Repository interface untuk Transaction operations
  */
 interface TransactionRepository {
 
     /**
-     * Get transaction logs for specific PPID
-     * Source: GET /trx/ppid/{ppid}
+     * Get transaction logs by PPID
      */
-    fun getTransactionLogs(ppid: String): Flow<Resource<List<TransactionLog>>>
+    suspend fun getTransactionLogs(ppid: String): Flow<Resource<List<TransactionLog>>>
 
     /**
-     * Get transaction summary statistics
+     * Get transaction logs dengan filter
      */
-    fun getTransactionSummary(ppid: String): Flow<Resource<TransactionSummary>>
+    suspend fun getTransactionLogsWithFilter(
+        ppid: String,
+        startDate: String? = null,
+        endDate: String? = null
+    ): Flow<Resource<List<TransactionLog>>>
 }
-
-/**
- * Transaction summary data class
- */
-data class TransactionSummary(
-    val totalCount: Int,
-    val incomingCount: Int,
-    val outgoingCount: Int,
-    val totalIncoming: Long,
-    val totalOutgoing: Long,
-    val netAmount: Long,
-    val latestBalance: Long
-)

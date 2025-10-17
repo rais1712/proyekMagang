@@ -1,38 +1,37 @@
-// =================================================================
 // File: app/src/main/java/com/proyek/maganggsp/domain/repository/LoketRepository.kt
 package com.proyek.maganggsp.domain.repository
 
-import com.proyek.maganggsp.domain.model.Loket
-import com.proyek.maganggsp.domain.model.LoketSearchHistory
+import com.proyek.maganggsp.domain.model.Receipt
 import com.proyek.maganggsp.util.Resource
 import kotlinx.coroutines.flow.Flow
 
 /**
- * MODULAR: Loket Repository Interface (KEPT EXISTING)
- * For local history management and loket operations
+ * Repository interface untuk Loket operations
  */
 interface LoketRepository {
 
     /**
-     * Get loket profile with comprehensive data
+     * Search profiles by PPID
      */
-    fun getLoketProfile(ppid: String): Flow<Resource<Loket>>
+    suspend fun searchProfiles(ppid: String): Flow<Resource<List<Receipt>>>
 
     /**
-     * Block/unblock operations
+     * Get recent accessed profiles
      */
-    fun blockLoket(ppid: String): Flow<Resource<Unit>>
-    fun unblockLoket(ppid: String): Flow<Resource<Unit>>
+    suspend fun getRecentProfiles(): Flow<Resource<List<Receipt>>>
 
     /**
-     * Local history management
+     * Save search history
      */
-    fun getRecentLokets(): Flow<Resource<List<Loket>>>
-    fun searchLoket(ppidQuery: String): Flow<Resource<List<Loket>>>
-    suspend fun saveToHistory(loket: Loket)
+    suspend fun saveSearchHistory(ppid: String)
 
     /**
-     * Favorites management
+     * Get search history
      */
-    fun getFavoriteLokets(): Flow<Resource<List<Loket>>>
-    suspend fun toggleFavorite
+    suspend fun getSearchHistory(): Flow<List<String>>
+
+    /**
+     * Clear search history
+     */
+    suspend fun clearSearchHistory()
+}

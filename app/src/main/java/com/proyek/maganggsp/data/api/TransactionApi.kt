@@ -2,23 +2,37 @@
 package com.proyek.maganggsp.data.api
 
 import com.proyek.maganggsp.data.dto.TransactionResponse
-import retrofit2.http.GET
-import retrofit2.http.Path
+import retrofit2.Response
+import retrofit2.http.*
 
 /**
- * MODULAR: TransactionApi interface
- * Based on actual HTTP request: GET /trx/ppid/{ppid}
- * Maps to TransactionLog domain model
+ * API interface untuk Transaction operations
+ * Sesuai dengan HTTP requests yang diberikan
  */
 interface TransactionApi {
 
     /**
-     * Get transaction logs for specific PPID
+     * Get transaction logs by PPID
      * Endpoint: GET /trx/ppid/{ppid}
-     * Example: /trx/ppid/PIDLKTD0014
-     * Maps to: TransactionLog domain model
+     * Example: GET /trx/ppid/PIDLKTD0014
      */
     @GET("trx/ppid/{ppid}")
-    suspend fun getTransactionLogs(@Path("ppid") ppid: String): List<TransactionResponse>
-}
+    suspend fun getTransactionLogs(
+        @Path("ppid") ppid: String,
+        @Header("Authorization") token: String,
+        @Header("Content-Type") contentType: String = "application/json"
+    ): Response<List<TransactionResponse>>
 
+    /**
+     * Get transaction logs with date filter
+     */
+    @GET("trx/ppid/{ppid}")
+    suspend fun getTransactionLogsWithFilter(
+        @Path("ppid") ppid: String,
+        @Query("startDate") startDate: String? = null,
+        @Query("endDate") endDate: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Header("Authorization") token: String,
+        @Header("Content-Type") contentType: String = "application/json"
+    ): Response<List<TransactionResponse>>
+}

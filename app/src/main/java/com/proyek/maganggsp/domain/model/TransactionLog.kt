@@ -1,117 +1,36 @@
 // File: app/src/main/java/com/proyek/maganggsp/domain/model/TransactionLog.kt
 package com.proyek.maganggsp.domain.model
 
-import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.*
-
 /**
- * MODULAR: TransactionLog domain model
- * Berdasarkan API /trx/ppid/{ppid} dan UI mockup receipt table
- * Shows: PLG000123, +Rp50.000/-Rp100.000, Saldo: Rp29.850.000, 15 Juli 2025
+ * Domain model untuk Transaction Log
+ * Sesuai dengan API endpoint: GET /trx/ppid/{ppid}
  */
 data class TransactionLog(
-    val tldRefnum: String,           // Transaction reference (PLG000123)
-    val tldPan: String,              // PAN card number (masked)
-    val tldIdpel: String,            // Customer ID
-    val tldAmount: Long,             // Transaction amount (positive/negative)
-    val tldBalance: Long,            // Resulting balance after transaction
-    val tldDate: String,             // ISO timestamp
-    val tldPpid: String              // Associated PPID
+    val id: String,
+    val refNumber: String,
+    val noPelanggan: String,
+    val amount: Long,
+    val type: String, // "CREDIT" atau "DEBIT"
+    val timestamp: String,
+    val description: String,
+    val status: String,
+    val ppid: String,
+    val saldo: Long = 0L
 ) {
-
     /**
-     * Format amount with proper sign like UI mockup: +Rp50.000 or -Rp100.000
+     * Helper function untuk format amount sesuai UI mockup
+     * +Rp50.000 atau -Rp100.000
      */
     fun getFormattedAmount(): String {
-        val localeID = Locale("in", "ID")
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-
-        return if (tldAmount >= 0) {
-            "+${numberFormat.format(tldAmount)}"
-        } else {
-            numberFormat.format(tldAmount) // Already has minus sign
-        }
+        val prefix = if (type == "CREDIT") "+" else "-"
+        val formatted = java.text.DecimalFormat("#,###").format(amount)
+        return "${prefix}Rp${formatted}"
     }
 
     /**
-     * Format balance info like UI mockup: Saldo: Rp29.850.000
+     * Helper function untuk mendapatkan warna berdasarkan type
      */
-    fun getBalanceDisplayText(): String {
-        val localeID = Locale("in", "ID")
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-        return "Saldo: ${numberFormat.format(tldBalance)}"
+    fun getAmountColor(): String {
+        return if (type == "CREDIT") "#2E7D32" else "#D32F2F" // green atau red
     }
-
-    /**
-     * Format date to readable Indonesian format: 15 Juli 2025
-     */
-    fun getFormattedDate(): String {
-        return try {
-            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-            isoFormat.timeZone = TimeZone.getTimeZone("UTC")
-            val date = isoFormat.parse(tldDate)
-            val readableFormat = SimpleDateFormat("dd MMMM yyyy", Locale("in", "ID"))
-            readableFormat.format(date!!)
-        } catch (e: Exception) {
-            tldDate // Return original if parsing fails
-        }
-    }
-
-    /**
-     * Get display description for transaction item
-     */
-    fun getDisplayDescription(): String {
-        return "No. Ref: $tldRefnum"
-    }
-
-    /**
-     * Check if transaction is incoming (positive amount)
-     */
-    fun isIncomingTransaction(): Boolean = tldAmount > 0
-
-    /**
-     * Check if transaction is outgoing (negative amount)
-     */
-    fun isOutgoingTransaction(): Boolean = tldAmount < 0
-
-    /**
-     * Validation
-     */
-    fun hasValidData(): Boolean = tldRefnum.isNotBlank() && tldPpid.isNotBlank()
-
-    /**
-     * Get transaction type for UI display
-     */
-    fun getTransactionType(): TransactionType {
-        return when {
-            tldAmount > 0 -> TransactionType.INCOMING
-            tldAmount < 0 -> TransactionType.OUTGOING
-            else -> TransactionType.ZERO
-        }
-    }
-
-    enum class TransactionType {
-        INCOMING,    // Green - dana masuk
-        OUTGOING,    // Red - dana keluar
-        ZERO         // Neutral - no change
-    }
-}
-
-/**
- * Extension function to check incoming transaction
- */
-fun TransactionLog.isIncomingTransaction(): Boolean {
-    // Asumsi: tldAmount > 0 adalah incoming
-    return this.tldAmount > 0
-}
-
-/**
- * Extension function to check outgoing transaction
- */
-fun TransactionLog.isOutgoingTransaction(): Boolean {
-    // Asumsi: tldAmount < 0 adalah outgoing
-    return this.tldAmount < 0
 }
