@@ -1,0 +1,177 @@
+# 🎯 **ANDROID BUILD CRITICAL FIX - SINGLE EXECUTION TASK**
+
+## **MISSION OBJECTIVE**
+Fix Android Kotlin project with 200+ compilation errors in ONE complete execution. Achieve build success for Login + Profile + Transaction features. NO incremental fixes, NO follow-up tasks required.
+
+## **PROJECT SPECS**
+- **Path:** `C:\Users\HP 14s\AndroidStudioProjects\MagangGSP`
+- **Architecture:** Clean Architecture (Domain/Data/Presentation), MVVM, Hilt DI
+- **Build:** Gradle Kotlin DSL, ViewBinding enabled
+- **API:** `http://192.168.168.68:180/api` (accessible)
+
+***
+
+# 🔧 **COMPREHENSIVE FIX EXECUTION**
+
+## **CRITICAL ERROR CATEGORIES TO RESOLVE**
+
+### **1. ARCHITECTURE CONSISTENCY (45+ errors)**
+**Root Cause:** AppException vs String type mismatches, Resource.Empty companion object issues
+**Fix Strategy:** 
+- Replace ALL `AppException.ValidationException("msg")` with `Resource.Error("msg")`
+- Replace ALL `AppException.NetworkException(e)` with `Resource.Error(e.message ?: "Network error")`
+- Change ALL `Resource.Empty.instance` to `Resource.Empty()`
+- Remove ALL companion object references from Resource class
+
+### **2. MISSING ENUM VALUES (12+ errors)**
+**Root Cause:** LoketStatus.FLAGGED, SUSPENDED, UNKNOWN referenced but don't exist
+**Fix Strategy:**
+- Add `FLAGGED("flagged")`, `SUSPENDED("suspended")`, `UNKNOWN("unknown")` to LoketStatus enum
+- Update all when/switch expressions to handle these cases
+- Set UNKNOWN as default fallback in companion object
+
+### **3. PROPERTY REFERENCE ERRORS (8+ errors)**
+**Root Cause:** ModelExtensions using wrong property names, Admin constructor missing parameters
+**Fix Strategy:**
+- Replace all `it.amount` with `it.tldAmount` in TransactionLog extensions
+- Add `token: String` and `role: String = "USER"` parameters to Admin data class
+- Fix LoginResponse.toAdmin() to pass token from response
+- Update SessionManager line 165 to provide all required parameters
+
+### **4. FLOW TYPE CONSISTENCY (25+ errors)**
+**Root Cause:** UseCase returns Flow but called as direct types, suspend functions not in coroutine
+**Fix Strategy:**
+- Ensure ALL Repository methods return `Flow<Resource<T>>`
+- Update ALL UseCase methods to return Flow types
+- Fix ViewModels to use `.collect {}` instead of direct assignment
+- Wrap suspend calls in `viewModelScope.launch {}`
+
+### **5. DEPENDENCY INJECTION MISMATCHES (6+ errors)**
+**Root Cause:** Constructor parameters don't match DI provider definitions
+**Fix Strategy:**
+- Fix LoketHistoryManager constructor to match DataModule provider
+- Remove extra parameters from constructor if using `@Inject constructor()`
+- Ensure all @Singleton and @Provides annotations match implementations
+
+### **6. UI LAYER BREAKDOWN (100+ errors)**
+**Root Cause:** ViewBinding classes not generated, AppUtils missing, Fragment references undefined
+**Fix Strategy:**
+- Comment out entire problematic UI files: DetailLoketActivity, ReceiptAdapter, TransactionLogAdapter, UpdateProfileActivity
+- Replace ALL AppUtils.showToast() with Toast.makeText().show()
+- Comment out historyFragment, monitorFragment references in MainActivity
+
+---
+
+# 📋 **COMPLETE FIX IMPLEMENTATION**
+
+## **FILE MODIFICATION TARGETS**
+
+### **CORE ARCHITECTURE FIXES**
+1. **util/Resource.kt** - Remove companion object, ensure direct instantiation
+2. **domain/model/LoketStatus.kt** - Add FLAGGED, SUSPENDED, UNKNOWN enum values
+3. **domain/model/Admin.kt** - Add token and role parameters with defaults
+4. **domain/model/ModelExtensions.kt** - Fix property references (amount → tldAmount)
+5. **domain/model/Loket.kt** - Update when expressions to handle all enum values
+
+### **DATA LAYER FIXES**
+6. **data/dto/LoginResponse.kt** - Fix toAdmin() method to pass token parameter
+7. **data/source/local/SessionManager.kt** - Fix line 165 Admin instantiation
+8. **data/source/local/LoketHistoryManager.kt** - Fix constructor parameters
+9. **di/DataModule.kt** - Match LoketHistoryManager provider with constructor
+10. **util/exceptions/ExceptionMapper.kt** - Create if missing with basic implementation
+
+### **REPOSITORY LAYER FIXES**
+11. **domain/repository/AuthRepository.kt** - Ensure Flow return types
+12. **data/repositoryImpl/AuthRepositoryImpl.kt** - Implement missing methods, Flow returns
+13. **data/repositoryImpl/LoketRepositoryImpl.kt** - Complete interface implementation
+14. **data/repositoryImpl/ProfileRepositoryImpl.kt** - Fix method signatures and implementations
+15. **data/repositoryImpl/TransactionRepositoryImpl.kt** - Ensure Flow consistency
+
+### **USECASE LAYER FIXES**
+16. **domain/usecase/auth/AuthUseCase.kt** - Remove AppException, return Flow consistently
+17. **domain/usecase/auth/GetAdminProfileUseCase.kt** - Remove duplicate class declaration
+18. **domain/usecase/profile/GetProfileUseCase.kt** - Fix return types and parameter requirements
+19. **domain/usecase/profile/UpdateProfileUseCase.kt** - Add missing parameters, suspend context
+20. **domain/usecase/profile/BlockUnblockUseCase.kt** - Add missing parameters, suspend context
+21. **domain/usecase/transaction/GetTransactionLogsUseCase.kt** - Add missing parameters
+
+### **PRESENTATION LAYER FIXES**
+22. **presentation/login/LoginViewModel.kt** - Fix Resource.Empty usage, collect Flow
+23. **presentation/main/MainViewModel.kt** - Fix Resource.Empty usage, error handling
+24. **presentation/profile/UpdateProfileViewModel.kt** - Fix Resource.Empty usage
+
+### **UI LAYER TEMPORARY FIXES**
+25. **presentation/detail_loket/DetailLoketActivity.kt** - Comment out entire file content
+26. **presentation/detail_loket/ReceiptAdapter.kt** - Comment out entire file content  
+27. **presentation/transaction/TransactionLogAdapter.kt** - Comment out entire file content
+28. **presentation/profile/UpdateProfileActivity.kt** - Comment out entire file content
+29. **presentation/home/HomeFragment.kt** - Replace AppUtils calls, fix nullable handling
+30. **presentation/main/MainActivity.kt** - Comment out fragment references
+
+***
+
+# ⚡ **EXECUTION INSTRUCTIONS**
+
+## **SYSTEMATIC EXECUTION APPROACH**
+
+1. **BACKUP PROJECT STATE**
+   - Create git commit or full project copy before modifications
+
+2. **ARCHITECTURE LAYER FIXES** 
+   - Fix Resource class companion object issues across all files
+   - Add missing enum values to LoketStatus with proper when/switch handling
+   - Update Admin model constructor and fix all instantiation points
+   - Correct property references in extension functions
+
+3. **DEPENDENCY CHAIN RESOLUTION**
+   - Fix all Repository interface implementations to return Flow<Resource<T>>
+   - Update UseCase methods to properly handle Flow types and eliminate AppException
+   - Correct DI constructor parameter mismatches in DataModule
+   - Create missing utility classes with minimal implementations
+
+4. **PRESENTATION LAYER STABILIZATION**
+   - Update ViewModels to use Resource.Empty() direct instantiation
+   - Fix Flow collection in ViewModels with proper coroutine scope
+   - Comment out broken UI components that depend on missing ViewBinding classes
+   - Replace AppUtils references with standard Android Toast calls
+
+5. **BUILD VERIFICATION**
+   - Execute `./gradlew clean`
+   - Run `./gradlew assembleDebug --stacktrace`
+   - Verify zero compilation errors
+   - Confirm APK generation success
+
+## **SUCCESS CRITERIA VERIFICATION**
+- ✅ Zero compilation errors in build output
+- ✅ Resource class usage consistent throughout project
+- ✅ All enum references resolved (LoketStatus.FLAGGED, SUSPENDED, UNKNOWN)
+- ✅ All Repository methods return Flow<Resource<T>>
+- ✅ All UseCase methods properly handle Flow types
+- ✅ Admin model instantiation works with all required parameters
+- ✅ DI graph builds without constructor parameter mismatches
+- ✅ Core business logic (Login/Profile/Transaction) compiles successfully
+- ✅ APK builds and can be installed for testing
+
+## **CRITICAL CONSTRAINTS**
+- **NO NEW DEPENDENCIES:** Do not modify build.gradle dependencies
+- **NO ARCHITECTURE CHANGES:** Maintain existing Clean Architecture pattern
+- **NO API MODIFICATIONS:** Do not change existing endpoint contracts
+- **PRESERVE FUNCTIONALITY:** All working features must remain functional
+- **MINIMAL CHANGES:** Use surgical fixes, avoid unnecessary refactoring
+
+## **EMERGENCY PROTOCOLS**
+If build still fails after implementation:
+- Document remaining error count and categories
+- Provide full error log with --debug --stacktrace
+- Identify which fix categories were successful vs failed
+- Report any new error types that emerged during fixes
+
+***
+
+# 🚀 **IMMEDIATE EXECUTION COMMAND**
+
+**EXECUTE ALL FIXES SIMULTANEOUSLY**
+
+Apply every fix listed above in a single comprehensive operation. This is a production-critical build failure that requires immediate resolution. The project must achieve build success with core features (Login + Profile + Transaction) functional after this single execution.
+
+**NO INCREMENTAL FIXES. NO FOLLOW-UP TASKS. COMPLETE RESOLUTION REQUIRED.**

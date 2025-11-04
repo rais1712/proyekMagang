@@ -106,11 +106,11 @@ class ProfileRepositoryImpl @Inject constructor(
                         emit(Resource.Success(listOf(receipt)))
                     } catch (apiError: Exception) {
                         Log.w(TAG, "Direct API access failed, returning empty")
-                        emit(Resource.Empty)
+                        emit(Resource.Empty())
                     }
                 } else {
                     Log.d(TAG, "No results found for PPID pattern: $ppidQuery")
-                    emit(Resource.Empty)
+                    emit(Resource.Empty())
                 }
 
             } catch (e: Exception) {

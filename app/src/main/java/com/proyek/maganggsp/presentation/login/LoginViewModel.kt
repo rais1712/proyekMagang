@@ -28,7 +28,7 @@ class LoginViewModel @Inject constructor(
         private const val MIN_LOADING_DURATION = 1000L // Minimum loading for good UX
     }
 
-    private val _loginState = MutableStateFlow<Resource<Admin>>(Resource.Empty)
+    private val _loginState = MutableStateFlow<Resource<Admin>>(Resource.Empty())
     val loginState: StateFlow<Resource<Admin>> = _loginState
 
     private val _eventFlow = MutableSharedFlow<UiEvent>()
@@ -74,7 +74,7 @@ class LoginViewModel @Inject constructor(
                     Log.d(TAG, "✅ Login API success - Admin: ${result.data?.name}")
 
                     // Clear login state and emit success event
-                    _loginState.value = Resource.Empty
+                    _loginState.value = Resource.Empty()
                     _eventFlow.emit(UiEvent.LoginSuccess)
                 }
                 is Resource.Error -> {
@@ -84,12 +84,12 @@ class LoginViewModel @Inject constructor(
                         delay(MIN_LOADING_DURATION - elapsedTime)
                     }
 
-                    val enhancedMessage = enhanceErrorMessage(result.exception)
+                    val enhancedMessage = enhanceErrorMessage(result.message)
                     _loginState.value = Resource.Error(
                         AppException.UnknownException(enhancedMessage)
                     )
 
-                    Log.e(TAG, "❌ Login API error: ${result.exception.message}")
+                    Log.e(TAG, "❌ Login API error: ${result.message.message}")
                 }
                 else -> {
                     Log.d(TAG, "📋 Login state: ${result::class.simpleName}")

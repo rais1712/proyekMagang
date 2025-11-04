@@ -20,7 +20,7 @@ class UpdateProfileViewModel @Inject constructor(
         private const val TAG = "UpdateProfileViewModel"
     }
 
-    private val _updateState = MutableStateFlow<Resource<Unit>>(Resource.Empty)
+    private val _updateState = MutableStateFlow<Resource<Unit>>(Resource.Empty())
     val updateState: StateFlow<Resource<Unit>> = _updateState.asStateFlow()
 
     private val _eventFlow = MutableSharedFlow<UiEvent>(
@@ -104,7 +104,7 @@ class UpdateProfileViewModel @Inject constructor(
     }
 
     fun onUpdateConsumed() {
-        _updateState.value = Resource.Empty
+        _updateState.value = Resource.Empty()
         Log.d(TAG, "🧹 Update state consumed")
     }
 

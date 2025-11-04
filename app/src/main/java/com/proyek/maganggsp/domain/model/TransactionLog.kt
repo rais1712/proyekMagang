@@ -33,4 +33,39 @@ data class TransactionLog(
     fun getAmountColor(): String {
         return if (type == "CREDIT") "#2E7D32" else "#D32F2F" // green atau red
     }
+    
+    /**
+     * Helper functions untuk filter transaksi
+     */
+    fun isIncomingTransaction(): Boolean = type == "CREDIT" || amount > 0
+    
+    fun isOutgoingTransaction(): Boolean = type == "DEBIT" || amount < 0
+    
+    /**
+     * Helper function untuk validasi data
+     */
+    fun hasValidData(): Boolean {
+        return refNumber.isNotBlank() && noPelanggan.isNotBlank() && ppid.isNotBlank()
+    }
+    
+    /**
+     * Alias properties untuk kompatibilitas dengan kode lama
+     */
+    val tldAmount: Long get() = amount
+    val tldRefnum: String get() = refNumber
+    val tldPan: String get() = noPelanggan
+    val tldIdpel: String get() = noPelanggan
+    val tldBalance: Long get() = saldo
+    val tldDate: String get() = timestamp
+    val tldPpid: String get() = ppid
+    
+    /**
+     * Helper methods untuk display
+     */
+    fun getDisplayDescription(): String = description.ifBlank { "Transaksi $refNumber" }
+    
+    fun getBalanceDisplayText(): String {
+        val formatted = java.text.DecimalFormat("#,###").format(saldo)
+        return "Rp${formatted}"
+    }
 }

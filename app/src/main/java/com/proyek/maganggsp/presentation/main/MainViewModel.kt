@@ -33,7 +33,7 @@ class MainViewModel @Inject constructor(
         private const val TAG = "MainViewModel"
     }
 
-    private val _sessionState = MutableStateFlow<Resource<Admin>>(Resource.Empty)
+    private val _sessionState = MutableStateFlow<Resource<Admin>>(Resource.Empty())
     val sessionState = _sessionState.asStateFlow()
 
     private val _eventFlow = MutableSharedFlow<UiEvent>()

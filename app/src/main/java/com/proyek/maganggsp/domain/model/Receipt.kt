@@ -39,4 +39,27 @@ data class Receipt(
     fun getDisplayText(): String {
         return "$noPelanggan: ${getFormattedAmount()}"
     }
+    
+    /**
+     * Helper function untuk validasi data
+     */
+    fun hasValidData(): Boolean {
+        return refNumber.isNotBlank() && noPelanggan.isNotBlank() && ppid.isNotBlank()
+    }
+    
+    /**
+     * Alias untuk kompatibilitas dengan kode lama
+     */
+    val amount: Long get() = jumlah
+    
+    /**
+     * Helper methods untuk display
+     */
+    fun getDisplayTitle(): String = namaLoket.ifBlank { "Loket $noPelanggan" }
+    
+    fun getDisplayPhone(): String = nomorHP.ifBlank { "-" }
+    
+    fun getDisplayPpid(): String = ppid.ifBlank { "-" }
+    
+    fun getFormattedJumlah(): String = getFormattedAmount()
 }

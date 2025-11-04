@@ -10,21 +10,11 @@ enum class LoketStatus(
     val colorResource: String,
     val backgroundResource: String
 ) {
-    NORMAL(
-        displayName = "Normal",
-        colorResource = "#2E7D32",           // green
-        backgroundResource = "#E8F5E8"       // light green
-    ),
-    BLOCKED(
-        displayName = "Diblokir",
-        colorResource = "#D32F2F",           // red  
-        backgroundResource = "#FFEBEE"       // light red
-    ),
-    FLAGGED(
-        displayName = "Ditandai",
-        colorResource = "#F57C00",           // orange
-        backgroundResource = "#FFF3E0"       // light orange
-    );
+    NORMAL("Normal", "#2E7D32", "#E8F5E8"),
+    BLOCKED("Diblokir", "#D32F2F", "#FFEBEE"),
+    FLAGGED("Ditandai", "#F57C00", "#FFF3E0"),
+    SUSPENDED("Ditangguhkan", "#F57C00", "#FFF3E0"),
+    UNKNOWN("Tidak Diketahui", "#757575", "#F5F5F5");
 
     companion object {
         /**
@@ -35,7 +25,8 @@ enum class LoketStatus(
                 "normal" -> NORMAL
                 "blocked", "diblokir" -> BLOCKED
                 "flagged", "ditandai" -> FLAGGED
-                else -> NORMAL // default
+                "suspended", "ditangguhkan" -> SUSPENDED
+                else -> UNKNOWN // default
             }
         }
 
@@ -47,6 +38,8 @@ enum class LoketStatus(
                 NORMAL -> "normal"
                 BLOCKED -> "blocked"
                 FLAGGED -> "flagged"
+                SUSPENDED -> "suspended"
+                UNKNOWN -> "unknown"
             }
         }
     }

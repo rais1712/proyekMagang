@@ -147,14 +147,14 @@ class DetailLoketActivity : AppCompatActivity() {
                 LoggingUtils.logInfo(TAG, "Profile loaded: ${resource.data.namaLoket}")
             }
             is Resource.Error -> {
-                ErrorHandler.showError(this, resource.exception)
-                LoggingUtils.logError(TAG, "Profile load error", resource.exception)
+                ErrorHandler.showError(this, resource.message)
+                LoggingUtils.logError(TAG, "Profile load error", resource.message)
                 showRetryOptions()
             }
             is Resource.Loading -> {
                 LoggingUtils.logDebug(TAG, "Loading profile...")
             }
-            is Resource.Empty -> {
+            is Resource.Empty() -> {
                 ErrorHandler.showError(this, "Data profil tidak ditemukan")
                 showRetryOptions()
             }
@@ -228,14 +228,14 @@ class DetailLoketActivity : AppCompatActivity() {
                 resetButtonStates()
             }
             is Resource.Error -> {
-                ErrorHandler.showError(this, resource.exception)
-                LoggingUtils.logError(TAG, "Action error", resource.exception)
+                ErrorHandler.showError(this, resource.message)
+                LoggingUtils.logError(TAG, "Action error", resource.message)
                 resetButtonStates()
             }
             is Resource.Loading -> {
                 setButtonsLoadingState(true)
             }
-            is Resource.Empty -> {
+            is Resource.Empty() -> {
                 resetButtonStates()
             }
         }

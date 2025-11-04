@@ -178,7 +178,7 @@ class UpdateProfileActivity : AppCompatActivity() {
             }
             is Resource.Error -> {
                 Log.e(TAG, "❌ Update profile gagal: ${resource.message}")
-                AppUtils.showError(this, resource.exception)
+                AppUtils.showError(this, resource.message)
             }
             is Resource.Loading -> {
                 Log.d(TAG, "⏳ Update profile dalam proses...")

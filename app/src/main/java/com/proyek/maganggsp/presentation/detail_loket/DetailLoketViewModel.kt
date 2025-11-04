@@ -32,7 +32,7 @@ class DetailLoketViewModel @Inject constructor(
     private val _profileState = MutableStateFlow<Resource<Receipt>>(Resource.Loading())
     val profileState: StateFlow<Resource<Receipt>> = _profileState.asStateFlow()
 
-    private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty)
+    private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty())
     val actionState: StateFlow<Resource<Unit>> = _actionState.asStateFlow()
 
     private val _eventFlow = MutableSharedFlow<UiEvent>()
@@ -72,8 +72,8 @@ class DetailLoketViewModel @Inject constructor(
                     LoggingUtils.logInfo(TAG, "Profile loaded successfully: ${result.data.refNumber}")
                 }
                 is Resource.Error -> {
-                    LoggingUtils.logError(TAG, "Profile load error", result.exception)
-                    emitUiEvent(UiEvent.ShowToast("Gagal memuat data: ${result.exception.message}"))
+                    LoggingUtils.logError(TAG, "Profile load error", result.message)
+                    emitUiEvent(UiEvent.ShowToast("Gagal memuat data: ${result.message.message}"))
                 }
                 is Resource.Loading -> {
                     LoggingUtils.logDebug(TAG, "Loading profile...")
@@ -95,7 +95,7 @@ class DetailLoketViewModel @Inject constructor(
                     refreshData()
                 }
                 is Resource.Error -> {
-                    emitUiEvent(UiEvent.ShowToast("Gagal memblokir profil: ${result.exception.message}"))
+                    emitUiEvent(UiEvent.ShowToast("Gagal memblokir profil: ${result.message.message}"))
                 }
                 is Resource.Loading -> {
                     LoggingUtils.logDebug(TAG, "Block operation in progress...")
@@ -117,7 +117,7 @@ class DetailLoketViewModel @Inject constructor(
                     refreshData()
                 }
                 is Resource.Error -> {
-                    emitUiEvent(UiEvent.ShowToast("Gagal membuka blokir profil: ${result.exception.message}"))
+                    emitUiEvent(UiEvent.ShowToast("Gagal membuka blokir profil: ${result.message.message}"))
                 }
                 is Resource.Loading -> {
                     LoggingUtils.logDebug(TAG, "Unblock operation in progress...")
@@ -128,7 +128,7 @@ class DetailLoketViewModel @Inject constructor(
     }
 
     fun onActionConsumed() {
-        _actionState.value = Resource.Empty
+        _actionState.value = Resource.Empty()
     }
 
     fun isProfileBlocked(): Boolean {

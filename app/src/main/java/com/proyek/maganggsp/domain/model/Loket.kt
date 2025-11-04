@@ -33,6 +33,8 @@ data class Loket(
         LoketStatus.NORMAL -> "Normal"
         LoketStatus.BLOCKED -> "Diblokir"
         LoketStatus.FLAGGED -> "Ditandai"
+        LoketStatus.SUSPENDED -> "Ditangguhkan"
+        LoketStatus.UNKNOWN -> "Tidak Diketahui"
     }
 
     fun isBlocked(): Boolean = status == LoketStatus.BLOCKED
@@ -42,23 +44,8 @@ data class Loket(
     // Block/unblock API logic
     fun getOriginalPpid(): String = ppid.removeSuffix("blok")
     fun getBlockedPpid(): String = if (ppid.endsWith("blok")) ppid else "${ppid}blok"
-}
-
-/**
- * Status enum dengan API logic
- */
-enum class LoketStatus {
-    NORMAL,
-    BLOCKED,
-    FLAGGED;
-
-    companion object {
-        fun fromPpid(ppid: String?): LoketStatus {
-            return if (ppid?.endsWith("blok") == true) {
-                BLOCKED
-            } else {
-                NORMAL
-            }
-        }
-    }
+    
+    // Helper methods untuk SearchAdapter
+    fun getDisplayPhone(): String = nomorHP.ifBlank { "-" }
+    fun getDisplayPpid(): String = ppid.ifBlank { "-" }
 }

@@ -164,11 +164,11 @@ class HomeFragment : Fragment() {
                 }
             }
             is Resource.Error -> {
-                AppUtils.showError(requireContext(), resource.exception)
-                AppUtils.logError(TAG, "Search error", resource.exception)
+                AppUtils.showError(requireContext(), resource.message)
+                AppUtils.logError(TAG, "Search error", resource.message)
                 showEmptyState("Gagal melakukan pencarian. Coba lagi.")
             }
-            is Resource.Empty -> {
+            is Resource.Empty() -> {
                 showEmptyState("Tidak ada hasil pencarian")
             }
             is Resource.Loading -> {
@@ -199,10 +199,10 @@ class HomeFragment : Fragment() {
                 }
             }
             is Resource.Error -> {
-                AppUtils.logError(TAG, "Recent receipts error", resource.exception)
+                AppUtils.logError(TAG, "Recent receipts error", resource.message)
                 showEmptyState("Gagal memuat riwayat pencarian")
             }
-            is Resource.Empty -> {
+            is Resource.Empty() -> {
                 showEmptyState("Belum ada riwayat pencarian.\nMulai cari loket dengan PPID.")
             }
             is Resource.Loading -> {
