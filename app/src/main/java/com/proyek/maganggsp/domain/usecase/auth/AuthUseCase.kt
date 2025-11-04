@@ -134,31 +134,7 @@ class IsLoggedInUseCase @Inject constructor(
     }
 }
 
-// =====================================================================
-// GET ADMIN PROFILE USE CASE - Enhanced with error handling
-// =====================================================================
-class GetAdminProfileUseCase @Inject constructor(
-    private val sessionManager: SessionManager
-) {
-    companion object {
-        private const val TAG = "GetAdminProfileUseCase"
-    }
-
-    operator fun invoke(): Admin? {
-        return try {
-            val admin = sessionManager.getAdminProfile()
-            if (admin != null) {
-                Log.d(TAG, "👤 Admin profile retrieved: ${admin.name}")
-            } else {
-                Log.w(TAG, "⚠️ No admin profile found in session")
-            }
-            admin
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error retrieving admin profile", e)
-            null
-        }
-    }
-}
+// GET ADMIN PROFILE USE CASE - Removed duplicate, use GetAdminProfileUseCase from separate file
 
 // =====================================================================
 // VALIDATE SESSION USE CASE - New addition

@@ -117,8 +117,8 @@ class TransactionLogActivity : AppCompatActivity() {
                 updateTransactionStats(resource.data)
             }
             is Resource.Error -> {
-                AppUtils.showError(this, resource.exception)
-                AppUtils.logError(TAG, "Transaction logs error", resource.exception)
+                AppUtils.showError(this, resource.message)
+                AppUtils.logError(TAG, "Transaction logs error", resource.message)
                 AppUtils.applyEmptyState(
                     textView = binding.tvEmpty,
                     context = "transactions",
@@ -128,7 +128,7 @@ class TransactionLogActivity : AppCompatActivity() {
             is Resource.Loading -> {
                 AppUtils.logDebug(TAG, "Loading transaction logs...")
             }
-            is Resource.Empty -> {
+            is Resource.Empty() -> {
                 AppUtils.applyEmptyState(
                     textView = binding.tvEmpty,
                     context = "transactions",

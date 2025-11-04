@@ -16,21 +16,21 @@ fun List<Receipt>.sortByRefNumber(): List<Receipt> = sortedBy { it.refNumber }
 
 // TransactionLog extensions
 fun List<TransactionLog>.getTotalIncoming(): Long =
-    filter { it.isIncomingTransaction() }.sumOf { it.tldAmount }
+    filter { it.isIncomingTransaction() }.sumOf { it.amount }
 
 fun List<TransactionLog>.getTotalOutgoing(): Long =
-    filter { it.isOutgoingTransaction() }.sumOf { kotlin.math.abs(it.tldAmount) }
+    filter { it.isOutgoingTransaction() }.sumOf { kotlin.math.abs(it.amount) }
 
-fun List<TransactionLog>.getNetAmount(): Long = sumOf { it.tldAmount }
+fun List<TransactionLog>.getNetAmount(): Long = sumOf { it.amount }
 
 fun List<TransactionLog>.getValidTransactions(): List<TransactionLog> = filter { it.hasValidData() }
 
-fun List<TransactionLog>.sortByDateDescending(): List<TransactionLog> = sortedByDescending { it.tldDate }
+fun List<TransactionLog>.sortByDateDescending(): List<TransactionLog> = sortedByDescending { it.timestamp }
 
-fun List<TransactionLog>.sortByAmountDescending(): List<TransactionLog> = sortedByDescending { it.tldAmount }
+fun List<TransactionLog>.sortByAmountDescending(): List<TransactionLog> = sortedByDescending { it.amount }
 
 fun List<TransactionLog>.filterByDateRange(startDate: String, endDate: String): List<TransactionLog> =
-    filter { it.tldDate >= startDate && it.tldDate <= endDate }
+    filter { it.timestamp >= startDate && it.timestamp <= endDate }
 
 fun List<TransactionLog>.filterIncomingOnly(): List<TransactionLog> = filter { it.isIncomingTransaction() }
 

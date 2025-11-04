@@ -4,12 +4,15 @@ package com.proyek.maganggsp.presentation.detail_loket
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.usecase.profile.GetProfileUseCase
-import com.proyek.maganggsp.domain.usecase.profile.GetTransactionLogsUseCase
+import com.proyek.maganggsp.domain.usecase.transaction.GetTransactionLogsUseCase
 import com.proyek.maganggsp.domain.usecase.profile.UpdateProfileUseCase
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.AppException
+import com.proyek.maganggsp.util.Extensions.extractPpidSafely
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -38,7 +41,7 @@ class TransactionLogViewModel @Inject constructor(
     val transactionLogsState: StateFlow<Resource<List<TransactionLog>>> = _transactionLogsState.asStateFlow()
 
     // Profile update action state
-    private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty)
+    private val _actionState = MutableStateFlow<Resource<Unit>>(Resource.Empty())
     val actionState: StateFlow<Resource<Unit>> = _actionState.asStateFlow()
 
     private val _eventFlow = MutableSharedFlow<UiEvent>(
@@ -128,69 +131,83 @@ class TransactionLogViewModel @Inject constructor(
     private fun createPlaceholderProfile(ppid: String) {
         val placeholderReceipt = Receipt(
             refNumber = "REF-PLACEHOLDER",
-            idPelanggan = ppid,
-            amount = 0L,
-            logged = "Placeholder data untuk testing"
+            noPelanggan = "PLG${ppid.take(6)}",
+            tipe = "DEPOSIT",
+            jumlah = 0L,
+            status = "SUCCESS",
+            waktu = "2024-01-15T10:30:00.000Z",
+            ppid = ppid
         )
         _profileState.value = Resource.Success(placeholderReceipt)
         Log.d(TAG, "📋 Placeholder profile dibuat untuk ppid: $ppid")
     }
 
     private fun loadTransactionLogs(ppid: String) {
-        getTransactionLogsUseCase(ppid).onEach { result ->
-            _transactionLogsState.value = result
+        viewModelScope.launch {
+            getTransactionLogsUseCase.execute(ppid).onEach { result ->
+                _transactionLogsState.value = result
 
-            when (result) {
-                is Resource.Success -> {
-                    val data = result.data ?: emptyList()
-                    Log.d(TAG, "✅ Transaction logs dimuat: ${data.size} items")
+                when (result) {
+                    is Resource.Success -> {
+                        val data = result.data ?: emptyList()
+                        Log.d(TAG, "✅ Transaction logs dimuat: ${data.size} items")
 
-                    // Jika tidak ada data, buat placeholder untuk testing
-                    if (data.isEmpty()) {
+                        // Jika tidak ada data, buat placeholder untuk testing
+                        if (data.isEmpty()) {
+                            createPlaceholderTransactionLogs(ppid)
+                        }
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Transaction logs error: ${result.message}")
+                        // Buat placeholder untuk testing
                         createPlaceholderTransactionLogs(ppid)
                     }
+                    is Resource.Loading -> {
+                        Log.d(TAG, "⏳ Memuat transaction logs...")
+                    }
+                    else -> Unit
                 }
-                is Resource.Error -> {
-                    Log.e(TAG, "❌ Transaction logs error: ${result.message}")
-                    // Buat placeholder untuk testing
-                    createPlaceholderTransactionLogs(ppid)
-                }
-                is Resource.Loading -> {
-                    Log.d(TAG, "⏳ Memuat transaction logs...")
-                }
-                else -> Unit
-            }
-        }.launchIn(viewModelScope)
+            }.launchIn(viewModelScope)
+        }
     }
 
     private fun createPlaceholderTransactionLogs(ppid: String) {
         val placeholderTransactions = listOf(
             TransactionLog(
-                tldRefnum = "TXN001-PLACEHOLDER",
-                tldPan = "1234****5678",
-                tldIdpel = ppid,
-                tldAmount = 100000L,
-                tldBalance = 1000000L,
-                tldDate = "2024-01-15T10:30:00.000Z",
-                tldPpid = ppid
+                id = "TXN001",
+                refNumber = "TXN001-PLACEHOLDER",
+                noPelanggan = "1234****5678",
+                amount = 100000L,
+                type = "CREDIT",
+                timestamp = "2024-01-15T10:30:00.000Z",
+                description = "Deposit",
+                status = "SUCCESS",
+                ppid = ppid,
+                saldo = 1000000L
             ),
             TransactionLog(
-                tldRefnum = "TXN002-PLACEHOLDER",
-                tldPan = "1234****5678",
-                tldIdpel = ppid,
-                tldAmount = -50000L,
-                tldBalance = 950000L,
-                tldDate = "2024-01-14T14:15:00.000Z",
-                tldPpid = ppid
+                id = "TXN002",
+                refNumber = "TXN002-PLACEHOLDER",
+                noPelanggan = "1234****5678",
+                amount = -50000L,
+                type = "DEBIT",
+                timestamp = "2024-01-14T14:15:00.000Z",
+                description = "Withdrawal",
+                status = "SUCCESS",
+                ppid = ppid,
+                saldo = 950000L
             ),
             TransactionLog(
-                tldRefnum = "TXN003-PLACEHOLDER",
-                tldPan = "1234****5678",
-                tldIdpel = ppid,
-                tldAmount = 75000L,
-                tldBalance = 1025000L,
-                tldDate = "2024-01-13T09:45:00.000Z",
-                tldPpid = ppid
+                id = "TXN003",
+                refNumber = "TXN003-PLACEHOLDER",
+                noPelanggan = "1234****5678",
+                amount = 75000L,
+                type = "CREDIT",
+                timestamp = "2024-01-13T09:45:00.000Z",
+                description = "Deposit",
+                status = "SUCCESS",
+                ppid = ppid,
+                saldo = 1025000L
             )
         )
 
@@ -226,7 +243,7 @@ class TransactionLogViewModel @Inject constructor(
     }
 
     fun onActionConsumed() {
-        _actionState.value = Resource.Empty
+        _actionState.value = Resource.Empty()
     }
 
     private fun emitUiEvent(event: UiEvent) {

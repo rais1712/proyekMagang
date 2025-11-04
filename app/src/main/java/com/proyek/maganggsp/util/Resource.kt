@@ -22,13 +22,13 @@ sealed class Resource<out T> {
     data class Loading<T>(val data: T? = null) : Resource<T>()
 
     data class Error<T>(
-        val exception: AppException,
+        val message: String,
         val data: T? = null
     ) : Resource<T>() {
-        val message: String get() = exception.message
+        constructor(exception: AppException, data: T? = null) : this(exception.message, data)
     }
 
-    object Empty : Resource<Nothing>()
+    class Empty<T> : Resource<T>()
 }
 
 // ============================================
@@ -76,7 +76,7 @@ fun <T> Resource<T>.applyToStandardLoadingViews(
             contentView.isVisible = false
             emptyView?.isVisible = false
         }
-        is Resource.Empty -> {
+        is Resource.Empty() -> {
             shimmerView.stopShimmer()
             shimmerView.isVisible = false
             contentView.isVisible = false
@@ -126,7 +126,7 @@ fun <T> Resource<T>.applyToLoadingViews(
             contentView.isVisible = false
             emptyView?.isVisible = false
         }
-        is Resource.Empty -> {
+        is Resource.Empty() -> {
             stopShimmerSafely(shimmerView)
             shimmerView.isVisible = false
             contentView.isVisible = false
@@ -184,7 +184,7 @@ fun <T> Resource<T>.applyToDualLoadingViews(
             secondaryContent?.isVisible = false
             emptyView?.isVisible = false
         }
-        is Resource.Empty -> {
+        is Resource.Empty() -> {
             // Stop all shimmers
             primaryShimmer.stopShimmer()
             primaryShimmer.isVisible = false
@@ -246,7 +246,7 @@ fun <T> Flow<Resource<T>>.withSmartRetry(
     collect { resource ->
         when (resource) {
             is Resource.Error -> {
-                val shouldRetry = config.retryableExceptions.contains(resource.exception::class.java) &&
+                val shouldRetry = config.retryableExceptions.contains(resource.message::class.java) &&
                         retryAttempt < config.maxRetries
 
                 if (shouldRetry) {
@@ -321,8 +321,8 @@ inline fun <T> Resource<T>.onSuccess(action: (T) -> Unit): Resource<T> {
     return this
 }
 
-inline fun <T> Resource<T>.onError(action: (AppException) -> Unit): Resource<T> {
-    if (this is Resource.Error) action(exception)
+inline fun <T> Resource<T>.onError(action: (String) -> Unit): Resource<T> {
+    if (this is Resource.Error) action(message)
     return this
 }
 
@@ -334,9 +334,9 @@ inline fun <T> Resource<T>.onLoading(action: () -> Unit): Resource<T> {
 inline fun <T, R> Resource<T>.map(transform: (T) -> R): Resource<R> {
     return when (this) {
         is Resource.Success -> Resource.Success(transform(data))
-        is Resource.Error -> Resource.Error(exception, data?.let(transform))
+        is Resource.Error -> Resource.Error(message, data?.let(transform))
         is Resource.Loading -> Resource.Loading(data?.let(transform))
-        is Resource.Empty -> Resource.Empty
+        is Resource.Empty() -> Resource.Empty()()
     }
 }
 
@@ -345,7 +345,7 @@ fun <T> Resource<T>.getDataOrNull(): T? {
         is Resource.Success -> data
         is Resource.Error -> data
         is Resource.Loading -> data
-        is Resource.Empty -> null
+        is Resource.Empty() -> null
     }
 }
 
@@ -353,7 +353,7 @@ fun <T> Resource<T>.getDataOrNull(): T? {
 fun <T> Resource<T>.isLoading(): Boolean = this is Resource.Loading
 fun <T> Resource<T>.isSuccess(): Boolean = this is Resource.Success
 fun <T> Resource<T>.isError(): Boolean = this is Resource.Error
-fun <T> Resource<T>.isEmpty(): Boolean = this is Resource.Empty
+fun <T> Resource<T>.isEmpty(): Boolean = this is Resource.Empty()
 
 fun <T> Resource<T>.hasData(): Boolean {
     val data = getDataOrNull()

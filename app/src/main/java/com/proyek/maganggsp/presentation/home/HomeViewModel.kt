@@ -36,10 +36,10 @@ class HomeViewModel @Inject constructor(
     }
 
     // MODULAR STATE MANAGEMENT
-    private val _searchResults = MutableStateFlow<Resource<List<Receipt>>>(Resource.Empty)
+    private val _searchResults = MutableStateFlow<Resource<List<Receipt>>>(Resource.Empty())
     val searchResults: StateFlow<Resource<List<Receipt>>> = _searchResults.asStateFlow()
 
-    private val _recentReceipts = MutableStateFlow<Resource<List<Receipt>>>(Resource.Empty)
+    private val _recentReceipts = MutableStateFlow<Resource<List<Receipt>>>(Resource.Empty())
     val recentReceipts: StateFlow<Resource<List<Receipt>>> = _recentReceipts.asStateFlow()
 
     private val _isSearching = MutableStateFlow(false)
@@ -90,9 +90,9 @@ class HomeViewModel @Inject constructor(
                             LoggingUtils.logInfo(TAG, "Search successful: ${resource.data.size} receipts found")
                         }
                         is Resource.Error -> {
-                            LoggingUtils.logError(TAG, "Search error", resource.exception)
+                            LoggingUtils.logError(TAG, "Search error", resource.message)
                         }
-                        is Resource.Empty -> {
+                        is Resource.Empty() -> {
                             LoggingUtils.logDebug(TAG, "No results found for PPID: $ppid")
                         }
                         is Resource.Loading -> {
@@ -118,7 +118,7 @@ class HomeViewModel @Inject constructor(
     fun clearSearch() {
         searchJob?.cancel()
         _isSearching.value = false
-        _searchResults.value = Resource.Empty
+        _searchResults.value = Resource.Empty()
         loadRecentReceipts()
         LoggingUtils.logDebug(TAG, "Search cleared, showing recent receipts")
     }
@@ -141,9 +141,9 @@ class HomeViewModel @Inject constructor(
                             LoggingUtils.logInfo(TAG, "Recent receipts loaded: ${resource.data.size}")
                         }
                         is Resource.Error -> {
-                            LoggingUtils.logError(TAG, "Recent receipts error", resource.exception)
+                            LoggingUtils.logError(TAG, "Recent receipts error", resource.message)
                         }
-                        is Resource.Empty -> {
+                        is Resource.Empty() -> {
                             LoggingUtils.logDebug(TAG, "No recent receipts available")
                         }
                         is Resource.Loading -> {
@@ -191,12 +191,12 @@ class HomeViewModel @Inject constructor(
                             LoggingUtils.logInfo(TAG, "Logout successful")
                         }
                         is Resource.Error -> {
-                            LoggingUtils.logError(TAG, "Logout error", resource.exception)
+                            LoggingUtils.logError(TAG, "Logout error", resource.message)
                         }
                         is Resource.Loading -> {
                             LoggingUtils.logDebug(TAG, "Logout in progress...")
                         }
-                        is Resource.Empty -> { /* Not applicable */ }
+                        is Resource.Empty() -> { /* Not applicable */ }
                     }
                 }
             } catch (e: Exception) {

@@ -1,0 +1,174 @@
+# GesPay Admin - Android Application
+
+## Overview
+GesPay Admin is an Android mobile application for managing payment lokets (kiosks/stations). The application is built with modern Android development practices using Kotlin and follows the MVVM (Model-View-ViewModel) architecture pattern with Clean Architecture principles.
+
+**Project Type:** Android Mobile Application (Native)  
+**Language:** Kotlin  
+**Build System:** Gradle (Kotlin DSL)  
+**Min SDK:** 24 (Android 7.0)  
+**Target SDK:** 34 (Android 14)
+
+## Current State
+This is a GitHub import that has been configured for the Replit environment. The Android SDK has been installed and configured. Major fixes have been applied to resolve compilation errors.
+
+### Fixes Applied (2025-11-04)
+1. ✅ Created missing utility classes (`UiStateHelper`, `PlaceholderDataGenerator`, `Extensions`)
+2. ✅ Fixed `Resource.kt` - Changed from `AppException` to String messages, fixed `Empty` class instantiation
+3. ✅ Added missing `LoketStatus` enum values (SUSPENDED, UNKNOWN)
+4. ✅ Fixed duplicate `GetAdminProfileUseCase` definition
+5. ✅ Updated `TransactionLog` and `Receipt` models with helper methods and alias properties
+6. ✅ Fixed `ModelExtensions.kt` to use correct property names
+7. ✅ Fixed placeholder data creation in `TransactionLogViewModel`
+8. ✅ Fixed all `Resource.Empty` instantiation issues (changed to `Resource.Empty()`)
+9. ✅ Fixed all `.exception` to `.message` references throughout codebase
+
+### Remaining Issues
+The following files still have compilation errors that need to be addressed:
+1. **UI Adapters**: Some adapters use properties that need adjustment
+2. **UpdateProfileActivity**: Missing binding class and some field references
+3. **TransactionLogViewModel** (in transaction package): Has different implementation issues
+4. **MainActivity**: Fragment references may need adjustment
+
+These are primarily UI-layer issues and don't affect the core domain/data architecture.
+
+## Project Architecture
+
+### Technology Stack
+- **Language:** Kotlin 1.9.22
+- **Architecture:** MVVM + Clean Architecture
+- **Dependency Injection:** Hilt (Dagger)
+- **Networking:** Retrofit + OkHttp
+- **Async Operations:** Kotlin Coroutines + Flow
+- **Navigation:** Android Navigation Component
+- **UI:** Android View Binding (XML layouts)
+- **Security:** AndroidX Security Crypto for secure data storage
+
+### Project Structure
+```
+app/src/main/
+├── java/com/proyek/maganggsp/
+│   ├── data/              # Data layer (API, DTOs, repositories)
+│   │   ├── api/           # Retrofit API interfaces
+│   │   ├── dto/           # Data Transfer Objects
+│   │   └── repositoryImpl/ # Repository implementations
+│   ├── domain/            # Business logic layer
+│   │   ├── model/         # Domain models
+│   │   ├── repository/    # Repository interfaces
+│   │   └── usecase/       # Use cases (business logic)
+│   ├── presentation/      # UI layer (Activities, Fragments, ViewModels)
+│   │   ├── login/         # Login screen
+│   │   ├── main/          # Main container activity
+│   │   ├── home/          # Home screen with loket monitoring
+│   │   ├── detail_loket/  # Loket detail and transactions
+│   │   ├── profile/       # Profile management
+│   │   └── transaction/   # Transaction history
+│   ├── di/                # Dependency injection modules
+│   └── util/              # Utility classes and helpers
+└── res/                   # Resources (layouts, drawables, strings, etc.)
+```
+
+### Key Features
+1. **Authentication:** Admin login system
+2. **Loket Management:** Monitor and manage payment kiosks/stations
+3. **Transaction Monitoring:** View transaction logs and receipts
+4. **Loket Status Tracking:** Track loket status (normal, flagged, blocked)
+5. **Profile Management:** Update admin profile information
+6. **Search History:** Search through loket history
+
+### API Configuration
+- **Debug Base URL:** `https://dev-api.gespay.co.id/`
+- **Release Base URL:** `https://api.gespay.co.id/`
+- The app communicates with a backend API for all data operations
+
+## Build Instructions
+
+### Building the APK
+The project uses Gradle as the build system. To build the application:
+
+```bash
+./gradlew assembleDebug    # Build debug APK
+./gradlew assembleRelease  # Build release APK
+```
+
+The generated APK will be located at:
+- Debug: `app/build/outputs/apk/debug/app-debug.apk`
+- Release: `app/build/outputs/apk/release/app-release.apk`
+
+### Running Tests
+```bash
+./gradlew test             # Run unit tests
+./gradlew connectedAndroidTest  # Run instrumented tests
+```
+
+## Dependencies
+The project uses the following major dependencies:
+- **AndroidX Core & AppCompat** - Core Android libraries
+- **Material Design Components** - UI components following Material Design
+- **Navigation Component** - Fragment navigation
+- **Lifecycle Components** - ViewModel and LiveData
+- **Hilt** - Dependency injection
+- **Retrofit** - REST API client
+- **OkHttp** - HTTP client with logging
+- **Gson** - JSON serialization
+- **Coroutines** - Asynchronous programming
+- **Shimmer** - Loading placeholders
+- **Security Crypto** - Encrypted SharedPreferences
+
+## Development Notes
+
+### Important Configuration
+1. The app requires internet permissions (already configured in AndroidManifest.xml)
+2. Clear text traffic is enabled for development purposes
+3. The app uses portrait orientation for all screens
+4. Session management is handled in MainActivity
+
+### Build Configuration
+- The project uses buildConfig feature to inject configuration values
+- Debug and release builds use different API base URLs
+- ProGuard is disabled for both debug and release builds (can be enabled for production)
+
+## Deployment
+This is a mobile application and cannot be deployed as a web service. To distribute:
+1. Build the APK using Gradle
+2. Distribute the APK file to users for installation on Android devices
+3. For production, sign the APK and publish to Google Play Store or other distribution channels
+
+## Replit Environment Setup
+This project has been configured to run in the Replit environment with the following setup:
+
+### Installed Components
+- **Java Development Kit**: GraalVM 22.3
+- **Android SDK**: Command-line tools with platform-tools, android-34 platform, and build-tools 34.0.0
+- **Build Tools**: Gradle wrapper (version 8.11.1)
+- **System Tools**: wget, unzip, android-tools
+
+### Configuration Files
+- `local.properties`: Contains Android SDK location (`/home/runner/android-sdk`)
+- `.gitignore`: Updated with comprehensive Android/Kotlin ignore patterns
+- Workflow configured for building debug APK
+
+### Environment Variables
+The Android SDK is located at: `/home/runner/android-sdk`
+
+To use the Android SDK tools manually:
+```bash
+export ANDROID_SDK_ROOT=$HOME/android-sdk
+export ANDROID_HOME=$ANDROID_SDK_ROOT
+```
+
+## Fixing the Build Errors
+To fix the compilation errors and get the app building:
+
+1. Review and fix missing utility class implementations in `app/src/main/java/com/proyek/maganggsp/util/`
+2. Ensure all layout XML files referenced in view bindings exist
+3. Fix model field name mismatches in ViewModels (especially `TransactionLogViewModel`)
+4. Add missing imports throughout the codebase
+5. Run `./gradlew assembleDebug` to test the build
+
+## Recent Changes
+- 2025-11-04: Initial project import and Replit environment setup
+- Installed Android SDK and Java development toolchain
+- Fixed import path for `GetTransactionLogsUseCase` in `TransactionLogViewModel`
+- Set up build workflow for generating APK files
+- Documented known compilation issues

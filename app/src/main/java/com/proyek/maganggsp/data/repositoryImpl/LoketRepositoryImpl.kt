@@ -262,12 +262,12 @@ class LoketRepositoryImpl @Inject constructor(
 
                     } catch (apiError: Exception) {
                         Log.w(TAG, "Direct API access failed, no results found")
-                        emit(Resource.Empty)
+                        emit(Resource.Empty())
                     }
                 } else {
                     // Pattern search in cache didn't return results
                     Log.d(TAG, "🔍 No results found for PPID pattern: $ppidQuery")
-                    emit(Resource.Empty)
+                    emit(Resource.Empty())
                 }
 
             } catch (e: Exception) {

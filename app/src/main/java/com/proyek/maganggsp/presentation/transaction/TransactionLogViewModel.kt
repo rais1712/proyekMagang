@@ -73,7 +73,7 @@ class TransactionLogViewModel @Inject constructor(
                     }
                 }
                 is Resource.Error -> {
-                    LoggingUtils.logError(TAG, "Transaction logs error", result.exception)
+                    LoggingUtils.logError(TAG, "Transaction logs error", result.message)
                     // Create placeholder data for testing
                     createPlaceholderData()
                 }
