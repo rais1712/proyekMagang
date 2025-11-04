@@ -10,7 +10,16 @@ GesPay Admin is an Android mobile application for managing payment lokets (kiosk
 **Target SDK:** 34 (Android 14)
 
 ## Current State
-This is a GitHub import that has been configured to run in the Replit environment. The project can be built to generate an APK file that can be installed on Android devices or emulators.
+This is a GitHub import that has been configured for the Replit environment. The Android SDK has been installed and configured. However, **the codebase currently has compilation errors** that need to be fixed before an APK can be generated.
+
+### Known Issues
+The imported code has several compilation errors including:
+1. **Missing utility classes**: `UiStateHelper`, `AppUtils`, `PlaceholderDataGenerator`, and `Extensions` are referenced but implementations may be incomplete
+2. **Missing layout files**: `ActivityUpdateProfileBinding` and some fragment layouts are referenced but not found
+3. **Model inconsistencies**: Some view models use outdated field names that don't match the current domain models
+4. **Import errors**: Missing imports in several ViewModel and Activity files
+
+These appear to be pre-existing issues in the imported repository and will need to be fixed to successfully build the application.
 
 ## Project Architecture
 
@@ -114,7 +123,41 @@ This is a mobile application and cannot be deployed as a web service. To distrib
 2. Distribute the APK file to users for installation on Android devices
 3. For production, sign the APK and publish to Google Play Store or other distribution channels
 
+## Replit Environment Setup
+This project has been configured to run in the Replit environment with the following setup:
+
+### Installed Components
+- **Java Development Kit**: GraalVM 22.3
+- **Android SDK**: Command-line tools with platform-tools, android-34 platform, and build-tools 34.0.0
+- **Build Tools**: Gradle wrapper (version 8.11.1)
+- **System Tools**: wget, unzip, android-tools
+
+### Configuration Files
+- `local.properties`: Contains Android SDK location (`/home/runner/android-sdk`)
+- `.gitignore`: Updated with comprehensive Android/Kotlin ignore patterns
+- Workflow configured for building debug APK
+
+### Environment Variables
+The Android SDK is located at: `/home/runner/android-sdk`
+
+To use the Android SDK tools manually:
+```bash
+export ANDROID_SDK_ROOT=$HOME/android-sdk
+export ANDROID_HOME=$ANDROID_SDK_ROOT
+```
+
+## Fixing the Build Errors
+To fix the compilation errors and get the app building:
+
+1. Review and fix missing utility class implementations in `app/src/main/java/com/proyek/maganggsp/util/`
+2. Ensure all layout XML files referenced in view bindings exist
+3. Fix model field name mismatches in ViewModels (especially `TransactionLogViewModel`)
+4. Add missing imports throughout the codebase
+5. Run `./gradlew assembleDebug` to test the build
+
 ## Recent Changes
 - 2025-11-04: Initial project import and Replit environment setup
-- Configured Java/Kotlin development toolchain
+- Installed Android SDK and Java development toolchain
+- Fixed import path for `GetTransactionLogsUseCase` in `TransactionLogViewModel`
 - Set up build workflow for generating APK files
+- Documented known compilation issues

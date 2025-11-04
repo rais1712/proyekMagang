@@ -4,12 +4,15 @@ package com.proyek.maganggsp.presentation.detail_loket
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.proyek.maganggsp.domain.model.Receipt
+import com.proyek.maganggsp.domain.model.TransactionLog
 import com.proyek.maganggsp.domain.usecase.profile.GetProfileUseCase
-import com.proyek.maganggsp.domain.usecase.profile.GetTransactionLogsUseCase
+import com.proyek.maganggsp.domain.usecase.transaction.GetTransactionLogsUseCase
 import com.proyek.maganggsp.domain.usecase.profile.UpdateProfileUseCase
 import com.proyek.maganggsp.util.NavigationConstants
 import com.proyek.maganggsp.util.Resource
 import com.proyek.maganggsp.util.exceptions.AppException
+import com.proyek.maganggsp.util.Extensions.extractPpidSafely
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -137,30 +140,32 @@ class TransactionLogViewModel @Inject constructor(
     }
 
     private fun loadTransactionLogs(ppid: String) {
-        getTransactionLogsUseCase(ppid).onEach { result ->
-            _transactionLogsState.value = result
+        viewModelScope.launch {
+            getTransactionLogsUseCase.execute(ppid).onEach { result ->
+                _transactionLogsState.value = result
 
-            when (result) {
-                is Resource.Success -> {
-                    val data = result.data ?: emptyList()
-                    Log.d(TAG, "✅ Transaction logs dimuat: ${data.size} items")
+                when (result) {
+                    is Resource.Success -> {
+                        val data = result.data ?: emptyList()
+                        Log.d(TAG, "✅ Transaction logs dimuat: ${data.size} items")
 
-                    // Jika tidak ada data, buat placeholder untuk testing
-                    if (data.isEmpty()) {
+                        // Jika tidak ada data, buat placeholder untuk testing
+                        if (data.isEmpty()) {
+                            createPlaceholderTransactionLogs(ppid)
+                        }
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Transaction logs error: ${result.message}")
+                        // Buat placeholder untuk testing
                         createPlaceholderTransactionLogs(ppid)
                     }
+                    is Resource.Loading -> {
+                        Log.d(TAG, "⏳ Memuat transaction logs...")
+                    }
+                    else -> Unit
                 }
-                is Resource.Error -> {
-                    Log.e(TAG, "❌ Transaction logs error: ${result.message}")
-                    // Buat placeholder untuk testing
-                    createPlaceholderTransactionLogs(ppid)
-                }
-                is Resource.Loading -> {
-                    Log.d(TAG, "⏳ Memuat transaction logs...")
-                }
-                else -> Unit
-            }
-        }.launchIn(viewModelScope)
+            }.launchIn(viewModelScope)
+        }
     }
 
     private fun createPlaceholderTransactionLogs(ppid: String) {
