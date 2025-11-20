@@ -1,12 +1,13 @@
-// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt - UPDATED FOR MODULAR
+// File: app/src/main/java/com/proyek/maganggsp/di/RepositoryModule.kt
+
 package com.proyek.maganggsp.di
 
 import com.proyek.maganggsp.data.repositoryImpl.AuthRepositoryImpl
-import com.proyek.maganggsp.data.repositoryImpl.ProfileRepositoryImpl
-import com.proyek.maganggsp.data.repositoryImpl.TransactionRepositoryImpl
+// DISABLED: import com.proyek.maganggsp.data.repositoryImpl.ProfileRepositoryImpl
+// DISABLED: import com.proyek.maganggsp.data.repositoryImpl.TransactionRepositoryImpl
 import com.proyek.maganggsp.domain.repository.AuthRepository
-import com.proyek.maganggsp.domain.repository.ProfileRepository
-import com.proyek.maganggsp.domain.repository.TransactionRepository
+// DISABLED: import com.proyek.maganggsp.domain.repository.ProfileRepository
+// DISABLED: import com.proyek.maganggsp.domain.repository.TransactionRepository
 import com.proyek.maganggsp.util.exceptions.ExceptionMapper
 import dagger.Binds
 import dagger.Module
@@ -15,16 +16,21 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * MINIMAL VERSION: Only AuthRepository enabled for build success
+ * ProfileRepository and TransactionRepository temporarily disabled
+ *
+ * TODO: Re-enable other repositories after fixing implementation files
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    /**
-     * MODULAR: Separate repository bindings replacing unified approach
-     */
     @Binds
     @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    /* TEMPORARILY DISABLED - Uncomment after fixing implementations
 
     @Binds
     @Singleton
@@ -33,6 +39,7 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTransactionRepository(impl: TransactionRepositoryImpl): TransactionRepository
+    */
 
     companion object {
         @Provides
