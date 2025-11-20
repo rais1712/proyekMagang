@@ -1,24 +1,27 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/usecase/auth/AuthUseCases.kt - COMPLETE
+// File: app/src/main/java/com/proyek/maganggsp/domain/usecase/auth/AuthUseCase.kt
+
 package com.proyek.maganggsp.domain.usecase.auth
 
 import com.proyek.maganggsp.domain.model.Admin
 import com.proyek.maganggsp.domain.repository.AuthRepository
 import com.proyek.maganggsp.data.source.local.SessionManager
 import com.proyek.maganggsp.util.Resource
-import com.proyek.maganggsp.util.exceptions.AppException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.collect
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 import android.util.Log
 
 /**
- * ✅ PHASE 1 COMPLETE: All Auth UseCases with enhanced error handling
+ * ✅ FIXED: All Auth UseCases with String-based error handling
+ * ❌ REMOVED: All AppException usage
+ * ✅ FIXED: Flow type consistency
  */
 
 // =====================================================================
-// LOGIN USE CASE - Enhanced with better validation and error mapping
+// LOGIN USE CASE - Fixed AppException to String conversion
 // =====================================================================
 class LoginUseCase @Inject constructor(
     private val repository: AuthRepository
@@ -27,39 +30,54 @@ class LoginUseCase @Inject constructor(
         private const val TAG = "LoginUseCase"
     }
 
-    operator fun invoke(email: String, password: String): Flow<Resource<Admin>> = flow {
+    suspend operator fun invoke(email: String, password: String): Flow<Resource<Admin>> = flow {
         try {
             emit(Resource.Loading())
             Log.d(TAG, "🚀 Starting login process for email: $email")
 
-            // Enhanced input validation
+            // Enhanced input validation with String messages
             when {
                 email.isBlank() -> {
-                    emit(Resource.Error(AppException.ValidationException("Email tidak boleh kosong")))
+                    emit(Resource.Error("Email tidak boleh kosong"))
                     return@flow
                 }
+
                 password.isBlank() -> {
-                    emit(Resource.Error(AppException.ValidationException("Password tidak boleh kosong")))
+                    emit(Resource.Error("Password tidak boleh kosong"))
                     return@flow
                 }
+
                 !isValidEmail(email) -> {
-                    emit(Resource.Error(AppException.ValidationException("Format email tidak valid")))
+                    emit(Resource.Error("Format email tidak valid"))
                     return@flow
                 }
+
                 password.length < 6 -> {
-                    emit(Resource.Error(AppException.ValidationException("Password minimal 6 karakter")))
+                    emit(Resource.Error("Password minimal 6 karakter"))
                     return@flow
                 }
             }
 
-            // Perform login through repository
-            val admin = repository.login(email.trim(), password)
-            emit(Resource.Success(admin))
-            Log.d(TAG, "✅ Login successful for: ${admin.email}")
+            // Call repository and collect Flow result
+            repository.login(email.trim(), password).collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        Log.d(TAG, "✅ Login successful for: ${result.data?.email}")
+                        emit(result)
+                    }
+                    is Resource.Error -> {
+                        Log.e(TAG, "❌ Login failed: ${result.message}")
+                        emit(result)
+                    }
+                    is Resource.Loading -> {
+                        emit(result)
+                    }
+                    else -> {
+                        emit(Resource.Error("Unknown response type"))
+                    }
+                }
+            }
 
-        } catch (e: AppException) {
-            Log.e(TAG, "❌ AppException during login: ${e.message}")
-            emit(Resource.Error(e))
         } catch (e: HttpException) {
             val message = when (e.code()) {
                 401 -> "Email atau password salah"
@@ -68,13 +86,15 @@ class LoginUseCase @Inject constructor(
                 else -> "Terjadi kesalahan: ${e.message()}"
             }
             Log.e(TAG, "❌ HTTP error during login: ${e.code()} - $message")
-            emit(Resource.Error(AppException.ServerException(e.code(), message)))
+            emit(Resource.Error(message))
+
         } catch (e: IOException) {
             Log.e(TAG, "❌ Network error during login: ${e.message}")
-            emit(Resource.Error(AppException.NetworkException("Periksa koneksi internet Anda")))
+            emit(Resource.Error("Periksa koneksi internet Anda"))
+
         } catch (e: Exception) {
             Log.e(TAG, "❌ Unexpected error during login", e)
-            emit(Resource.Error(AppException.UnknownException("Terjadi kesalahan yang tidak terduga")))
+            emit(Resource.Error("Terjadi kesalahan yang tidak terduga: ${e.message}"))
         }
     }
 
@@ -84,7 +104,7 @@ class LoginUseCase @Inject constructor(
 }
 
 // =====================================================================
-// LOGOUT USE CASE - Complete implementation
+// LOGOUT USE CASE - Fixed to String errors
 // =====================================================================
 class LogoutUseCase @Inject constructor(
     private val repository: AuthRepository
@@ -93,7 +113,7 @@ class LogoutUseCase @Inject constructor(
         private const val TAG = "LogoutUseCase"
     }
 
-    operator fun invoke(): Flow<Resource<Unit>> = flow {
+    suspend operator fun invoke(): Flow<Resource<Unit>> = flow {
         try {
             emit(Resource.Loading())
             Log.d(TAG, "🚪 Starting logout process")
@@ -102,18 +122,15 @@ class LogoutUseCase @Inject constructor(
             emit(Resource.Success(Unit))
             Log.d(TAG, "✅ Logout successful")
 
-        } catch (e: AppException) {
-            Log.e(TAG, "❌ AppException during logout: ${e.message}")
-            emit(Resource.Error(e))
         } catch (e: Exception) {
             Log.e(TAG, "❌ Unexpected error during logout", e)
-            emit(Resource.Error(AppException.UnknownException("Gagal melakukan logout: ${e.message}")))
+            emit(Resource.Error("Gagal melakukan logout: ${e.message}"))
         }
     }
 }
 
 // =====================================================================
-// LOGIN STATUS USE CASE - Complete implementation
+// LOGIN STATUS USE CASE - Simple boolean check
 // =====================================================================
 class IsLoggedInUseCase @Inject constructor(
     private val repository: AuthRepository
@@ -134,10 +151,8 @@ class IsLoggedInUseCase @Inject constructor(
     }
 }
 
-// GET ADMIN PROFILE USE CASE - Removed duplicate, use GetAdminProfileUseCase from separate file
-
 // =====================================================================
-// VALIDATE SESSION USE CASE - New addition
+// VALIDATE SESSION USE CASE - Fixed String errors
 // =====================================================================
 class ValidateSessionUseCase @Inject constructor(
     private val repository: AuthRepository,
@@ -147,21 +162,21 @@ class ValidateSessionUseCase @Inject constructor(
         private const val TAG = "ValidateSessionUseCase"
     }
 
-    operator fun invoke(): Flow<Resource<Admin>> = flow {
+    suspend operator fun invoke(): Flow<Resource<Admin>> = flow {
         try {
             emit(Resource.Loading())
             Log.d(TAG, "🔍 Validating user session")
 
             if (!repository.isLoggedIn()) {
                 Log.w(TAG, "❌ Session not valid - user not logged in")
-                emit(Resource.Error(AppException.AuthenticationException("Session expired")))
+                emit(Resource.Error("Session expired"))
                 return@flow
             }
 
             val admin = sessionManager.getAdminProfile()
             if (admin == null) {
                 Log.w(TAG, "❌ Session not valid - no admin profile")
-                emit(Resource.Error(AppException.AuthenticationException("Profile not found")))
+                emit(Resource.Error("Profile not found"))
                 return@flow
             }
 
@@ -170,87 +185,8 @@ class ValidateSessionUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error validating session", e)
-            emit(Resource.Error(AppException.UnknownException("Session validation failed")))
+            emit(Resource.Error("Session validation failed: ${e.message}"))
         }
     }
 }
 
-// =====================================================================
-// REFRESH SESSION USE CASE - New addition for token refresh scenarios
-// =====================================================================
-class RefreshSessionUseCase @Inject constructor(
-    private val sessionManager: SessionManager
-) {
-    companion object {
-        private const val TAG = "RefreshSessionUseCase"
-    }
-
-    operator fun invoke(): Flow<Resource<Admin>> = flow {
-        try {
-            emit(Resource.Loading())
-            Log.d(TAG, "🔄 Refreshing session data")
-
-            val admin = sessionManager.getAdminProfile()
-            val hasValidSession = sessionManager.isSessionValid()
-
-            if (admin != null && hasValidSession) {
-                Log.d(TAG, "✅ Session refreshed successfully")
-                emit(Resource.Success(admin))
-            } else {
-                Log.w(TAG, "❌ Session refresh failed - invalid or expired")
-                emit(Resource.Error(AppException.AuthenticationException("Session expired")))
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error refreshing session", e)
-            emit(Resource.Error(AppException.UnknownException("Failed to refresh session")))
-        }
-    }
-}
-
-// =====================================================================
-// SESSION DEBUG USE CASE - For troubleshooting
-// =====================================================================
-class GetSessionDebugInfoUseCase @Inject constructor(
-    private val sessionManager: SessionManager,
-    private val repository: AuthRepository
-) {
-    companion object {
-        private const val TAG = "GetSessionDebugInfoUseCase"
-    }
-
-    operator fun invoke(): String {
-        return try {
-            val admin = sessionManager.getAdminProfile()
-            val isLoggedIn = repository.isLoggedIn()
-            val sessionDebug = sessionManager.debugSessionState()
-            val remainingTime = sessionManager.getRemainingSessionTimeMinutes()
-
-            """
-            📊 AUTH DEBUG INFORMATION:
-            
-            🔐 Authentication Status:
-            - Is Logged In: $isLoggedIn
-            - Session Valid: ${sessionManager.isSessionValid()}
-            - Remaining Time: ${remainingTime} minutes
-            
-            👤 User Profile:
-            - Name: ${admin?.name ?: "NOT_FOUND"}
-            - Email: ${admin?.email ?: "NOT_FOUND"}
-            - Token Length: ${admin?.token?.length ?: 0}
-            
-            💾 Session Details:
-            $sessionDebug
-            
-            🏗️ Build Info:
-            - Build Type: ${com.proyek.maganggsp.BuildConfig.BUILD_TYPE}
-            - Base URL: ${com.proyek.maganggsp.BuildConfig.BASE_URL}
-            - Version: ${com.proyek.maganggsp.BuildConfig.VERSION_NAME}
-            """.trimIndent()
-
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error generating debug info", e)
-            "Session Debug Error: ${e.message}"
-        }
-    }
-}

@@ -1,4 +1,5 @@
-// File: app/src/main/java/com/proyek/maganggsp/domain/model/LoketStatus.kt  
+// File: app/src/main/java/com/proyek/maganggsp/domain/model/LoketStatus.kt
+
 package com.proyek.maganggsp.domain.model
 
 /**
