@@ -1,10 +1,11 @@
-// File: app/src/main/java/com/proyek/maganggsp/di/DataModule.kt - NEW
+// File: app/src/main/java/com/proyek/maganggsp/di/DataModule.kt
+
 package com.proyek.maganggsp.di
 
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.proyek.maganggsp.data.source.local.LoketHistoryManager
+// DISABLED: import com.proyek.maganggsp.data.source.local.LoketHistoryManager
 import com.proyek.maganggsp.data.source.local.SessionManager
 import dagger.Module
 import dagger.Provides
@@ -13,6 +14,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * MINIMAL VERSION: LoketHistoryManager disabled
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
@@ -21,16 +25,19 @@ object DataModule {
     @Singleton
     fun provideGson(): Gson {
         return GsonBuilder()
-            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            .setPrettyPrinting()
+            .setLenient()
             .create()
     }
 
     @Provides
     @Singleton
-    fun provideSessionManager(@ApplicationContext context: Context): SessionManager {
+    fun provideSessionManager(
+        @ApplicationContext context: Context
+    ): SessionManager {
         return SessionManager(context)
     }
+
+    /* TEMPORARILY DISABLED - Re-enable after fixing LoketHistoryManager
 
     @Provides
     @Singleton
@@ -40,4 +47,5 @@ object DataModule {
     ): LoketHistoryManager {
         return LoketHistoryManager(context, gson)
     }
+    */
 }

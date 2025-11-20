@@ -1,14 +1,9 @@
 // File: app/src/main/java/com/proyek/maganggsp/data/repositoryImpl/BaseRepository.kt
-
 package com.proyek.maganggsp.data.repositoryImpl
 
 import com.proyek.maganggsp.util.exceptions.ExceptionMapper
 import android.util.Log
 
-/**
- * Base class untuk semua Repository Implementation
- * Menyediakan exception mapping dan error handling
- */
 abstract class BaseRepository(
     protected val exceptionMapper: ExceptionMapper
 ) {
@@ -16,20 +11,14 @@ abstract class BaseRepository(
         private const val TAG = "BaseRepository"
     }
 
-    /**
-     * Handle dan map exceptions ke user-friendly messages
-     */
-    protected fun <T> handleException(
+    protected fun handleException(
         exception: Exception,
         context: String = "Operation"
     ): Nothing {
         Log.e(TAG, "$context failed: ${exception.message}", exception)
-        throw exceptionMapper.mapException(exception)
+        throw exceptionMapper.toAppException(exception)
     }
 
-    /**
-     * Safe execute dengan automatic exception handling
-     */
     protected suspend fun <T> executeSafely(
         operation: suspend () -> T
     ): T {
